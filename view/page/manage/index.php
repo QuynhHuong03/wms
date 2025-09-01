@@ -3,13 +3,13 @@ session_start();
 ob_start();
 
 // Kiểm tra nếu chưa đăng nhập
-if (!isset($_SESSION["dangnhap"])) {
+if (!isset($_SESSION["login"])) {
     header("Location: ../view/page/login/index.php");
     exit();
 }
 
 // Lấy thông tin user
-$user = $_SESSION["dangnhap"];
+$user = $_SESSION["login"];
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -45,7 +45,8 @@ body, html {
 </head>
 <body>
 <div class="container-flex">
-    <?php include('../../layout/sidebar.php'); ?>
+    <?php include('../../layout/sidebar.php'); 
+    ?>
     <div class="main-content">
         <?php include('../../layout/header.php'); ?>
         <div class="content">

@@ -60,12 +60,30 @@ $users = $_SESSION["login"];
     <a href="index.php?page=quanly/warehouse"><i class="fas fa-warehouse"></i> Quản lý kho</a>
     <a href="index.php?page=quanly/products"><i class="fas fa-tags"></i> Danh mục sản phẩm</a>
     <a href="index.php?page=quanly/report"><i class="fas fa-chart-line"></i> Báo cáo thống kê</a>
-  <?php elseif (!empty($users['role_id']) && $users['role_id'] == 2): ?>
-    <!-- Menu cho Quản lý kho -->
+  <?php elseif ($users['role_id'] == 2): ?>
+    <!-- Menu cho Quản lý kho tổng -->
     <a href="index.php?page=quanly/duyetphieunhap"><i class="fas fa-file-import"></i> Duyệt phiếu nhập kho</a>
     <a href="index.php?page=quanly/duyetphieuxuat"><i class="fas fa-file-export"></i> Duyệt phiếu xuất kho</a>
+    <a href="index.php?page=quanly/tonkhochinhanh"><i class="fas fa-boxes"></i> tồn kho chi nhánh</a>
     <a href="index.php?page=quanly/products"><i class="fas fa-tags"></i> Danh mục sản phẩm</a>
     <a href="index.php?page=quanly/report"><i class="fas fa-chart-line"></i> Báo cáo thống kê</a>
+  <?php elseif ($users['role_id'] == 3): ?>
+    <!-- Menu cho Nhân viên kho tổng -->
+    <a href="index.php?page=quanly/phieunhap"><i class="fas fa-file-import"></i> Tạo phiếu nhập kho tổng</a>
+    <a href="index.php?page=quanly/phieuxuat"><i class="fas fa-file-export"></i> Tạo phiếu xuất kho tổng</a>
+    <a href="index.php?page=quanly/tonkho"><i class="fas fa-boxes"></i> Xem tồn kho tổng</a>
+    <a href="index.php?page=quanly/report"><i class="fas fa-chart-line"></i> Báo cáo tổng</a>
+  <?php elseif ($users['role_id'] == 4): ?>
+    <!-- Menu cho Quản lý kho chi nhánh -->
+    <a href="index.php?page=quanly/duyetphieunhapchinhanh"><i class="fas fa-file-import"></i> Duyệt phiếu nhập kho chi nhánh</a>
+    <a href="index.php?page=quanly/duyetphieuxuatchinhanh"><i class="fas fa-file-export"></i> Duyệt phiếu xuất kho chi nhánh</a>
+    <a href="index.php?page=quanly/tonkhochinhanh"><i class="fas fa-boxes"></i> Xem tồn kho chi nhánh</a>
+    <a href="index.php?page=quanly/reportchinhanh"><i class="fas fa-chart-line"></i> Báo cáo chi nhánh</a>
+  <?php elseif ($users['role_id'] == 5): ?>
+    <!-- Menu cho Nhân viên kho chi nhánh -->
+    <a href="index.php?page=quanly/phieunhapchinhanh"><i class="fas fa-file-import"></i> Tạo phiếu nhập kho chi nhánh</a>
+    <a href="index.php?page=quanly/phieuxuatchinhanh"><i class="fas fa-file-export"></i> Tạo phiếu xuất kho chi nhánh</a>
+    <a href="index.php?page=quanly/tonkhochinhanh"><i class="fas fa-boxes"></i> Xem tồn kho chi nhánh</a>
   <?php endif; ?>
 
   <a href="index.php?page=hoso"><i class="fas fa-user"></i> Hồ sơ</a>

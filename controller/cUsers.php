@@ -19,7 +19,7 @@ class CUsers {
             unset($_SESSION["login"]);
             // set session mới
             $_SESSION["login"] = $result;
-            header("Location: ../manage/index.php");
+            header("Location: ../manage");
             exit();
         }
         return false;
