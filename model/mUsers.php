@@ -3,16 +3,19 @@ include_once("connect.php");
 
 class MUsers {
     public function SelectAllUsers() {
-        $p = new clsKetNoi();
-        $con = $p->moKetNoi();
-        if ($con) {
-            $str = "SELECT * FROM users";
-            $tblSP = $con->query($str);
-            $p->dongKetNoi($con);
-            return $tblSP;
-        }
-        return false; 
+    $p = new clsKetNoi();
+    $con = $p->moKetNoi();
+    if ($con) {
+        $str = "SELECT u.*, r.role_name 
+                FROM users u 
+                LEFT JOIN roles r ON u.role_id = r.role_id";
+        $tblSP = $con->query($str);
+        $p->dongKetNoi($con);
+        return $tblSP;
     }
+    return false; 
+}
+
 
     public function login($email, $password) {
         $p = new clsKetNoi();
@@ -44,5 +47,28 @@ class MUsers {
         }
         return false;
     }
+
+    public function SelectUserById($id) {
+        $p = new clsKetNoi();
+        $con = $p->moKetNoi();
+        if ($con) {
+            $stmt = $con->prepare("SELECT u.*, r.role_name 
+                                FROM users u 
+                                LEFT JOIN roles r ON u.role_id = r.role_id
+                                WHERE u.user_id = ?");
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $p->dongKetNoi($con);
+
+            if ($result->num_rows > 0) {
+                return $result->fetch_assoc(); // chỉ lấy 1 dòng
+            }
+        }
+        return false;
+    }
+
+    
+
 }
 ?>

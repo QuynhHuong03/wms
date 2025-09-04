@@ -24,5 +24,29 @@ class CUsers {
         }
         return false;
     }
+
+
+    //Lấy nhân viên theo mã
+        public function get($id) {
+            $p = new MUsers();
+            $tblNV = $p->SelectAllUsers($id);
+
+            if ($tblNV) {
+                return $tblNV;
+            } else {
+                return null; // Không có nv với id đó
+            }
+        }
+
+        public function getUserwithRole($id) {
+            $p = new MUsers();
+            $tblNV = $p->SelectUserwithRole($id);
+
+            if ($tblNV) {
+                return $tblNV;
+            } else {
+                return null; // Không có nv với id đó
+            }
+        }
 }
 ?>
