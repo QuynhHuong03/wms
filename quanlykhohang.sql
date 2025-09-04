@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 31, 2025 at 02:46 PM
+-- Generation Time: Sep 04, 2025 at 04:26 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -108,7 +108,7 @@ CREATE TABLE `roles` (
 --
 
 INSERT INTO `roles` (`role_id`, `role_name`, `description`) VALUES
-(1, 'admin', NULL),
+(1, 'Admin', NULL),
 (2, 'Quản lý kho tổng', NULL),
 (3, 'Nhân viên kho tổng', NULL),
 (4, 'Quản lý kho chi nhánh', NULL),
@@ -212,7 +212,8 @@ CREATE TABLE `suppliers` (
 --
 
 CREATE TABLE `users` (
-  `user_id` int(11) NOT NULL,
+  `id` int(11) NOT NULL,
+  `user_id` varchar(10) NOT NULL,
   `fullname` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
   `email` varchar(50) DEFAULT NULL,
   `gender` tinyint(4) DEFAULT NULL,
@@ -227,9 +228,9 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`user_id`, `fullname`, `email`, `gender`, `phone`, `password`, `status`, `role_id`, `warehouse_id`) VALUES
-(1, 'admin', 'admin@gmail.com', 1, '0987654321', '$2y$10$fPUuywsZHayGidNAZMGxMev5dHg3GrFFjfdeGqidW7XQwNWBMbTEO', 1, 1, NULL),
-(2, 'Nguyễn An', 'nguyenan@gmail.com', 1, '0912346789', '$2y$10$z1KsoLcJqARMHPh6Q9cliOEyGMBYSRgzDSyiuiJfu.TASVvgCk86q', 1, 2, NULL);
+INSERT INTO `users` (`id`, `user_id`, `fullname`, `email`, `gender`, `phone`, `password`, `status`, `role_id`, `warehouse_id`) VALUES
+(1, 'NV001', 'admin', 'admin@gmail.com', 1, '0987654321', '$2y$10$fPUuywsZHayGidNAZMGxMev5dHg3GrFFjfdeGqidW7XQwNWBMbTEO', 1, 1, NULL),
+(2, 'NV002', 'Nguyễn An', 'nguyenan@gmail.com', 1, '0912346789', '$2y$10$z1KsoLcJqARMHPh6Q9cliOEyGMBYSRgzDSyiuiJfu.TASVvgCk86q', 1, 2, NULL);
 
 -- --------------------------------------------------------
 
@@ -345,7 +346,8 @@ ALTER TABLE `suppliers`
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
-  ADD PRIMARY KEY (`user_id`),
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_userid` (`user_id`),
   ADD UNIQUE KEY `email` (`email`),
   ADD KEY `role_id` (`role_id`),
   ADD KEY `warehouse_id` (`warehouse_id`);
@@ -436,7 +438,7 @@ ALTER TABLE `suppliers`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `warehouse`
@@ -479,8 +481,8 @@ ALTER TABLE `products`
 --
 ALTER TABLE `stock_counts`
   ADD CONSTRAINT `stock_counts_ibfk_1` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouse` (`warehouse_id`),
-  ADD CONSTRAINT `stock_counts_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`),
-  ADD CONSTRAINT `stock_counts_ibfk_3` FOREIGN KEY (`approved_by`) REFERENCES `users` (`user_id`);
+  ADD CONSTRAINT `stock_counts_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
+  ADD CONSTRAINT `stock_counts_ibfk_3` FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`);
 
 --
 -- Constraints for table `stock_count_details`
@@ -503,8 +505,8 @@ ALTER TABLE `stock_transactions`
   ADD CONSTRAINT `stock_transactions_ibfk_1` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouse` (`warehouse_id`),
   ADD CONSTRAINT `stock_transactions_ibfk_2` FOREIGN KEY (`related_warehouse_id`) REFERENCES `warehouse` (`warehouse_id`),
   ADD CONSTRAINT `stock_transactions_ibfk_3` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`supplier_id`),
-  ADD CONSTRAINT `stock_transactions_ibfk_4` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`),
-  ADD CONSTRAINT `stock_transactions_ibfk_5` FOREIGN KEY (`approved_by`) REFERENCES `users` (`user_id`);
+  ADD CONSTRAINT `stock_transactions_ibfk_4` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
+  ADD CONSTRAINT `stock_transactions_ibfk_5` FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`);
 
 --
 -- Constraints for table `stock_transaction_details`
