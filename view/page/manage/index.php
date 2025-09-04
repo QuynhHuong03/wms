@@ -2,13 +2,12 @@
 session_start();
 ob_start();
 
-// Kiểm tra nếu chưa đăng nhập
-if (!isset($_SESSION["login"])) {
-    header("Location: ../view/page/login/index.php");
+// Nếu chưa đăng nhập thì về login
+if (!isset($_SESSION["login"]) || empty($_SESSION["login"])) {
+    header("Location: ../login/index.php");
     exit();
 }
 
-// Lấy thông tin user
 $user = $_SESSION["login"];
 ?>
 <!DOCTYPE html>
@@ -45,13 +44,34 @@ body, html {
 </head>
 <body>
 <div class="container-flex">
-    <?php include('../../layout/sidebar.php'); 
-    ?>
+    <?php include('../../layout/sidebar.php'); ?>
     <div class="main-content">
-        <?php include('../../layout/header.php'); ?>
+        <?php 
+        // include('../../layout/header.php'); ?>
+
         <div class="content">
-            <h2>Dashboard</h2>
-            <p>Nội dung chính hiển thị ở đây...</p>
+            <?php
+            // Điều hướng page
+            if (isset($_GET['page'])) {
+                $page = $_GET['page'];
+                $path = $page;
+
+                // Nếu là thư mục thì load index.php
+                if (is_dir($path) && file_exists($path . "/index.php")) {
+                    include($path . "/index.php");
+                }
+                // Nếu là file
+                elseif (file_exists($path . ".php")) {
+                    include($path . ".php");
+                }
+                else {
+                    echo "<h3>Trang không tồn tại!</h3>";
+                }
+            } else {
+                // Trang mặc định khi mới vào
+                include("dashboard/index.php");
+            }
+            ?>
         </div>
     </div>
 </div>
