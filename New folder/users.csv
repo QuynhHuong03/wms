@@ -1,0 +1,3 @@
+﻿user_id,fullname,email,gender,phone,password,status,role_id,warehouse_id
+1,Nguyen Van A,a@gmail.com,1,0909123456,hashedpass,1,1,1
+2,Tran Thi B,b@gmail.com,0,0912345678,hashedpass,1,2,2
