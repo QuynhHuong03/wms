@@ -1,65 +1,148 @@
 <?php
-include_once("connect.php");
+include_once("connect.php"); // connect.php phải có clsKetNoi cho MongoDB
+include_once("mRoles.php");  // để dùng lại MongoResult wrapper
 
 class MWarehouse {
+
+    // Lấy tất cả loại kho
     public function getWarehouseTypes() {
         $p = new clsKetNoi();
         $con = $p->moKetNoi();
-        $types = [];
         if ($con) {
-            $sql = "SELECT * FROM warehouse_types";
-            $result = $con->query($sql);
-            if ($result) {
-                while ($row = $result->fetch_assoc()) {
-                    $types[] = $row;
+            try {
+                $col = $con->selectCollection('warehouse_types');
+                $cursor = $col->find([]);
+                $results = [];
+
+                foreach ($cursor as $doc) {
+                    $item = json_decode(json_encode($doc), true);
+                    if (isset($item['_id']['$oid'])) {
+                        $item['_id'] = $item['_id']['$oid'];
+                    }
+                    $results[] = $item;
                 }
+
+                $p->dongKetNoi($con);
+                return new MongoResult($results);
+            } catch (\Exception $e) {
+                $p->dongKetNoi($con);
+                die("Lỗi query MongoDB: " . $e->getMessage());
             }
-            $p->dongKetNoi($con);
         }
-        return $types;
+        return false;
     }
+
+    // Lấy danh sách kho theo loại
     public function getWarehousesByType($type_id) {
         $p = new clsKetNoi();
         $con = $p->moKetNoi();
         if ($con) {
-            $sql = "SELECT * FROM warehouse WHERE warehouse_type = ?";
-            $stmt = $con->prepare($sql);
-            $stmt->bind_param("i", $type_id);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $p->dongKetNoi($con);
-            return $result;
+            try {
+                $col = $con->selectCollection('warehouse');
+                $cursor = $col->find(['warehouse_type' => (int)$type_id]);
+                $results = [];
+
+                foreach ($cursor as $doc) {
+                    $item = json_decode(json_encode($doc), true);
+                    if (isset($item['_id']['$oid'])) {
+                        $item['_id'] = $item['_id']['$oid'];
+                    }
+                    $results[] = $item;
+                }
+
+                $p->dongKetNoi($con);
+                return new MongoResult($results);
+            } catch (\Exception $e) {
+                $p->dongKetNoi($con);
+                die("Lỗi query MongoDB: " . $e->getMessage());
+            }
         }
         return false;
     }
+
+// Lấy tất cả kho
+public function getAllWarehouses() {
+    $p = new clsKetNoi();
+    $con = $p->moKetNoi();
+    if ($con) {
+        try {
+            $col = $con->selectCollection('warehouse');
+            $cursor = $col->find([]);
+            $results = [];
+
+            foreach ($cursor as $doc) {
+                 var_dump($doc);
+                $item = json_decode(json_encode($doc), true);
+                if (isset($item['_id']['$oid'])) {
+                    $item['_id'] = $item['_id']['$oid'];
+                }
+                $results[] = $item;
+            }
+
+            $p->dongKetNoi($con);
+            return new MongoResult($results); // Trả về MongoResult
+        } catch (\Exception $e) {
+            $p->dongKetNoi($con);
+            die("Lỗi query MongoDB: " . $e->getMessage());
+        }
+    }
+    return false;
+}
+
+
+    // Tìm kho theo tên (LIKE)
     public function searchWarehousesByName($name) {
         $p = new clsKetNoi();
         $con = $p->moKetNoi();
         if ($con) {
-            $sql = "SELECT w.*, t.name AS type_name 
-                    FROM warehouse w 
-                    JOIN warehouse_types t ON w.warehouse_type = t.id 
-                    WHERE w.warehouse_name LIKE ?";
-            $stmt = $con->prepare($sql);
-            $like = "%$name%";
-            $stmt->bind_param("s", $like);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $p->dongKetNoi($con);
-            return $result;
+            try {
+                $col = $con->selectCollection('warehouse');
+                $cursor = $col->find([
+                    'warehouse_name' => ['$regex' => $name, '$options' => 'i']
+                ]);
+                $results = [];
+
+                foreach ($cursor as $doc) {
+                    $item = json_decode(json_encode($doc), true);
+                    if (isset($item['_id']['$oid'])) {
+                        $item['_id'] = $item['_id']['$oid'];
+                    }
+                    $results[] = $item;
+                }
+
+                $p->dongKetNoi($con);
+                return new MongoResult($results);
+            } catch (\Exception $e) {
+                $p->dongKetNoi($con);
+                die("Lỗi query MongoDB: " . $e->getMessage());
+            }
         }
         return false;
     }
+
+    // Thêm kho chi nhánh
     public function addBranchWarehouse($warehouse_id, $warehouse_name, $address, $status) {
         $p = new clsKetNoi();
         $con = $p->moKetNoi();
-        // 2 là warehouse_type cho kho chi nhánh
-        $sql = "INSERT INTO warehouse (warehouse_id, warehouse_name, address, status, warehouse_type) VALUES (?, ?, ?, ?, 2)";
-        $stmt = $con->prepare($sql);
-        $stmt->bind_param("sssi", $warehouse_id, $warehouse_name, $address, $status);
-        $result = $stmt->execute();
-        $p->dongKetNoi($con);
-        return $result;
+        if ($con) {
+            try {
+                $col = $con->selectCollection('warehouse');
+                $insertResult = $col->insertOne([
+                    'warehouse_id'   => $warehouse_id,
+                    'warehouse_name' => $warehouse_name,
+                    'address'        => $address,
+                    'status'         => (int)$status,
+                    'warehouse_type' => 2 // 2 = kho chi nhánh
+                ]);
+
+                $p->dongKetNoi($con);
+                return $insertResult->getInsertedCount() > 0;
+            } catch (\Exception $e) {
+                $p->dongKetNoi($con);
+                die("Lỗi insert MongoDB: " . $e->getMessage());
+            }
+        }
+        return false;
     }
 }
 ?>

@@ -1,7 +1,7 @@
 <?php
 // session_start();
 include_once("../../../model/mRoles.php");
-$mChucVu = new MRoles();
+$mRoles = new MRoles();
 if (!isset($_SESSION["login"])) {
     header("Location: ../page/index.php?page=login");
     exit();
@@ -9,8 +9,8 @@ if (!isset($_SESSION["login"])) {
 
 ?>
  <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+// error_reporting(E_ALL);
+// ini_set('display_errors', 1);
 ?>
 
 <!DOCTYPE html>
@@ -179,7 +179,7 @@ body {
     include_once("../../../controller/cUsers.php");
     $id = $_GET['id'];
     $p = new CUsers();
-    $user = $p->getAllUsers($id);
+    $user = $p->get($id);
     ?>
   <div class="page-header">
     <h2>Cập nhật người dùng</h2>
@@ -187,22 +187,24 @@ body {
   </div>
 
   <div class="container">
-    <form action="" method="post" enctype="multipart/form-data" onsubmit="return validateForm()">
+    <form action="users/updateUsers/process.php" method="post" enctype="multipart/form-data" onsubmit="return validateForm()">
       
       <!-- Họ và tên -->
       <div class="form-group">
         <label for="name">Họ và tên</label>
         <input type="text" id="name" name="name" 
                 placeholder="Nhập họ và tên" 
-                value="<?php echo isset($user['fullname']) ? htmlspecialchars($user['fullname']) : ''; ?>">
+                value="<?php echo $user['name']?>"
+            onblur="validateField(this, 'Họ và tên không được để trống.', value => value.length > 0)">
         <span class="error-message"></span>
       </div>
-
 
       <!-- Email -->
       <div class="form-group">
         <label for="email">Email</label>
-        <input type="email" id="email" name="email" placeholder="Nhập email">
+        <input type="email" id="email" name="email" placeholder="Nhập email" 
+                value="<?php echo $user['email']?>"
+            onblur="validateField(this, 'Email không được để trống.', value => value.length > 0)">
         <span class="error-message"></span>
       </div>
 
@@ -210,9 +212,8 @@ body {
       <div class="form-group">
         <label for="gender">Giới tính</label>
         <select name="gender" id="gender">
-          <option value="">- Chọn giới tính -</option>
-          <option value="1">Nam</option>
-          <option value="0">Nữ</option>
+          <option value="1" <?php echo ($user['gender'] == 1) ? "selected" : ""; ?>>Nam</option>
+          <option value="0" <?php echo ($user['gender'] == 0) ? "selected" : ""; ?>>Nữ</option>
         </select>
         <span class="error-message"></span>
       </div>
@@ -220,19 +221,9 @@ body {
       <!-- Số điện thoại -->
       <div class="form-group">
         <label for="phone">Số điện thoại</label>
-        <input type="text" id="phone" name="phone" placeholder="Nhập số điện thoại">
-        <span class="error-message"></span>
-      </div>
-
-      <!-- Mật khẩu -->
-      <div class="form-group password-group">
-        <label for="password">Mật khẩu</label>
-        <div class="password-wrapper">
-          <input type="password" id="password" name="password" placeholder="Nhập mật khẩu">
-          <span class="toggle-password" onclick="togglePassword()">
-            <i class="fa-solid fa-eye"></i>
-          </span>
-        </div>
+        <input type="text" id="phone" name="phone" placeholder="Nhập số điện thoại" 
+                value="<?php echo $user['phone']?>"
+            onblur="validateField(this, 'Số điện thoại không được để trống.', value => value.length > 0)">
         <span class="error-message"></span>
       </div>
 
@@ -240,18 +231,18 @@ body {
       <div class="form-group">
         <label for="role_id">Vai trò</label>
         <select name="role_id" id="role_id">
-          <option value="">- Chọn vai trò -</option>
           <?php
             include("../../../controller/cRoles.php");
             $obj = new CRoles();
-            $tblRole = $obj->getAllRoles();
-            var_dump($tblRole);
-            if ($tblRole && $tblRole instanceof mysqli_result && $tblRole->num_rows > 0) {
-                while ($r = $tblRole->fetch_assoc()) {
-                    echo '<option value="' . $r['role_id'] . '">' . $r['role_name'] . '</option>';
+            $listRole = $obj->getAllRoles(); // dùng hàm controller trả về mysqli_result
+
+            if ($listRole && $listRole->num_rows > 0) {
+                while ($r = $listRole->fetch_assoc()) {
+                    $selected = ($r['role_id'] == $user['role_id']) ? 'selected' : '';
+                    echo '<option value="' . $r['role_id'] . '" ' . $selected . '>' . $r['role_name'] . '</option>';
                 }
             } else {
-                echo '<option value="">⚠ Không có dữ liệu vai trò</option>';
+                echo '<option value="">Không có dữ liệu vai trò</option>';
             }
           ?>
         </select>
@@ -262,174 +253,256 @@ body {
       <div class="form-group">
         <label for="status">Trạng thái</label>
         <select id="status" name="status">
-          <option value="">- Chọn trạng thái -</option>
-          <option value="1">Đang làm việc</option>
-          <option value="2">Nghỉ việc</option>
+          <option value="1" <?php echo ($user['status'] == 1) ? 'selected' : ''; ?>>Đang làm việc</option>
+          <option value="2" <?php echo ($user['status'] == 2) ? 'selected' : ''; ?>>Nghỉ việc</option>
         </select>
         <span class="error-message"></span>
       </div>
 
       <!-- Kho làm việc -->
-      <div class="form-group">
-        <label for="warehouse_id">Kho làm việc</label>
-        <select name="warehouse_id" id="warehouse_id">
-          <option value="">- Chọn kho -</option>
-          <!-- PHP đổ dữ liệu -->
-        </select>
-        <span class="error-message"></span>
-      </div>
+<div class="form-group">
+    <label for="warehouse_id">Kho làm việc</label>
+    <select name="warehouse_id" id="warehouse_id">
+        <option value="">- Chọn kho -</option>
+        <?php
+        include_once(__DIR__ . "/../../../../../controller/cWarehouse.php");
+$Obj = new CWarehouse();
+$warehouses = $Obj->getAllWarehouses();
+if ($warehouses && $warehouses->num_rows > 0) {
+    while ($r = $warehouses->fetch_assoc()) {
+        $selected = ($r['warehouse_id'] == $user['warehouse_id']) ? 'selected' : '';
+        echo '<option value="' . $r['warehouse_id'] . '" ' . $selected . '>' . $r['warehouse_name'] . '</option>';
+    }
+} else {
+    echo '<option value="">Không có dữ liệu kho</option>';
+}
+
+
+
+        ?>
+    </select>
+    <span class="error-message"></span>
+</div>
+
+
 
       <!-- Nút thao tác -->
       <div class="form-actions">
         <a href="index.php?page=users">Quay lại</a>
-        <button type="reset" class="btn-secondary">Hủy</button>
-        <button type="submit" class="btn-success" name="btnAdd">Lưu</button>
+        <button type="button" class="btn-secondary" id="btnCancel">Hủy</button>
+        <button type="submit" class="btn-success" name="btnUpdate">Cập nhật</button>
       </div>
 
     </form>
   </div>
   <?php
-// Nếu nhấn nút Lưu thì mới xử lý cập nhật
-if (isset($_POST['btnSua'])) {
-    include("xuly.php");
-}
-?>
+    // Nếu nhấn nút Lưu thì mới xử lý cập nhật
+    // if (isset($_POST['btnUpdate'])) {
+    //     include("process.php");
+    // }
+  ?>
+
+<!-- Modal xác nhận -->
+<div id="confirmModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
+    background: rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
+  <div style="background:#fff; padding:20px 30px; border-radius:12px; max-width:400px; width:90%; text-align:center;">
+    <p style="font-size:18px; margin-bottom:20px;">Bạn có chắc chắn muốn cập nhật nhân viên này không?</p>
+    <button id="confirmYes" style="background:#16a34a; color:#fff; padding:10px 20px; border:none; border-radius:8px; margin-right:10px; cursor:pointer;">Có</button>
+    <button id="confirmNo" style="background:#6b7280; color:#fff; padding:10px 20px; border:none; border-radius:8px; cursor:pointer;">Hủy</button>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.querySelector("form");
+    const modal = document.getElementById("confirmModal");
+    const btnYes = document.getElementById("confirmYes");
+    const btnNo = document.getElementById("confirmNo");
+
+    form.addEventListener("submit", function(e){
+        e.preventDefault(); // ngăn submit mặc định
+        modal.style.display = "flex"; // hiện popup
+    });
+
+    btnNo.addEventListener("click", function(){
+        modal.style.display = "none"; // đóng popup
+    });
+
+    btnYes.addEventListener("click", function(){
+    const formData = new FormData(form);
+    formData.append('id', '<?php echo $user['user_id']; ?>'); // gửi id
+    formData.append('btnUpdate', '1'); // gửi để process.php nhận biết là form submit
+
+    fetch("users/updateUsers/process.php", {  // cùng cấp với index.php
+        method: "POST",
+        body: formData
+    })
+    .then(() => {
+        // Sau khi update xong, redirect về trang danh sách
+        window.location.href = "index.php?page=users";
+    })
+    .catch(error => {
+        alert("Lỗi: " + error);
+    });
+});
+
+});
+</script>
+
+
 </body>
-
-
 </html>
 
 <script>
-  function validateField(field, message, validator) {
-    const errorSpan = field.nextElementSibling;
-    if (!validator(field.value.trim())) {
-      errorSpan.textContent = message;
-      field.classList.add("is-invalid"); // Thêm class để làm nổi bật lỗi
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.querySelector("form");
+  const inputs = form.querySelectorAll("input, select");
+  const saveBtn = form.querySelector("button[name='btnUpdate']");
+  const cancelBtn = document.getElementById("btnCancel");
+
+  // 🟢 Lưu dữ liệu gốc ban đầu
+  const originalData = {};
+  inputs.forEach((field) => {
+    if (field.type === "checkbox" || field.type === "radio") {
+      originalData[field.id] = field.checked;
     } else {
-      errorSpan.textContent = "";
-      field.classList.remove("is-invalid");
+      originalData[field.id] = field.value;
     }
-  }
+  });
 
-  function validateForm(){
-    // Kiểm tra lại toàn bộ form trước khi gửi
-    const name = document.getElementById("name");
-    const phone = document.getElementById("phone");
-    const email = document.getElementsByName("email")[0];
-    const status = document.getElementById("status");
-    const chucvu = document.getElementsByName("chucvu")[0];
-
-    let isValid = true;
-
-    // Kiểm tra trường nhập liệu
-    validateField(name, "Họ và tên không được để trống.", value => value.length > 0);
-    validateField(chucvu, "Vui lòng chọn chức vụ.", value => value !== "");
-    validateField(status, "Vui lòng chọn trạng thái.", value => value !== "");
-
-
-    function validateName(name) {
-    const nameRegex = /^[a-zA-ZÀ-ỹ\s]+$/; // Cho phép ký tự alphabet (bao gồm có dấu) và dấu cách
-    if (name.trim() === "") {
-        return { valid: false, message: "Họ và tên không được để trống." };
-    }
-    if (!nameRegex.test(name)) {
-        return { valid: false, message: "Họ và tên chỉ được chứa ký tự chữ cái và dấu cách." };
-    }
-    return { valid: true, message: "" };
-    }
-
-    function validatePhoneNumber(phoneNumber) {
-  // Kiểm tra số bắt đầu bằng mã vùng hợp lệ ở Việt Nam và có 10 chữ số
-  const phoneRegex = /^(03|05|07|08|09)\d{8}$/; 
-  if (phoneNumber.trim() === "") {
-    return { valid: false, message: "Số điện thoại không được để trống." };
-  }
-  if (!phoneRegex.test(phoneNumber)) {
-    return { 
-      valid: false, 
-      message: "Số điện thoại không hợp lệ. Số điện thoại phải gồm 10 chữ số và bắt đầu là 03, 05, 07, 08, 09." 
-    };
-  }
-  return { valid: true, message: "" };
-}
-
-
-    function validateEmail(email) {
-      const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/; // Định dạng email chuẩn
-      if (email.trim() === "") {
-        return { valid: false, message: "Email không được để trống." };
-      }
-      if (!emailRegex.test(email)) {
-        return { valid: false, message: "Email không hợp lệ. Email có định dạng là abc@xxx.yy" };
-      }
-      return { valid: true, message: "" };
-    }
-
-
-
-    // Kiểm tra họ tên
-    const nameValidation = validateName(name.value);
-    if (!nameValidation.valid) {
-        const nameError = name.nextElementSibling;
-        nameError.textContent = nameValidation.message;
-        name.classList.add("is-invalid");
-        isValid = false;
-    } else {
-        name.nextElementSibling.textContent = "";
-        name.classList.remove("is-invalid");
-    }
-
-    // Kiểm tra số điện thoại
-    const phoneValidation = validatePhoneNumber(phone.value);
-      if (!phoneValidation.valid) {
-        const phoneError = phone.nextElementSibling;
-        phoneError.textContent = phoneValidation.message;
-        phone.classList.add("is-invalid");
-        isValid = false;
+  // 🟢 Hàm reset khi nhấn Hủy
+  cancelBtn.addEventListener("click", function () {
+    // Reset lại giá trị ban đầu
+    inputs.forEach((field) => {
+      if (field.type === "checkbox" || field.type === "radio") {
+        field.checked = originalData[field.id];
       } else {
-        phone.nextElementSibling.textContent = "";
-        phone.classList.remove("is-invalid");
+        field.value = originalData[field.id];
       }
+      field.dataset.touched = "false"; // reset trạng thái touched
+    });
 
-    // Kiểm tra email
-    const emailValidation = validateEmail(email.value);
-    if (!emailValidation.valid) {
-      const emailError = email.nextElementSibling;
-      emailError.textContent = emailValidation.message;
-      email.classList.add("is-invalid");
-      isValid = false;
+    // Xóa lỗi hiển thị
+    const errors = form.querySelectorAll(".error-message");
+    errors.forEach((error) => {
+      error.innerText = "";
+    });
+
+    // Disable lại nút cập nhật
+    saveBtn.disabled = true;
+    saveBtn.style.opacity = "0.6";
+    saveBtn.style.cursor = "not-allowed";
+  });
+
+  // Disable nút cập nhật lúc đầu
+  saveBtn.disabled = true;
+  saveBtn.style.opacity = "0.6";
+  saveBtn.style.cursor = "not-allowed";
+
+  inputs.forEach((field) => (field.dataset.touched = "false"));
+
+  function validateField(field) {
+    let value = field.value.trim();
+    let error = field.closest(".form-group").querySelector(".error-message"); 
+    let valid = true;
+
+    if (field.dataset.touched === "false") return true;
+
+    // --- Check rỗng ---
+    if (value === "") {
+      switch (field.id) {
+        case "name":
+          error.innerText = "Họ tên không được để trống";
+          break;
+        case "email":
+          error.innerText = "Email không được để trống";
+          break;
+        case "phone":
+          error.innerText = "Số điện thoại không được để trống";
+          break;
+        case "gender":
+          error.innerText = "Vui lòng chọn giới tính";
+          break;
+        case "role_id":
+          error.innerText = "Vui lòng chọn vai trò";
+          break;
+        case "status":
+          error.innerText = "Vui lòng chọn trạng thái";
+          break;
+        default:
+          error.innerText = "Trường này không được để trống";
+      }
+      return false;
     } else {
-      email.nextElementSibling.textContent = "";
-      email.classList.remove("is-invalid");
+      error.innerText = "";
     }
 
-    // Kiểm tra các trường select
-    if (status.value === "") {
-      const statusError = status.nextElementSibling;
-      statusError.textContent = "Vui lòng chọn trạng thái.";
-      status.classList.add("is-invalid");
-      isValid = false;
-    } else {
-      status.nextElementSibling.textContent = "";
-      status.classList.remove("is-invalid");
+    // --- Check chi tiết ---
+    if (field.id === "name") {
+      let regex = /^[\p{L}\s]+$/u;
+      if (!regex.test(value)) {
+        error.innerText = "Họ tên chỉ được chứa chữ cái và khoảng trắng";
+        valid = false;
+      }
     }
 
-    if (chucvu.value === "") {
-      const chucvuError = chucvu.nextElementSibling;
-      chucvuError.textContent = "Vui lòng chọn chức vụ.";
-      chucvu.classList.add("is-invalid");
-      isValid = false;
-    } else {
-      chucvu.nextElementSibling.textContent = "";
-      chucvu.classList.remove("is-invalid");
+    if (field.id === "email") {
+      let regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!regex.test(value)) {
+        error.innerText = "Email không hợp lệ";
+        valid = false;
+      }
     }
 
-    // If the form is valid, show the confirmation prompt
-    if (isValid) {
-      return confirm("Bạn có chắc chắn muốn cập nhật nhân viên này không?");
-        
+    if (field.id === "phone") {
+      let regex = /^[0-9]{10}$/;
+      if (!regex.test(value)) {
+        error.innerText = "Số điện thoại phải gồm 10 chữ số";
+        valid = false;
+      }
     }
-    return false; // If the form is invalid, prevent submission
 
+
+    return valid;
   }
+
+  function validateForm() {
+    let isValid = true;
+    inputs.forEach((field) => {
+      if (field.type !== "radio") {
+        if (!validateField(field)) isValid = false;
+      }
+    });
+
+    saveBtn.disabled = !isValid;
+    saveBtn.style.opacity = isValid ? "1" : "0.6";
+    saveBtn.style.cursor = isValid ? "pointer" : "not-allowed";
+
+    return isValid;
+  }
+
+  inputs.forEach((field) => {
+    if (field.type !== "radio") {
+      field.addEventListener("input", function () {
+        field.dataset.touched = "true";
+        validateField(field);
+        validateForm();
+      });
+
+      field.addEventListener("blur", function () {
+        field.dataset.touched = "true";
+        validateField(field);
+        validateForm();
+      });
+
+      field.addEventListener("change", function () {
+        field.dataset.touched = "true";
+        validateField(field);
+        validateForm();
+      });
+    }
+  });
+
+  
+});
 </script>

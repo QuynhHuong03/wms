@@ -44,10 +44,9 @@ body, html {
 </head>
 <body>
 <div class="container-flex">
-    <?php include('../../layout/sidebar.php'); ?>
+    <?php include(__DIR__ . '/../../layout/sidebar.php'); ?>
     <div class="main-content">
-        <?php 
-        // include('../../layout/header.php'); ?>
+        <?php include(__DIR__ . '/../../layout/header.php'); ?>
 
         <div class="content">
             <?php
