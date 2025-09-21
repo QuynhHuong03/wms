@@ -128,8 +128,12 @@ $users = $_SESSION["login"];
   <?php if (!empty($users['role_id']) && $users['role_id'] == 1): ?>
     <!-- Menu cho Admin -->
     <a href="index.php?page=users"><i class="fas fa-users"></i> Quản lý người dùng</a>
+    <a href="index.php?page=roles"><i class="fas fa-users"></i> Quản lý vai trò</a>
     <a href="index.php?page=warehouse"><i class="fas fa-warehouse"></i> Quản lý kho</a>
-    <a href="index.php?page=products"><i class="fas fa-tags"></i> Danh mục sản phẩm</a>
+    <a href="index.php?page=warehouse_type"><i class="fas fa-warehouse"></i> Quản lý loại kho</a>
+    <a href="index.php?page=supplier"><i class="fas fa-box"></i> Quản lý nhà cung cấp</a>
+    <a href="index.php?page=categories"><i class="fas fa-tags"></i> Danh mục sản phẩm</a>
+    <a href="index.php?page=products"><i class="fas fa-product-hunt"></i> Quản lý sản phẩm</a>
     <a href="index.php?page=report"><i class="fas fa-chart-line"></i> Báo cáo thống kê</a>
 
   <?php elseif ($users['role_id'] == 2): ?>
