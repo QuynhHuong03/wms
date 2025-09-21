@@ -8,15 +8,11 @@ class CWarehouse {
         $p = new MWarehouse();
         $types = $p->getWarehouseTypes();
 
-        if (!$types) {
-            return -1; // lỗi hoặc không kết nối được
+        if (!$types || empty($types)) {
+            return []; // Trả về mảng rỗng nếu không có dữ liệu
         }
 
-        if (!empty($types->result)) {
-            return $types; // có dữ liệu
-        } else {
-            return 0; // không có loại kho
-        }
+        return $types; // Trả về danh sách loại kho
     }
 
     // Lấy danh sách kho theo loại
@@ -31,45 +27,65 @@ class CWarehouse {
 
     // Lấy tất cả kho (kho chính + kho chi nhánh)
     public function getAllWarehouses() {
-    $p = new MWarehouse();
+        $p = new MWarehouse();
 
-    $warehouses1 = $p->getWarehousesByType(1); // kho chính
-    $warehouses2 = $p->getWarehousesByType(2); // kho chi nhánh
+        $warehouses1 = $p->getWarehousesByType(1); // kho tổng
+        $warehouses2 = $p->getWarehousesByType(2); // kho chi nhánh
 
-    $results = [];
-
-    if ($warehouses1 && $warehouses1->num_rows > 0) {
-        $warehouses1->reset(); // đảm bảo từ đầu
-        while ($row = $warehouses1->fetch_assoc()) {
-            $results[] = $row;
+        $types = $p->getWarehouseTypes(); // Lấy danh sách loại kho
+        $typeMap = [];
+        foreach ($types as $type) {
+            $typeMap[$type['id']] = $type['name']; // Tạo map loại kho
         }
-    }
 
-    if ($warehouses2 && $warehouses2->num_rows > 0) {
-        $warehouses2->reset();
-        while ($row = $warehouses2->fetch_assoc()) {
-            $results[] = $row;
+        $results = [];
+
+        if (is_array($warehouses1) && !empty($warehouses1)) {
+            foreach ($warehouses1 as &$warehouse) {
+                $warehouse['type_name'] = $typeMap[$warehouse['warehouse_type']] ?? 'Không xác định';
+            }
+            $results = array_merge($results, $warehouses1);
         }
-    }
 
-    return new MongoResult($results);
-}
+        if (is_array($warehouses2) && !empty($warehouses2)) {
+            foreach ($warehouses2 as &$warehouse) {
+                $warehouse['type_name'] = $typeMap[$warehouse['warehouse_type']] ?? 'Không xác định';
+            }
+            $results = array_merge($results, $warehouses2);
+        }
+
+        return $results; // Trả về danh sách kho
+    }
 
 
     // Tìm kho theo tên (LIKE)
     public function searchWarehousesByName($name) {
         $p = new MWarehouse();
-        $warehouses = $p->searchWarehousesByName($name);
-
-        if (!$warehouses) return false;
-
-        return $warehouses;
+        return $p->searchWarehousesByName($name);
     }
 
     // Thêm kho chi nhánh
-    public function addBranchWarehouse($warehouse_id, $warehouse_name, $address, $status) {
+    public function addBranchWarehouse($warehouse_id, $warehouse_name, $address, $status, $created_at) {
         $p = new MWarehouse();
-        return $p->addBranchWarehouse($warehouse_id, $warehouse_name, $address, $status);
+        return $p->addBranchWarehouse($warehouse_id, $warehouse_name, $address, $status, $created_at);
+    }
+
+    // Xóa kho
+    public function deleteWarehouse($warehouseId) {
+        $p = new MWarehouse();
+        return $p->deleteWarehouse($warehouseId);
+    }
+
+    // Cập nhật thông tin kho
+    public function updateWarehouse($warehouse_id, $warehouse_name, $address, $status) {
+        $p = new MWarehouse();
+        return $p->updateWarehouse($warehouse_id, $warehouse_name, $address, $status);
+    }
+
+    // Cập nhật thông tin nhà cung cấp
+    public function updateSupplier($supplier_id, $supplier_name, $contact, $status) {
+        $p = new MSupplier();
+        return $p->updateSupplier($supplier_id, $supplier_name, $contact, $status);
     }
 }
 ?>
