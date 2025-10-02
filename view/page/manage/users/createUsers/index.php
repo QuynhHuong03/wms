@@ -1,6 +1,6 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+//error_reporting(E_ALL);
+//ini_set('display_errors', 1);
 ?>
 
 <style>
@@ -166,7 +166,7 @@ body {
   </div>
 
   <div class="container">
-    <form action="" method="post" enctype="multipart/form-data" onsubmit="return validateForm()">
+    <form action="users/createUsers/process.php" method="post" enctype="multipart/form-data" onsubmit="return validateForm()">
       
       <!-- Họ và tên -->
       <div class="form-group">
@@ -216,20 +216,20 @@ body {
       <div class="form-group">
         <label for="role_id">Vai trò</label>
         <select name="role_id" id="role_id">
-          <option value="">- Chọn vai trò -</option>
-          <?php
-            include("../../../controller/cRoles.php");
-            $obj = new CRoles();
-            $tblRole = $obj->getAllRoles();
-            var_dump($tblRole);
-            if ($tblRole && $tblRole instanceof mysqli_result && $tblRole->num_rows > 0) {
-                while ($r = $tblRole->fetch_assoc()) {
-                    echo '<option value="' . $r['role_id'] . '">' . $r['role_name'] . '</option>';
-                }
-            } else {
-                echo '<option value="">⚠ Không có dữ liệu vai trò</option>';
-            }
-          ?>
+      <option value="">- Chọn vai trò -</option>
+      <?php
+      include("../../../controller/cRoles.php");
+      $obj = new CRoles();
+      $tblRole = $obj->getAllRoles();
+      if (is_array($tblRole) && count($tblRole) > 0) {
+        foreach ($tblRole as $r) {
+          $value = isset($r['role_id']) ? $r['role_id'] : $r['_id'];
+          echo '<option value="' . $value . '">' . $r['description'] . '</option>';
+        }
+      } else {
+        echo '<option value="">⚠ Không có dữ liệu vai trò</option>';
+      }
+      ?>
         </select>
         <span class="error-message"></span>
       </div>
@@ -249,21 +249,34 @@ body {
       <div class="form-group">
         <label for="warehouse_id">Kho làm việc</label>
         <select name="warehouse_id" id="warehouse_id">
-          <option value="">- Chọn kho -</option>
-          <!-- PHP đổ dữ liệu -->
+      <option value="">- Chọn kho -</option>
+      <?php
+      include("../../../controller/cWarehouse.php");
+      $obj = new CWarehouse();
+      $warehouses = $obj->getWarehousesByType(2); // ví dụ: 2 = kho chi nhánh
+      if (is_array($warehouses) && count($warehouses) > 0) {
+        foreach ($warehouses as $row) {
+          echo '<option value="' . $row['warehouse_id'] . '">' . $row['warehouse_name'] . '</option>';
+        }
+      } else {
+        echo '<option value="">⚠ Không có dữ liệu kho</option>';
+      }
+      ?>
         </select>
         <span class="error-message"></span>
       </div>
+
 
       <!-- Nút thao tác -->
       <div class="form-actions">
         <a href="index.php?page=users">Quay lại</a>
         <button type="reset" class="btn-secondary">Hủy</button>
-        <button type="submit" class="btn-success" name="btnAdd">Lưu</button>
+        <button type="submit" class="btn-success" name="btnAdd">Thêm</button>
       </div>
 
     </form>
   </div>
+  
 </body>
 
 <script>
@@ -276,57 +289,76 @@ document.addEventListener("DOMContentLoaded", function () {
   saveBtn.style.opacity = "0.6";
   saveBtn.style.cursor = "not-allowed";
 
-  // Đánh dấu field nào đã "touched"
+  // Gán touched = false cho tất cả
   inputs.forEach((field) => (field.dataset.touched = "false"));
 
-function validateField(field) {
-  let value = field.value.trim();
-  let error = field.closest(".form-group").querySelector(".error-message"); 
-  let valid = true;
+  function validateField(field) {
+    let value = field.value.trim();
+    let error = field.closest(".form-group").querySelector(".error-message");
+    let valid = true;
 
-  if (field.dataset.touched === "false") return true; //chưa focus chưa kiểm tra
+    // Nếu chưa touched thì bỏ qua
+    if (field.dataset.touched === "false") {
+      error.innerText = "";
+      return true;
+    }
 
-  if (field.id === "name") {
-    let regex = /^[\p{L}\s]+$/u;
-    if (!regex.test(value)) {
-      error.innerText = "Họ tên chỉ được chứa chữ cái và khoảng trắng";
-      valid = false;
-    } else error.innerText = "";
+    // Kiểm tra required cho các input text
+    if (["name","email","phone","password"].includes(field.id) && value === "") {
+      switch (field.id) {
+        case "name": error.innerText = "Họ và tên là bắt buộc"; break;
+        case "email": error.innerText = "Email là bắt buộc"; break;
+        case "phone": error.innerText = "Số điện thoại là bắt buộc"; break;
+        case "password": error.innerText = "Mật khẩu là bắt buộc"; break;
+      }
+      return false;
+    }
+
+    // Họ và tên
+    if (field.id === "name") {
+      let regex = /^[\p{L}\s]+$/u;
+      if (!regex.test(value)) {
+        error.innerText = "Họ tên chỉ được chứa chữ cái và khoảng trắng";
+        valid = false;
+      } else error.innerText = "";
+    }
+
+    // Email
+    if (field.id === "email") {
+      let regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!regex.test(value)) {
+        error.innerText = "Email không hợp lệ";
+        valid = false;
+      } else error.innerText = "";
+    }
+
+    // Phone
+    if (field.id === "phone") {
+      let regex = /^[0-9]{10}$/;
+      if (!regex.test(value)) {
+        error.innerText = "Số điện thoại không hợp lệ (10 số)";
+        valid = false;
+      } else error.innerText = "";
+    }
+
+    // Password
+    if (field.id === "password") {
+      if (value.length < 6) {
+        error.innerText = "Mật khẩu phải từ 6 ký tự";
+        valid = false;
+      } else error.innerText = "";
+    }
+
+    // Select box
+    if (["role_id","status","warehouse_id","gender"].includes(field.id)) {
+      if (value === "") {
+        error.innerText = "Vui lòng chọn mục này";
+        valid = false;
+      } else error.innerText = "";
+    }
+
+    return valid;
   }
-
-  if (field.id === "email") {
-    let regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!regex.test(value)) {
-      error.innerText = "Email không hợp lệ";
-      valid = false;
-    } else error.innerText = "";
-  }
-
-  if (field.id === "phone") {
-    let regex = /^[0-9]{10}$/;
-    if (!regex.test(value)) {
-      error.innerText = "Số điện thoại không hợp lệ (10 số)";
-      valid = false;
-    } else error.innerText = "";
-  }
-
-  if (field.id === "password") {
-    if (value.length < 6) {
-      error.innerText = "Mật khẩu phải từ 6 ký tự";
-      valid = false;
-    } else error.innerText = "";
-  }
-
-  if (["role_id","status","warehouse_id","gender"].includes(field.id)) {
-    if (value === "") {
-      error.innerText = "Vui lòng chọn mục này";
-      valid = false;
-    } else error.innerText = "";
-  }
-
-  return valid;
-}
-
 
   function validateForm() {
     let isValid = true;
@@ -343,17 +375,17 @@ function validateField(field) {
     return isValid;
   }
 
-  // Khi input thay đổi
+  // Sự kiện input / blur / change
   inputs.forEach((field) => {
     if (field.type !== "radio") {
       field.addEventListener("input", function () {
-        field.dataset.touched = "true"; // đánh dấu đã đụng
+        field.dataset.touched = "true";
         validateField(field);
         validateForm();
       });
 
       field.addEventListener("blur", function () {
-        field.dataset.touched = "true"; // nếu rời khỏi thì cũng xem như touched
+        field.dataset.touched = "true"; // đánh dấu khi out
         validateField(field);
         validateForm();
       });
@@ -385,6 +417,5 @@ function togglePassword() {
     toggleIcon.classList.add("fa-eye");
   }
 }
-
-
 </script>
+

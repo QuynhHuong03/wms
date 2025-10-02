@@ -177,5 +177,108 @@ class MUsers {
             throw new \RuntimeException('Lỗi SelectUserById: ' . $e->getMessage());
         }
     }
+
+    // Tìm user theo email
+    public function findUserByEmail($email) {
+        try {
+            $doc = $this->usersCollection->findOne(['email' => $email]);
+            return $doc ? $this->docToArray($doc) : null;
+        } catch (\Throwable $e) {
+            throw new \RuntimeException('Lỗi findUserByEmail: ' . $e->getMessage());
+        }
+    }
+
+        // Thêm user mới
+    public function addUser($name, $email, $gender, $phone, $password, $role_id, $status, $warehouse_id) {
+    try {
+        // Lấy user_id cuối cùng dạng NVxxx, sắp xếp giảm dần
+        $lastUser = $this->usersCollection->findOne(
+            ['user_id' => ['$regex' => '^NV[0-9]+$']],
+            ['sort' => ['user_id' => -1]]
+        );
+
+        // Tính số tiếp theo
+        $nextNumber = 1;
+        if ($lastUser && isset($lastUser['user_id'])) {
+            $lastCode = $lastUser['user_id']; // VD: NV002
+            $num = (int)substr($lastCode, 2); // lấy số: 2
+            $nextNumber = $num + 1;
+        }
+
+        $newUserId = "NV" . str_pad($nextNumber, 3, "0", STR_PAD_LEFT);
+
+        // Hash mật khẩu trước khi lưu
+        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+        // Dữ liệu insert
+        $insertData = [
+            "user_id"      => $newUserId,
+            "name"         => $name,
+            "email"        => $email,
+            "gender"       => $gender,
+            "phone"        => $phone,
+            "password"     => $hashedPassword,
+            "role_id"      => $role_id,
+            "status"       => (int)$status,
+            "warehouse_id" => $warehouse_id,
+            "created_at"   => new \MongoDB\BSON\UTCDateTime()
+        ];
+
+        // Thêm vào collection
+        $result = $this->usersCollection->insertOne($insertData);
+
+        return $result->getInsertedCount() > 0;
+
+    } catch (\Throwable $e) {
+        error_log("AddUser error: " . $e->getMessage());
+        return false;
+    }
+}
+
+
+public function updateUserById($id, $data) {
+    $p = new clsKetNoi();
+    $con = $p->moKetNoi();
+    if ($con) {
+        try {
+            $col = $con->selectCollection('users');
+            $filter = ['_id' => new MongoDB\BSON\ObjectId($id)];
+            $update = ['$set' => $data];
+            $result = $col->updateOne($filter, $update);
+            $p->dongKetNoi($con);
+            return $result->getModifiedCount() > 0;
+        } catch (\Exception $e) {
+            $p->dongKetNoi($con);
+            die("Lỗi update MongoDB: " . $e->getMessage());
+        }
+    }
+    return false;
+}
+
+public function deleteUser($id) {
+    try {
+        $filter = [];
+
+        // Nếu là ObjectId hợp lệ thì xóa theo _id
+        if (preg_match('/^[0-9a-fA-F]{24}$/', $id)) {
+            $filter['_id'] = new \MongoDB\BSON\ObjectId($id);
+        } else {
+            // Nếu không, xóa theo user_id
+            $filter['user_id'] = $id;
+        }
+
+        $result = $this->usersCollection->deleteOne($filter);
+
+        // Trả về true nếu xóa thành công ít nhất 1 document
+        return $result->getDeletedCount() > 0;
+
+    } catch (\Throwable $e) {
+        error_log("deleteUser error: " . $e->getMessage());
+        return false;
+    }
+}
+
+
+
 }
 ?>

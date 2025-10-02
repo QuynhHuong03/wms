@@ -3,10 +3,10 @@ session_start();
 ob_start();
 
 // Nếu chưa đăng nhập thì về login
-/*if (!isset($_SESSION["login"]) || empty($_SESSION["login"])) {
+if (!isset($_SESSION["login"]) || empty($_SESSION["login"])) {
     header("Location: ../login/index.php");
     exit();
-}*/
+}
 
 $user = $_SESSION["login"];
 ?>
@@ -44,10 +44,9 @@ body, html {
 </head>
 <body>
 <div class="container-flex">
-    <?php include('../../layout/sidebar.php'); ?>
+    <?php include(__DIR__ . '/../../layout/sidebar.php'); ?>
     <div class="main-content">
-        <?php 
-        // include('../../layout/header.php'); ?>
+        <?php include(__DIR__ . '/../../layout/header.php'); ?>
 
         <div class="content">
             <?php

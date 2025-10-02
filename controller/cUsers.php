@@ -48,5 +48,29 @@ class CUsers {
 
         return $user ?: null; // Trả về user hoặc null nếu không tìm thấy
     }
+
+    // Thêm user mới
+    public function addUser($name, $email, $gender, $phone, $hashedPassword, $role_id, $status, $warehouse_id) {
+        $p = new MUsers();
+        // Kiểm tra email đã tồn tại chưa
+        $existing = $p->findUserByEmail($email); // Bạn cần tạo hàm này trong model nếu chưa có
+        if ($existing) {
+            return false; // email đã tồn tại
+        }
+        return $p->addUser($name, $email, $gender, $phone, $hashedPassword, $role_id, $status, $warehouse_id);
+    }
+
+    public function update($id, $data) {
+    $m = new MUsers();
+    return $m->updateUserById($id, $data); // MUsers thực hiện update MongoDB
+}
+
+    // Xóa user theo _id hoặc user_id
+    public function deleteUser($id) {
+        $p = new MUsers();
+        return $p->deleteUser($id); // Trả về true nếu xóa thành công, false nếu thất bại
+    }
+
+
 }
 ?>

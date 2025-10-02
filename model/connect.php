@@ -5,7 +5,7 @@ use MongoDB\Client;
 
 class clsKetNoi {
     private $uri = 'mongodb://127.0.0.1:27017';      // URI MongoDB trên laptop
-    private $dbName = 'WMS';                         // mặc định DB (đổi nếu cần)
+    private $dbName = 'WMS'; //'wms';                        // mặc định DB (đổi nếu cần)
     private $client = null;
 
     // Bạn có thể truyền URI / dbName khi tạo object nếu muốn
