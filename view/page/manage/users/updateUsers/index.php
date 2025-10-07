@@ -1,16 +1,14 @@
 <?php
 // session_start();
+// error_reporting(E_ALL);
+// ini_set('display_errors', 1);
+
 include_once("../../../model/mRoles.php");
 $mRoles = new MRoles();
 if (!isset($_SESSION["login"])) {
     header("Location: ../page/index.php?page=login");
     exit();
 }
-
-?>
- <?php
-// error_reporting(E_ALL);
-// ini_set('display_errors', 1);
 ?>
 
 <!DOCTYPE html>
@@ -18,7 +16,6 @@ if (!isset($_SESSION["login"])) {
 <head>
     <meta charset="UTF-8">
     <title>Cập nhật nhân viên</title>
-
 
 <style>
 body {
@@ -119,8 +116,6 @@ body {
   color: #111;
 }
 
-
-/* Error message */
 .error-message {
   font-size: 14px;
   color: #e11d48;
@@ -179,7 +174,7 @@ body {
     include_once("../../../controller/cUsers.php");
     $id = $_GET['id'];
     $p = new CUsers();
-    $user = $p->get($id);
+    $user = $p->getUserById($id);
     ?>
   <div class="page-header">
     <h2>Cập nhật người dùng</h2>
@@ -230,14 +225,31 @@ body {
       <!-- Vai trò -->
       <div class="form-group">
         <label for="role_id">Vai trò</label>
+<<<<<<< Updated upstream
+          <select name="role_id" id="role_id">
+            <?php
+              include("../../../controller/cRoles.php");
+              $obj = new CRoles();
+              $listRole = $obj->getAllRoles(); // trả về array
+              if ($listRole && is_array($listRole) && count($listRole) > 0) {
+                  foreach ($listRole as $r) {
+                      $selected = ($r['role_id'] == $user['role_id']) ? 'selected' : '';
+                      echo '<option value="' . htmlspecialchars($r['role_id']) . '" ' . $selected . '>' . htmlspecialchars($r['role_name']) . '</option>';
+                  }
+              } else {
+                  echo '<option value="">Không có dữ liệu vai trò</option>';
+              }
+            ?>
+          </select>
+=======
         <select name="role_id" id="role_id">
           <?php
             include("../../../controller/cRoles.php");
             $obj = new CRoles();
-            $listRole = $obj->getAllRoles(); // dùng hàm controller trả về mysqli_result
+            $listRole = $obj->getAllRoles(); // Trả về array
 
-            if ($listRole && $listRole->num_rows > 0) {
-                while ($r = $listRole->fetch_assoc()) {
+            if (!empty($listRole)) {
+                foreach ($listRole as $r) {
                     $selected = ($r['role_id'] == $user['role_id']) ? 'selected' : '';
                     echo '<option value="' . $r['role_id'] . '" ' . $selected . '>' . $r['role_name'] . '</option>';
                 }
@@ -245,7 +257,9 @@ body {
                 echo '<option value="">Không có dữ liệu vai trò</option>';
             }
           ?>
+
         </select>
+>>>>>>> Stashed changes
         <span class="error-message"></span>
       </div>
 
@@ -260,31 +274,51 @@ body {
       </div>
 
       <!-- Kho làm việc -->
+<<<<<<< Updated upstream
+  <div class="form-group">
+    <label for="warehouse_id">Kho làm việc</label>
+    <select name="warehouse_id" id="warehouse_id">
+      <option value="">- Chọn kho -</option>
+      <?php
+        include_once(__DIR__ . "/../../../../../controller/cWarehouse.php");
+        $Obj = new CWarehouse();
+        $warehouses = $Obj->getAllWarehouses();
+        if ($warehouses && is_array($warehouses) && count($warehouses) > 0) {
+          foreach ($warehouses as $r) {
+            $selected = ($r['warehouse_id'] == $user['warehouse_id']) ? 'selected' : '';
+            echo '<option value="' . htmlspecialchars($r['warehouse_id']) . '" ' . $selected . '>' . htmlspecialchars($r['warehouse_name']) . '</option>';
+          }
+        } else {
+          echo '<option value="">Không có dữ liệu kho</option>';
+        }
+      ?>
+    </select>
+    <span class="error-message"></span>
+  </div>
+=======
 <div class="form-group">
     <label for="warehouse_id">Kho làm việc</label>
     <select name="warehouse_id" id="warehouse_id">
         <option value="">- Chọn kho -</option>
         <?php
-        include_once(__DIR__ . "/../../../../../controller/cWarehouse.php");
+include_once(__DIR__ . "/../../../../../controller/cWarehouse.php");
 $Obj = new CWarehouse();
 $warehouses = $Obj->getAllWarehouses();
-if ($warehouses && $warehouses->num_rows > 0) {
-    while ($r = $warehouses->fetch_assoc()) {
+
+if (!empty($warehouses)) {
+    foreach ($warehouses as $r) {
         $selected = ($r['warehouse_id'] == $user['warehouse_id']) ? 'selected' : '';
         echo '<option value="' . $r['warehouse_id'] . '" ' . $selected . '>' . $r['warehouse_name'] . '</option>';
     }
 } else {
     echo '<option value="">Không có dữ liệu kho</option>';
 }
+?>
 
-
-
-        ?>
     </select>
     <span class="error-message"></span>
 </div>
-
-
+>>>>>>> Stashed changes
 
       <!-- Nút thao tác -->
       <div class="form-actions">
@@ -295,12 +329,6 @@ if ($warehouses && $warehouses->num_rows > 0) {
 
     </form>
   </div>
-  <?php
-    // Nếu nhấn nút Lưu thì mới xử lý cập nhật
-    // if (isset($_POST['btnUpdate'])) {
-    //     include("process.php");
-    // }
-  ?>
 
 <!-- Modal xác nhận -->
 <div id="confirmModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
@@ -348,7 +376,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 });
 </script>
-
 
 </body>
 </html>
@@ -461,8 +488,6 @@ document.addEventListener("DOMContentLoaded", function () {
         valid = false;
       }
     }
-
-
     return valid;
   }
 
@@ -502,7 +527,6 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     }
   });
-
   
 });
 </script>

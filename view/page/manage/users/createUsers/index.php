@@ -216,23 +216,20 @@ body {
       <div class="form-group">
         <label for="role_id">Vai trò</label>
         <select name="role_id" id="role_id">
-          <option value="">- Chọn vai trò -</option>
-          <?php
-include("../../../controller/cRoles.php");
-$obj = new CRoles();
-$tblRole = $obj->getAllRoles();
-
-if ($tblRole && $tblRole != -1 && $tblRole != 0 && $tblRole->num_rows > 0) {
-    while ($r = $tblRole->fetch_assoc()) {
-        // Nếu trong Mongo roles có role_id thì dùng role_id, 
-        // nếu không thì dùng _id (ObjectId)
-        $value = isset($r['role_id']) ? $r['role_id'] : $r['_id'];
-        echo '<option value="' . $value . '">' . $r['description'] . '</option>';
-    }
-} else {
-    echo '<option value="">⚠ Không có dữ liệu vai trò</option>';
-}
-?>
+      <option value="">- Chọn vai trò -</option>
+      <?php
+      include("../../../controller/cRoles.php");
+      $obj = new CRoles();
+      $tblRole = $obj->getAllRoles();
+      if (is_array($tblRole) && count($tblRole) > 0) {
+        foreach ($tblRole as $r) {
+          $value = isset($r['role_id']) ? $r['role_id'] : $r['_id'];
+          echo '<option value="' . $value . '">' . $r['description'] . '</option>';
+        }
+      } else {
+        echo '<option value="">⚠ Không có dữ liệu vai trò</option>';
+      }
+      ?>
         </select>
         <span class="error-message"></span>
       </div>
@@ -252,20 +249,19 @@ if ($tblRole && $tblRole != -1 && $tblRole != 0 && $tblRole->num_rows > 0) {
       <div class="form-group">
         <label for="warehouse_id">Kho làm việc</label>
         <select name="warehouse_id" id="warehouse_id">
-          <option value="">- Chọn kho -</option>
-          <?php
-            include("../../../controller/cWarehouse.php");
-            $obj = new CWarehouse();
-            $warehouses = $obj->getWarehousesByType(2); // ví dụ: 2 = kho chi nhánh
-
-            if ($warehouses && $warehouses->num_rows > 0) {
-                while ($row = $warehouses->fetch_assoc()) {
-                    echo '<option value="' . $row['warehouse_id'] . '">' . $row['warehouse_name'] . '</option>';
-                }
-            } else {
-                echo '<option value="">⚠ Không có dữ liệu kho</option>';
-            }
-          ?>
+      <option value="">- Chọn kho -</option>
+      <?php
+      include("../../../controller/cWarehouse.php");
+      $obj = new CWarehouse();
+      $warehouses = $obj->getWarehousesByType(2); // ví dụ: 2 = kho chi nhánh
+      if (is_array($warehouses) && count($warehouses) > 0) {
+        foreach ($warehouses as $row) {
+          echo '<option value="' . $row['warehouse_id'] . '">' . $row['warehouse_name'] . '</option>';
+        }
+      } else {
+        echo '<option value="">⚠ Không có dữ liệu kho</option>';
+      }
+      ?>
         </select>
         <span class="error-message"></span>
       </div>
@@ -280,6 +276,7 @@ if ($tblRole && $tblRole != -1 && $tblRole != 0 && $tblRole->num_rows > 0) {
 
     </form>
   </div>
+  
 </body>
 
 <script>
@@ -421,3 +418,4 @@ function togglePassword() {
   }
 }
 </script>
+

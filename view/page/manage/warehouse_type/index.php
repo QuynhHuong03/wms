@@ -1,17 +1,17 @@
 <?php
-include_once(__DIR__ . "/../../../../controller/cWarehouse.php");
-$cWarehouse = new CWarehouse();
+include_once(__DIR__ . "/../../../../controller/cWarehouse_type.php");
+$cWarehouseType = new CWarehouseType();
 
-$warehouses = $cWarehouse->getAllWarehouses();
+$warehouseTypes = $cWarehouseType->getAllWarehouseTypes();
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-    <title>Quản lý kho</title>
+    <meta charset="UTF-8">
+    <title>Quản lý loại kho</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <style>
-        /* CSS giống với Quản lý nhân viên */
         body {
             font-family: Arial, sans-serif;
             background-color: #f9f9f9;
@@ -44,9 +44,6 @@ $warehouses = $cWarehouse->getAllWarehouses();
             color: white;
         }
 
-
-        /* Header quản lý kho */
-
         .header-warehouse {
             display: flex;
             justify-content: space-between;
@@ -66,7 +63,6 @@ $warehouses = $cWarehouse->getAllWarehouses();
             font-size: 14px;
         }
 
-        /* Phần tìm kiếm + nút thêm */
         .header-right {
             display: flex;
             align-items: center;
@@ -74,7 +70,6 @@ $warehouses = $cWarehouse->getAllWarehouses();
             flex-wrap: wrap;
         }
 
-        /* Ô tìm kiếm */
         .qlkho-search-container {
             position: relative;
         }
@@ -82,17 +77,17 @@ $warehouses = $cWarehouse->getAllWarehouses();
         .qlkho-search {
             display: flex;
             align-items: center;
-            gap: 10px; /* Tăng khoảng cách giữa icon và input */
-            padding: 8px 16px; /* Tăng padding */
+            gap: 10px;
+            padding: 8px 16px;
             border-radius: 8px;
             border: 1px solid #ddd;
             background: #fff;
-            width: 400px; /* Kéo dài ô tìm kiếm */
+            width: 400px;
         }
 
         .qlkho-search i {
-            color: #666; /* Màu của icon */
-            font-size: 18px; /* Kích thước icon */
+            color: #666;
+            font-size: 18px;
         }
 
         .qlkho-search input {
@@ -100,7 +95,7 @@ $warehouses = $cWarehouse->getAllWarehouses();
             outline: none;
             font-size: 14px;
             padding: 4px 6px;
-            flex: 1; /* Để input chiếm toàn bộ không gian còn lại */
+            flex: 1;
         }
 
         #searchResult {
@@ -118,7 +113,6 @@ $warehouses = $cWarehouse->getAllWarehouses();
             z-index: 99;
         }
 
-        /* Nút Thêm kho */
         .btn-add-warehouse {
             background: #3b82f6;
             color: white;
@@ -139,7 +133,6 @@ $warehouses = $cWarehouse->getAllWarehouses();
             background: #2563eb;
         }
 
-        /* Responsive nhỏ */
         @media (max-width: 600px) {
             .header-warehouse {
                 flex-direction: column;
@@ -198,15 +191,15 @@ $warehouses = $cWarehouse->getAllWarehouses();
         }
 
         td a:hover {
-            color: #2563eb; /* Màu khi hover */
+            color: #2563eb;
         }
 
         .status-active, .status-inactive {
-            background: none; /* Loại bỏ màu nền */
-            color: #333; /* Đổi màu chữ thành màu tối */
-            padding: 0; /* Loại bỏ padding */
+            background: none;
+            color: #333;
+            padding: 0;
             font-size: 14px;
-            font-weight: normal; /* Loại bỏ font-weight */
+            font-weight: normal;
             display: inline-block;
         }
 
@@ -241,7 +234,6 @@ $warehouses = $cWarehouse->getAllWarehouses();
         }
 
         .btn-delete:hover {
-            color: #dc2626; /* Màu khi hover */
             color: #dc2626;
         }
 
@@ -251,61 +243,52 @@ $warehouses = $cWarehouse->getAllWarehouses();
     </style>
 </head>
 <body>
-    <div class="header-warehouse">
-        <div class="header-left">
-            <h3>QUẢN LÝ KHO</h3>
-            <p>Danh sách kho tổng và kho chi nhánh</p>
-        </div>
-
-        <div class="header-right">
-            <div class="qlkho-search-container">
-                <div class="qlkho-search">
-                    <i class="fas fa-search"></i>
-                    <input id="searchInput" type="text" placeholder="Tìm kiếm...">
-                </div>
-                <div id="searchResult"></div>
+        <div class="header-warehouse">
+            <div class="header-left">
+                <h3>QUẢN LÝ LOẠI KHO</h3>
+                <p>Danh sách các loại kho</p>
             </div>
 
-            <button class="btn-add-warehouse">
-                <a href="index.php?page=warehouse/createWarehouse">+ Thêm kho</a>
-            </button>
-        </div>
-    </div>
+            <div class="header-right">
+                <div class="qlkho-search-container">
+                    <div class="qlkho-search">
+                        <i class="fas fa-search"></i>
+                        <input id="searchInput" type="text" placeholder="Tìm kiếm...">
+                    </div>
+                    <div id="searchResult"></div>
+                </div>
 
+                <button class="btn-add-warehouse">
+                    <a href="index.php?page=warehouse_type/createWarehouse_type">+ Thêm loại kho</a>
+                </button>
+            </div>
     <div class="container qlkho">
         <?php
-        if (is_array($warehouses) && !empty($warehouses)) {
+
+        if (is_array($warehouseTypes) && !empty($warehouseTypes)) {
             echo '<table>';
             echo '
                 <thead>
                     <tr>
-                        <th>ID</th> <!-- Thêm cột ID -->
-                        <th>Mã kho</th>
-                        <th>Tên kho</th>
-                        <th>Địa chỉ</th>
-                        <th>Loại kho</th>
-                        <th>Trạng thái</th>
+                        <th>ID</th>
+                        <th>Mã loại kho</th>
+                        <th>Tên loại kho</th>
                         <th>Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
             ';
-            foreach ($warehouses as $warehouse) {
-                $statusText = $warehouse['status'] == 1 ? 'Đang hoạt động' : 'Ngừng hoạt động';
-
+            foreach ($warehouseTypes as $type) {
                 echo "
                     <tr>
-                        <td>{$warehouse['id']}</td> <!-- Hiển thị ID -->
-                        <td>{$warehouse['warehouse_id']}</td>
-                        <td>{$warehouse['warehouse_name']}</td>
-                        <td>{$warehouse['address']}</td>
-                        <td>{$warehouse['type_name']}</td>
-                        <td>{$statusText}</td>
+                        <td>{$type['id']}</td>
+                        <td>{$type['warehouse_type_id']}</td>
+                        <td>{$type['name']}</td>
                         <td>
-                            <a href='index.php?page=warehouse/updateWarehouse&id={$warehouse['warehouse_id']}' title='Sửa' style='margin-right:10px; color:#3b82f6;'>
+                            <a href='index.php?page=warehouse_type/updateWarehouse_type&id={$type['warehouse_type_id']}' title='Sửa' style='margin-right:10px; color:#3b82f6;'>
                                 <i class='fas fa-edit'></i>
                             </a>
-                            <a href='#' class='btn-delete' data-id='{$warehouse['warehouse_id']}' title='Xóa' style='margin-left:10px; color:red;'>
+                            <a href='#' class='btn-delete' data-id='" . $type['warehouse_type_id'] . "' title='Xóa' style='margin-left:10px; color:red;'>
                                 <i class='fas fa-trash-alt'></i>
                             </a>
                         </td>
@@ -314,7 +297,7 @@ $warehouses = $cWarehouse->getAllWarehouses();
             }
             echo '</tbody></table>';
         } else {
-            echo "<p>Không có kho nào.</p>";
+            echo "<p>Không có loại kho nào.</p>";
         }
         ?>
         <div class="col-md-4" style="padding-top: 20px;">
@@ -331,7 +314,7 @@ $warehouses = $cWarehouse->getAllWarehouses();
         searchInput.addEventListener('input', function() {
             const query = searchInput.value.trim();
             if (query !== '') {
-                fetch(`../../../view/page/manage/warehouse/searchWarehouse.php?q=${query}`)
+                fetch(`../../../view/page/manage/warehouse_type/searchWarehouse_type.php?q=${query}`)
                     .then(response => response.text())
                     .then(data => {
                         searchResult.innerHTML = data;
@@ -346,16 +329,16 @@ $warehouses = $cWarehouse->getAllWarehouses();
         document.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
-                const warehouseId = this.dataset.id;
+                const warehouseTypeId = this.dataset.id;
 
-                if (confirm('Bạn có chắc chắn muốn xóa kho này?')) {
-                    fetch(`../../../view/page/manage/warehouse/deleteWarehouse/deleteWarehouse.php?id=${warehouseId}`)
+                if (confirm('Bạn có chắc chắn muốn xóa loại kho này?')) {
+                    fetch(`../../../view/page/manage/warehouse_type/deleteWarehouse_type/index.php?id=${warehouseTypeId}`)
                         .then(response => response.text())
                         .then(data => {
                             alert(data);
-                            window.location.reload(); // Reload lại trang sau khi xóa
+                            window.location.reload();
                         })
-                        .catch(err => console.error('Lỗi xóa kho:', err));
+                        .catch(err => console.error('Lỗi xóa loại kho:', err));
                 }
             });
         });

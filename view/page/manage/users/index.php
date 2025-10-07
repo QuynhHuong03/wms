@@ -31,7 +31,6 @@ button a {
     color: white;
 }
 
-/* Header quản lý người dùng */
 .header-users {
     display: flex;
     justify-content: space-between;
@@ -97,7 +96,6 @@ button a {
     z-index: 99;
 }
 
-/* Nút Thêm người dùng */
 .btn-add-user {
     background: #3b82f6;
     color: white;
@@ -248,11 +246,36 @@ td a:hover {
     z-index: 1000;
 }
 
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.modal-content {
+    position: relative;
+    z-index: 1001;
+}
+
+.modal-overlay {
+    position: fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background: rgba(0,0,0,0.4);
+    z-index: 1000;
+}
+
 </style>
 
 <?php
     error_reporting();
-include_once(__DIR__ . '/../../../../controller/cUsers.php');
+    include_once(__DIR__ . '/../../../../controller/cUsers.php');
     $p = new CUsers();
 ?>
 
@@ -312,7 +335,15 @@ include_once(__DIR__ . '/../../../../controller/cUsers.php');
                     $statusClass = $r['status'] == 1 ? 'status-working' : 'status-left';
                     $statusText = $r['status'] == 1 ? 'Đang làm việc' : 'Nghỉ việc';
 
-                    $roleName = trim(mb_strtolower($r['role_name'], 'UTF-8'));
+                    // Lấy role_name từ role_info hoặc trực tiếp từ r
+                    $roleNameRaw = '';
+                    if (isset($r['role_info']['role_name'])) {
+                        $roleNameRaw = $r['role_info']['role_name'];
+                    } elseif (isset($r['role_name'])) {
+                        $roleNameRaw = $r['role_name'];
+                    }
+                    
+                    $roleName = trim(mb_strtolower($roleNameRaw, 'UTF-8'));
                     $roleClass = '';
                     switch ($roleName) {
                         case 'admin':
@@ -335,7 +366,7 @@ include_once(__DIR__ . '/../../../../controller/cUsers.php');
                         <td><?php echo $r['phone'] ?? ''; ?></td>
                         <td>
                             <span class="role-badge <?php echo $roleClass; ?>">
-                                <?php echo $r['role_name'] ?? ''; ?>
+                                <?php echo $r['role_name'] ?? ($r['role_info']['role_name'] ?? ''); ?>
                             </span>
                         </td>
                         <td>
