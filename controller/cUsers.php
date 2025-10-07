@@ -2,75 +2,121 @@
 include_once(__DIR__ . "/../model/mUsers.php");
 
 class CUsers {
+    private $mUsers;
+
+    public function __construct() {
+        $this->mUsers = new MUsers();
+    }
+
+    /* ==========================
+       LẤY THÔNG TIN
+    ========================== */
+
     // Lấy tất cả users
     public function getAllUsers() {
-        $p = new MUsers();
-        $users = $p->SelectAllUsers();
+    $users = $this->mUsers->getAllUsersWithRole();
 
-        if (!$users) {
-            return -1; // Lỗi kết nối
-        } elseif (iterator_count($users) > 0) {
-            return $users; // Trả về danh sách users
-        } else {
-            return 0; // Không có users
-        }
-    }
+    if (!$users) return -1; // Lỗi kết nối
+    return count($users) > 0 ? $users : 0;
+}
 
-    // Đăng nhập
-    public function dangnhaptaikhoan($email, $password) {
-        $p = new MUsers();
-        $result = $p->login($email, $password);
-
-        if ($result === "inactive") {
-            return false; // Tài khoản không hoạt động
-        } elseif ($result) {
-            // Xóa session cũ và tạo session mới
-            unset($_SESSION["login"]);
-            $_SESSION["login"] = $result;
-            header("Location: ../manage");
-            exit();
-        }
-        return false; // Sai email hoặc mật khẩu
-    }
-
-    // Lấy user theo ID
-    public function get($id) {
-        $p = new MUsers();
-        $user = $p->SelectUserById($id);
-
-        return $user ?: null; // Trả về user hoặc null nếu không tìm thấy
+    // Lấy user theo user_id
+    public function getUserById($id) {
+        return $this->mUsers->getUserByUserId($id);
     }
 
     // Lấy user kèm role
-    public function getUserwithRole($id) {
-        $p = new MUsers();
-        $user = $p->SelectUserwithRole($id);
-
-        return $user ?: null; // Trả về user hoặc null nếu không tìm thấy
+    public function getUserWithRole($id) {
+        $user = $this->mUsers->getUserByUserId($id);
+        if ($user && isset($user['role_id'])) {
+            $role = $this->mUsers->getRoleById($user['role_id']);
+            $user['role'] = $role;
+        }
+        return $user ?: null;
     }
+
+    /* ==========================
+       XỬ LÝ ĐĂNG NHẬP
+    ========================== */
+    public function login($email, $password) {
+        $result = $this->mUsers->login($email, $password);
+
+        if ($result === "inactive") return false;
+        if ($result) {
+            unset($_SESSION["login"]);
+            // Convert MongoDB document to array to avoid serialization issues
+            if ($result instanceof \MongoDB\Model\BSONDocument) {
+                $_SESSION["login"] = iterator_to_array($result);
+            } else {
+                $_SESSION["login"] = (array)$result;
+            }
+
+            // Kiểm tra first_login
+            if (isset($_SESSION["login"]['first_login']) && $_SESSION["login"]['first_login'] === true) {
+                header("Location: ../first_time_change_password.php");
+                exit();
+            }
+
+            header("Location: ../manage");
+            exit();
+        }
+        return false;
+    }
+
+    /* ==========================
+       QUẢN LÝ NGƯỜI DÙNG
+    ========================== */
 
     // Thêm user mới
     public function addUser($name, $email, $gender, $phone, $hashedPassword, $role_id, $status, $warehouse_id) {
-        $p = new MUsers();
-        // Kiểm tra email đã tồn tại chưa
-        $existing = $p->findUserByEmail($email); // Bạn cần tạo hàm này trong model nếu chưa có
-        if ($existing) {
-            return false; // email đã tồn tại
-        }
-        return $p->addUser($name, $email, $gender, $phone, $hashedPassword, $role_id, $status, $warehouse_id);
+        $existing = $this->mUsers->findUserByEmail($email);
+        if ($existing) return false;
+
+        return $this->mUsers->addUser(
+            $name, $email, $gender, $phone,
+            $hashedPassword, $role_id, $status, $warehouse_id,
+            true // first_login = true
+        );
     }
 
-    public function update($id, $data) {
-    $m = new MUsers();
-    return $m->updateUserById($id, $data); // MUsers thực hiện update MongoDB
-}
-
-    // Xóa user theo _id hoặc user_id
-    public function deleteUser($id) {
-        $p = new MUsers();
-        return $p->deleteUser($id); // Trả về true nếu xóa thành công, false nếu thất bại
+    // Admin cập nhật user (full field)
+    public function updateUserAdmin($userId, $data) {
+        return $this->mUsers->updateUserAdmin($userId, $data);
     }
 
+    // Nhân viên tự cập nhật profile
+    public function updateUserProfile($userId, $data) {
+        return $this->mUsers->updateUserProfile($userId, $data);
+    }
+
+    // Xóa user
+    public function deleteUser($userId) {
+        return $this->mUsers->deleteUser($userId);
+    }
+
+    /* ==========================
+       MẬT KHẨU
+    ========================== */
+
+    // Đổi mật khẩu lần đầu (First Time Login)
+    public function changePasswordFirstTime($userId, $newPassword) {
+        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+        $updateData = [
+            'password'    => $hashedPassword,
+            'first_login' => false,
+            'updated_at'  => new MongoDB\BSON\UTCDateTime()
+        ];
+        return $this->mUsers->updateUserAdmin($userId, $updateData);
+    }
+
+    // Đổi mật khẩu (sau khi login bình thường)
+    public function changePassword($userId, $currentPassword, $newPassword) {
+        return $this->mUsers->updatePassword($userId, $currentPassword, $newPassword);
+    }
+
+    // Alias method for updatePassword to maintain compatibility
+    public function updatePassword($userId, $currentPassword, $newPassword) {
+        return $this->changePassword($userId, $currentPassword, $newPassword);
+    }
 
 }
-?>

@@ -11,10 +11,7 @@ class CRoles {
     // Lấy tất cả roles
     public function getAllRoles() {
         $result = $this->mRoles->SelectAllRoles();
-        if ($result instanceof MongoResult) {
-            return $result->fetch_all();
-        }
-        return [];
+        return $result;
     }
 
     // Lấy role theo id
@@ -23,7 +20,7 @@ class CRoles {
     }
 
     // Thêm role mới
-    public function addRole($name, $description, $status) {
+    public function addRole($name, $description, $status, $create_at) {
         $p = new clsKetNoi();
         $con = $p->moKetNoi();
         if ($con) {
@@ -41,16 +38,8 @@ class CRoles {
             }
             $newRoleId = "R" . str_pad($nextNumber, 3, "0", STR_PAD_LEFT);
 
-            $insertData = [
-                "role_id"     => $newRoleId,
-                "role_name"   => $name,
-                "description" => $description,
-                "status"      => (int)$status,
-                "create_at"   => new \MongoDB\BSON\UTCDateTime()
-            ];
-
-            $result = $col->insertOne($insertData);
-            return $result->getInsertedCount() > 0;
+            $result = $this->mRoles->insertRole($newRoleId, $name, $description, $status, $create_at);
+            return $result;
         }
         return false;
     }
@@ -92,6 +81,11 @@ class CRoles {
             return $result->getDeletedCount() > 0;
         }
         return false;
+    }
+
+    // Tìm kiếm role theo tên
+    public function searchRolesByName($name) {
+        return $this->mRoles->searchRolesByName($name);
     }
 }
 ?>

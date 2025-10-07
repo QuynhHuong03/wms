@@ -57,5 +57,44 @@ class MRoles {
             die("Lỗi query MongoDB: " . $e->getMessage());
         }
     }
+
+    // Tìm kiếm vai trò theo tên
+    public function searchRolesByName($name) {
+        try {
+            $cursor = $this->col->find(['role_name' => ['$regex' => $name, '$options' => 'i']]);
+            $results = [];
+
+            foreach ($cursor as $doc) {
+                $results[] = [
+                    "_id" => (string)$doc->_id,
+                    "role_id" => $doc["role_id"],
+                    "role_name" => $doc["role_name"],
+                    "description" => $doc["description"]
+                ];
+            }
+
+            return $results;
+        } catch (Exception $e) {
+            die("Lỗi query MongoDB: " . $e->getMessage());
+        }
+    }
+
+    // Thêm vai trò mới
+    public function insertRole($role_id, $role_name, $description, $status, $create_at) {
+        try {
+            $insertData = [
+                "role_id"     => $role_id,
+                "role_name"   => $role_name,
+                "description" => $description,
+                "status"      => (int)$status,
+                "create_at"   => new MongoDB\BSON\UTCDateTime(strtotime($create_at) * 1000)
+            ];
+
+            $result = $this->col->insertOne($insertData);
+            return $result->getInsertedCount() > 0;
+        } catch (Exception $e) {
+            die("Lỗi query MongoDB: " . $e->getMessage());
+        }
+    }
 }
 ?>
