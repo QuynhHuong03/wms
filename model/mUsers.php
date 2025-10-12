@@ -246,7 +246,15 @@ public function getAllUsersWithRole() {
                 ['$set' => ['password' => $hashedPassword]]
             );
 
-            return $result->getModifiedCount() > 0;
+            // Provide more detailed result codes for debugging
+            $matched = method_exists($result, 'getMatchedCount') ? $result->getMatchedCount() : null;
+            $modified = method_exists($result, 'getModifiedCount') ? $result->getModifiedCount() : null;
+
+            if ($modified !== null && $modified > 0) return 'updated';
+            if ($matched !== null && $matched > 0 && $modified === 0) return 'not_updated';
+
+            // Fallback: if driver didn't provide counts, return boolean
+            return false;
         } catch (\Throwable $e) {
             error_log("updatePassword error: " . $e->getMessage());
             return false;

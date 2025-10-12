@@ -57,7 +57,7 @@ class MSupplier {
     }
 
     // Thêm nhà cung cấp
-    public function addSupplier($supplier_name, $contact, $created_at) {
+    public function addSupplier($supplier_name, $contact, $created_at, $contact_name, $tax_code, $country, $description) {
         $p = new clsKetNoi();
         $con = $p->moKetNoi();
         if ($con) {
@@ -76,11 +76,15 @@ class MSupplier {
                 // Tạo supplier_id mới
                 $newSupplierId = $maxId + 1;
 
-                // Thêm nhà cung cấp mới với ngày tạo
+                // Thêm nhà cung cấp mới với ngày tạo và các trường bổ sung
                 $insertResult = $col->insertOne([
                     'supplier_id'   => $newSupplierId,
                     'supplier_name' => $supplier_name,
                     'contact'       => $contact,
+                    'contact_name'  => $contact_name,
+                    'tax_code'      => $tax_code,
+                    'country'       => $country,
+                    'description'   => $description,
                     'status'        => 1, // Mặc định là 1
                     'created_at'    => $created_at // Ngày tạo
                 ]);
@@ -115,7 +119,7 @@ class MSupplier {
     }
 
     // Cập nhật thông tin nhà cung cấp
-    public function updateSupplier($supplier_id, $supplier_name, $contact, $status) {
+    public function updateSupplier($supplier_id, $supplier_name, $contact, $status, $contact_name = '', $tax_code = '', $country = '', $description = '') {
         $p = new clsKetNoi();
         $con = $p->moKetNoi();
         if ($con) {
@@ -126,13 +130,19 @@ class MSupplier {
                     die("Không tìm thấy nhà cung cấp với ID: $supplier_id");
                 }
 
+                $updateFields = [
+                    'supplier_name' => $supplier_name,
+                    'contact'       => $contact,
+                    'status'        => (int)$status,
+                    'contact_name'  => $contact_name,
+                    'tax_code'      => $tax_code,
+                    'country'       => $country,
+                    'description'   => $description
+                ];
+
                 $updateResult = $col->updateOne(
                     ['supplier_id' => (int)$supplier_id],
-                    ['$set' => [
-                        'supplier_name' => $supplier_name,
-                        'contact'       => $contact,
-                        'status'        => (int)$status
-                    ]]
+                    ['$set' => $updateFields]
                 );
 
                 if ($updateResult->getModifiedCount() === 0) {
