@@ -27,6 +27,12 @@ $p = new CRoles();
             padding: 25px 30px;
         }
 
+        h2 {
+            text-align: center;
+            color: #1e3a8a;
+            margin-bottom: 25px;
+        }
+
         .form-group {
             margin-bottom: 18px;
         }
@@ -39,7 +45,8 @@ $p = new CRoles();
             color: #333;
         }
 
-        .form-group input, .form-group select {
+        .form-group input,
+        .form-group select {
             width: 100%;
             padding: 10px 12px;
             border: 1px solid #ccc;
@@ -48,77 +55,56 @@ $p = new CRoles();
             transition: border-color 0.2s;
         }
 
-        .form-group input:focus, .form-group select:focus {
+        .form-group input:focus,
+        .form-group select:focus {
             border-color: #3b82f6;
             outline: none;
             box-shadow: 0 0 5px rgba(59,130,246,0.3);
         }
 
-<<<<<<< Updated upstream
+        /* Nút hành động */
         .form-actions {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 25px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
         }
 
-        .form-actions button {
+        .form-actions button,
+        .form-actions a {
+            background-color: #3b82f6;
+            color: #fff;
             padding: 10px 20px;
+            font-size: 16px;
             border: none;
             border-radius: 8px;
-            background-color: #3b82f6;
-            color: white;
-            font-size: 18px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: background 0.2s;
+            text-decoration: none;
+            display: inline-block;
         }
 
-        .form-actions button:hover {
+        .form-actions button:hover,
+        .form-actions a:hover {
             background-color: #2563eb;
         }
-=======
-        /* Button group */
-.form-actions {
-  text-align: center;
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-}
 
-.form-actions button,
-.form-actions a {
-  background-color: #3b82f6;
-  color: #fff;
-  padding: 10px 20px;
-  font-size: 15px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.2s;
-  text-decoration: none;
-  display: inline-block;
-}
+        .btn-secondary {
+            background-color: #6b7280;
+        }
 
-.form-actions button:hover,
-.form-actions a:hover {
-  background-color: #2563eb;
-}
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
 
-.form-actions .btn-secondary {
-  background-color: #6b7280;
-}
+        .btn-success {
+            background-color: #16a34a;
+        }
 
-.form-actions .btn-secondary:hover {
-  background-color: #4b5563;
-}
-
-.form-actions .btn-success {
-  background-color: #16a34a;
-}
-
-.form-actions .btn-success:hover {
-  background-color: #15803d;
-}
->>>>>>> Stashed changes
+        .btn-success:hover {
+            background-color: #15803d;
+        }
     </style>
 </head>
 <body>
@@ -129,10 +115,12 @@ $p = new CRoles();
                 <label for="role_name">Tên vai trò</label>
                 <input type="text" id="role_name" name="role_name" required>
             </div>
+
             <div class="form-group">
                 <label for="description">Mô tả</label>
                 <input type="text" id="description" name="description" required>
             </div>
+
             <div class="form-group">
                 <label for="status">Trạng thái</label>
                 <select id="status" name="status" required>
@@ -140,17 +128,16 @@ $p = new CRoles();
                     <option value="2">Không hoạt động</option>
                 </select>
             </div>
+
             <div class="form-group">
                 <label for="create_at">Ngày tạo</label>
                 <input type="text" id="create_at" name="create_at" value="<?php echo date('Y-m-d H:i:s'); ?>" readonly>
             </div>
+
             <div class="form-actions">
-<<<<<<< Updated upstream
-=======
-                <a href="index.php?page=roles">Quay lại</a>
-                <button type="reset" class="btn-secondary">Hủy</button>
->>>>>>> Stashed changes
-                <button type="submit" name="btnAdd">Thêm vai trò</button>
+                <a href="index.php?page=roles" class="btn-secondary"><i class="fa fa-arrow-left"></i> Quay lại</a>
+                <button type="reset" class="btn-secondary"><i class="fa fa-undo"></i> Hủy</button>
+                <button type="submit" name="btnAdd" class="btn-success"><i class="fa fa-plus"></i> Thêm vai trò</button>
             </div>
         </form>
     </div>

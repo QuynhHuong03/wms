@@ -4,312 +4,296 @@ ini_set('display_errors', 1);
 
 include_once(__DIR__ . '/../../../../controller/cRoles.php');
 $p = new CRoles();
+$roles = $p->getAllRoles();
 ?>
 
-<style>
-/* Dùng lại CSS từ user */
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f9f9f9;
-    margin: 0;
-    padding: 0;
-}
-.container.qlnl {
-    width: 100%;
-    max-width: 1200px;
-    margin: 20px auto;
-    background: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-}
-button {
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    background-color: #3b82f6;
-    color: white;
-    font-weight: bold;
-    transition: background-color 0.3s ease;
-}
-button a {
-    text-decoration: none;
-    color: white;
-}
-.header-users {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    margin: 20px 0;
-}
-.header-left h3 {
-    margin: 0;
-    color: #333;
-}
-.header-left p {
-    margin: 4px 0 0;
-    color: #666;
-    font-size: 14px;
-}
-.btn-add-role {
-    background: #3b82f6;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 16px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background 0.3s;
-}
-.btn-add-role a {
-    color: white;
-    text-decoration: none;
-}
-.btn-add-role:hover {
-    background: #2563eb;
-}
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
-thead {
-    background-color: #3b82f6;
-    color: white;
-    font-size: 16px;
-    text-align: left;
-}
-thead th {
-    padding: 10px;
-}
-tbody tr:nth-child(odd) { background-color: #f2f2f2; }
-tbody tr:nth-child(even) { background-color: #ffffff; }
-tbody td {
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
-}
-td a {
-    color: #3b82f6;
-    text-decoration: none;
-    font-size: 18px;
-}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Quản lý vai trò</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body {
+      background: #f6f8fa;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+    }
 
-/* Modal */
-.modal { display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; }
-.modal-content {
-    max-width:400px; margin:100px auto; background:#fff; padding:20px;
-    border-radius:10px; box-shadow:0 4px 8px rgba(0,0,0,0.2); text-align:center;
-}
-.modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); }
+    .role-container {
+      max-width: 1000px;
+      margin: 10px auto;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      animation: fadeIn 0.3s ease-in-out;
+    }
 
-/* Search */
-.qlnl-search-container {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-.qlnl-search {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 16px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    background: #fff;
-    width: 400px; /* Kéo dài ô tìm kiếm */
-}
-.qlnl-search i {
-    color: #666;
-    font-size: 18px; /* Kích thước icon */
-}
-.qlnl-search input {
-    border: none;
-    outline: none;
-    font-size: 14px;
-    padding: 4px 6px;
-    flex: 1; /* Để input chiếm toàn bộ không gian còn lại */
-}
-#searchResult {
-    position: absolute;
-    top: 110%;
-    left: 0;
-    right: 0;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    max-height: 250px;
-    overflow-y: auto;
-    display: none;
-    z-index: 99;
-}
-#searchResult div {
-    padding: 10px;
-    cursor: pointer;
-}
-#searchResult div:hover {
-    background: #f1f1f1;
-}
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
-.action-buttons {
-    display: flex;
-    gap: 5px; /* Khoảng cách giữa các icon */
-}
+    .header {
+      padding: 25px 30px;
+      border-bottom: 1px solid #e9ecef;
+      background: #fff;
+      text-align: center;
+    }
 
-.action-buttons a {
-    text-decoration: none;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 4px;
-    transition: background-color 0.3s ease;
-}
+    .header h2 {
+      margin: 0;
+      font-size: 26px;
+      color: #333;
+      font-weight: 700;
+    }
 
-.btn-edit {
-    color: #3b82f6;
-}
+    .header p {
+      margin: 6px 0 0;
+      color: #666;
+    }
 
-.btn-delete {
-     /* Màu nền icon Xóa */
-    color:  #ef4444;
-}
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 35px;
+      background: #fafbfc;
+      border-bottom: 1px solid #eee;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
 
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 8px 14px;
+      width: 350px;
+    }
 
-.btn-edit i, .btn-delete i {
-    font-size: 18px; /* Kích thước icon */
-}
-</style>
+    .search-box input {
+      border: none;
+      outline: none;
+      font-size: 14px;
+      flex: 1;
+    }
 
+    .btn-add {
+      background: #3b82f6;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: 0.25s;
+    }
+
+    .btn-add:hover {
+      background: #2563eb;
+      transform: translateY(-2px);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      text-align: center;
+      border-bottom: 1px solid #e1e4e8;
+      font-size: 15px;
+    }
+
+    th {
+      background: #f9fafb;
+      font-weight: 600;
+    }
+
+    tr:hover td {
+      background: #f1f7ff;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      transition: 0.2s;
+      font-size: 17px;
+    }
+
+    .btn-edit { color: #3b82f6; }
+    .btn-delete { color: #ef4444; }
+    .btn-icon:hover { transform: scale(1.1); }
+
+    #searchResult {
+      position: absolute;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+      z-index: 99;
+      width: 340px;
+      margin-top: 5px;
+    }
+
+    #searchResult div {
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    #searchResult div:hover {
+      background: #f1f1f1;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 20px;
+      color: #888;
+      font-style: italic;
+    }
+  </style>
+</head>
 <body>
-<div class="header-users">
-    <div class="header-left">
-        <h3>QUẢN LÝ VAI TRÒ</h3>
-        <p>Tạo và quản lý vai trò trong hệ thống</p>
+
+<div class="role-container">
+  <div class="header">
+    <h2><i class="fa-solid fa-user-shield"></i> Quản lý vai trò</h2>
+    <p>Tạo và quản lý vai trò trong hệ thống</p>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-container" style="position: relative;">
+      <div class="search-box">
+        <i class="fas fa-search" style="color:#666;"></i>
+        <input type="text" id="searchInput" placeholder="Tìm kiếm vai trò...">
+      </div>
+      <div id="searchResult"></div>
     </div>
 
-    <div class="header-right">
-        <div class="qlnl-search-container">
-            <div class="qlnl-search">
-                <i class="fas fa-search"></i>
-                <input id="searchInput" type="text" placeholder="Tìm kiếm vai trò...">
-            </div>
-            <div id="searchResult"></div>
-                    <button class="btn-add-role" style="margin-left: 10px;">
-            <a href="index.php?page=roles/createRoles">+ Thêm vai trò</a>
-        </button>
+    <a href="index.php?page=roles/createRoles" class="btn-add">
+      <i class="fa-solid fa-plus"></i> Thêm vai trò
+    </a>
+  </div>
 
-        </div>
-    </div>
-</div>
-
-<div class="container qlnl">
+  <div style="padding: 20px 30px;">
     <table>
-        <thead>
+      <thead>
+        <tr>
+          <th>Mã vai trò</th>
+          <th>Tên vai trò</th>
+          <th>Mô tả</th>
+          <th>Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php if (!empty($roles)): ?>
+          <?php foreach ($roles as $role): ?>
             <tr>
-                <th>Mã vai trò</th>
-                <th>Tên vai trò</th>
-                <th>Mô tả</th>
-                <th>Thao tác</th> <!-- Thêm cột Thao tác -->
+              <td><?= htmlspecialchars($role['role_id']) ?></td>
+              <td><?= htmlspecialchars($role['role_name']) ?></td>
+              <td><?= htmlspecialchars($role['description']) ?></td>
+              <td>
+                <div class="actions">
+                  <a href="index.php?page=roles/updateRoles&id=<?= urlencode($role['role_id']) ?>" class="btn-icon btn-edit" title="Sửa">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <a href="#" class="btn-icon btn-delete" data-id="<?= htmlspecialchars($role['role_id']) ?>" title="Xóa">
+                    <i class="fas fa-trash-alt"></i>
+                  </a>
+                </div>
+              </td>
             </tr>
-        </thead>
-        <tbody>
-            <?php
-            $roles = $p->getAllRoles();
-            if (!empty($roles)) {
-                foreach ($roles as $role) {
-                    echo "
-                        <tr>
-                            <td>{$role['role_id']}</td>
-                            <td>{$role['role_name']}</td>
-                            <td>{$role['description']}</td>
-                            <td>
-                                <div class='action-buttons'>
-                                    <a href='index.php?page=roles/updateRoles&id={$role['role_id']}' class='btn-edit' title='Sửa'>
-                                        <i class='fas fa-edit'></i>
-                                    </a>
-                                    <a href='#' class='btn-delete' data-id='{$role['role_id']}' title='Xóa'>
-                                        <i class='fas fa-trash-alt'></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    ";
-                }
-            } else {
-                echo "<tr><td colspan='4'>Không có vai trò nào</td></tr>";
-            }
-            ?>
-        </tbody>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <tr><td colspan="4" class="no-data">Không có vai trò nào.</td></tr>
+        <?php endif; ?>
+      </tbody>
     </table>
-</div>
-
-<!-- Modal Xác nhận Xóa -->
-<div id="deleteModal" class="modal">
-    <div class="modal-content">
-        <h3>Xác nhận xóa</h3>
-        <p>Bạn có chắc chắn muốn xóa vai trò này?</p>
-        <div style="margin-top:20px;">
-            <button id="cancelBtn" style="background:#ccc; color:#333; margin-right:10px; padding:8px 16px; border:none; border-radius:8px; cursor:pointer;">Hủy</button>
-            <button id="confirmDeleteBtn" style="background:red; color:white; padding:8px 16px; border:none; border-radius:8px; cursor:pointer;">Xóa</button>
-        </div>
-    </div>
-    <div class="modal-overlay"></div>
+  </div>
 </div>
 
 <script>
-const deleteModal = document.getElementById('deleteModal');
-const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-const cancelBtn = document.getElementById('cancelBtn');
-let deleteRoleId = null;
-
-// Mở modal khi nhấn nút xóa
-document.querySelectorAll('.btn-delete').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        const roleId = this.dataset.id;
-
-        if (confirm('Bạn có chắc chắn muốn xóa vai trò này?')) {
-            fetch(`../../../view/page/manage/roles/deleteRoles/deleteRoles.php?id=${roleId}`)
-                .then(response => response.text())
-                .then(data => {
-                    alert(data);
-                    window.location.reload(); // Reload lại trang sau khi xóa
-                })
-                .catch(err => console.error('Lỗi xóa vai trò:', err));
-        }
-    });
-});
-
-// Tìm kiếm vai trò
 const searchInput = document.getElementById('searchInput');
 const searchResult = document.getElementById('searchResult');
 
+// --- Tìm kiếm vai trò ---
 searchInput.addEventListener('input', function() {
-    const query = searchInput.value.trim();
-    if (query !== '') {
-        fetch(`../../../view/page/manage/roles/searchRoles.php?q=${query}`)
-            .then(response => response.text())
-            .then(data => {
-                searchResult.innerHTML = data;
-                searchResult.style.display = 'block';
-            })
-            .catch(error => console.error('Error:', error));
-    } else {
-        searchResult.style.display = 'none';
-    }
+  const query = this.value.trim();
+  if (query.length > 0) {
+    fetch(`../../../view/page/manage/roles/searchRoles.php?q=${encodeURIComponent(query)}`)
+      .then(res => res.text())
+      .then(data => {
+        searchResult.innerHTML = data;
+        searchResult.style.display = 'block';
+      })
+      .catch(console.error);
+  } else {
+    searchResult.style.display = 'none';
+  }
 });
 
-document.addEventListener('click', function(event) {
-    if (!searchResult.contains(event.target) && event.target !== searchInput) {
-        searchResult.style.display = 'none';
-    }
+document.addEventListener('click', e => {
+  if (!searchResult.contains(e.target) && e.target !== searchInput) {
+    searchResult.style.display = 'none';
+  }
+});
+
+// --- Xác nhận xóa bằng SweetAlert ---
+document.querySelectorAll('.btn-delete').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.preventDefault();
+    const id = btn.dataset.id;
+
+    Swal.fire({
+      title: 'Xác nhận xóa vai trò?',
+      text: 'Hành động này không thể hoàn tác!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Xóa',
+      cancelButtonText: 'Hủy'
+    }).then(result => {
+      if (result.isConfirmed) {
+        fetch(`../../../view/page/manage/roles/deleteRoles/deleteRoles.php?id=${id}`)
+          .then(res => res.text())
+          .then(data => {
+            Swal.fire({
+              icon: 'success',
+              title: 'Đã xóa!',
+              text: data,
+              timer: 1200,
+              showConfirmButton: false
+            });
+            setTimeout(() => window.location.reload(), 1300);
+          })
+          .catch(err => console.error('Lỗi:', err));
+      }
+    });
+  });
 });
 </script>
-
 </body>
-</body>
-
+</html>

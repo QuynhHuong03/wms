@@ -66,13 +66,57 @@ if ($_POST['action'] === 'changePassword') {
         exit;
     }
 
+    // Ensure user exists before attempting password update for clearer errors
+    $userExists = $p->getUserById($userId);
+    if (!$userExists) {
+        echo json_encode(['status' => 'error', 'message' => 'Người dùng không tồn tại.']);
+        exit;
+    }
+
     $result = $p->updatePassword($userId, $current, $new);
-    if ($result === true) {
-        echo json_encode(['status' => 'success', 'message' => 'Đổi mật khẩu thành công.']);
+    if ($result === 'updated') {
+        // Destroy session so user is forced to re-login with new password
+        // Unset all of the session variables.
+        $_SESSION = [];
+        // If it's desired to kill the session, also delete the session cookie.
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000,
+                $params['path'], $params['domain'],
+                $params['secure'], $params['httponly']
+            );
+        }
+        // Finally destroy the session.
+        session_destroy();
+
+        // Return success and a redirect URL to the login page
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Đổi mật khẩu thành công. Vui lòng đăng nhập lại.',
+            // Redirect to the project's logout page (matches sidebar link)
+            'redirect' => '../logout/index.php'
+        ]);
     } elseif ($result === 'wrong_password') {
         echo json_encode(['status' => 'error', 'message' => 'Mật khẩu hiện tại không chính xác.']);
+    } elseif ($result === 'not_updated') {
+        echo json_encode(['status' => 'error', 'message' => 'Mật khẩu mới giống mật khẩu cũ hoặc không có thay đổi được ghi nhận.']);
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'Không thể đổi mật khẩu. Vui lòng thử lại.']);
+        // Unexpected result — return safe debug info to help trace the issue
+        $type = gettype($result);
+        $valDescription = null;
+        if (is_null($result)) $valDescription = 'null';
+        elseif (is_bool($result)) $valDescription = $result ? 'true' : 'false';
+        elseif (is_scalar($result)) $valDescription = (string)$result;
+        else $valDescription = 'non-scalar';
+
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Có lỗi xảy ra khi đổi mật khẩu.',
+            'debug' => [
+                'result_type' => $type,
+                'result_value' => $valDescription
+            ]
+        ]);
     }
     exit;
 }

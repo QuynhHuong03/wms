@@ -165,33 +165,61 @@ body {
         <form action="supplier/updateSupplier/process.php" method="post">
             <input type="hidden" name="supplier_id" value="<?php echo $supplier['supplier_id']; ?>">
 
-            <!-- Tên nhà cung cấp -->
-            <div class="form-group">
-                <label for="supplier_name">Tên nhà cung cấp</label>
-                <input type="text" id="supplier_name" name="supplier_name" value="<?php echo $supplier['supplier_name']; ?>" required>
-                <span class="error-message"></span>
-            </div>
+      <!-- Tên nhà cung cấp -->
+      <div class="form-group">
+        <label for="supplier_name">Tên nhà cung cấp</label>
+        <input type="text" id="supplier_name" name="supplier_name" value="<?php echo $supplier['supplier_name']; ?>" required>
+        <span class="error-message"></span>
+      </div>
 
-            <!-- Liên hệ -->
-            <div class="form-group">
-                <label for="contact">Liên hệ</label>
-                <input type="text" id="contact" name="contact" value="<?php echo $supplier['contact']; ?>" required>
-                <span class="error-message"></span>
-            </div>
+      <!-- Liên hệ -->
+      <div class="form-group">
+        <label for="contact">Liên hệ</label>
+        <input type="text" id="contact" name="contact" value="<?php echo $supplier['contact']; ?>" required>
+        <span class="error-message"></span>
+      </div>
 
-            <!-- Trạng thái -->
-            <div class="form-group">
-                <label for="status">Trạng thái</label>
-                <select id="status" name="status" required>
-                    <option value="1" <?php echo ($supplier['status'] == 1) ? 'selected' : ''; ?>>Đang hoạt động</option>
-                    <option value="0" <?php echo ($supplier['status'] == 0) ? 'selected' : ''; ?>>Ngừng hoạt động</option>
-                </select>
-                <span class="error-message"></span>
-            </div>
+      <!-- Tên người liên hệ -->
+      <div class="form-group">
+        <label for="contact_name">Tên người liên hệ</label>
+        <input type="text" id="contact_name" name="contact_name" value="<?php echo isset($supplier['contact_name']) ? $supplier['contact_name'] : ''; ?>">
+        <span class="error-message"></span>
+      </div>
+
+      <!-- Mã số thuế -->
+      <div class="form-group">
+        <label for="tax_code">Mã số thuế</label>
+        <input type="text" id="tax_code" name="tax_code" value="<?php echo isset($supplier['tax_code']) ? $supplier['tax_code'] : ''; ?>">
+        <span class="error-message"></span>
+      </div>
+
+      <!-- Quốc gia -->
+      <div class="form-group">
+        <label for="country">Quốc gia</label>
+        <input type="text" id="country" name="country" value="<?php echo isset($supplier['country']) ? $supplier['country'] : ''; ?>">
+        <span class="error-message"></span>
+      </div>
+
+      <!-- Mô tả -->
+      <div class="form-group">
+        <label for="description">Mô tả</label>
+        <input type="text" id="description" name="description" value="<?php echo isset($supplier['description']) ? $supplier['description'] : ''; ?>">
+        <span class="error-message"></span>
+      </div>
+
+      <!-- Trạng thái -->
+      <div class="form-group">
+        <label for="status">Trạng thái</label>
+        <select id="status" name="status" required>
+          <option value="1" <?php echo ($supplier['status'] == 1) ? 'selected' : ''; ?>>Đang hoạt động</option>
+          <option value="0" <?php echo ($supplier['status'] == 0) ? 'selected' : ''; ?>>Ngừng hoạt động</option>
+        </select>
+        <span class="error-message"></span>
+      </div>
 
             <!-- Nút thao tác -->
             <div class="form-actions">
-                <a href="../index.php?page=supplier" class="btn-secondary">Quay lại</a>
+                <a href="index.php?page=supplier" class="btn-secondary">Quay lại</a>
                 <button type="submit" class="btn-success" name="btnUpdate">Cập nhật</button>
             </div>
         </form>

@@ -6,6 +6,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnUpdate"])) {
     $supplier_id   = trim($_POST["supplier_id"] ?? '');
     $supplier_name = trim($_POST["supplier_name"] ?? '');
     $contact       = trim($_POST["contact"] ?? '');
+    $contact_name  = trim($_POST["contact_name"] ?? '');
+    $tax_code      = trim($_POST["tax_code"] ?? '');
+    $country       = trim($_POST["country"] ?? '');
+    $description   = trim($_POST["description"] ?? '');
     $status        = $_POST["status"] ?? '';
 
     $errors = [];
@@ -33,7 +37,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnUpdate"])) {
     }
 
     $cSupplier = new CSupplier();
-    $result = $cSupplier->updateSupplier($supplier_id, $supplier_name, $contact, $status);
+    $result = $cSupplier->updateSupplier($supplier_id, $supplier_name, $contact, $status, $contact_name, $tax_code, $country, $description);
     if ($result) {
         // Hiển thị thông báo thành công và chuyển hướng
         echo "<script>

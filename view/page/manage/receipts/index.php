@@ -1,12 +1,60 @@
 <?php
-  include_once("../../../controller/cSupplier.php");
-  include_once("../../../controller/cProduct.php");
+  // ensure session for flash messages and default user/warehouse
+  if (session_status() === PHP_SESSION_NONE) session_start();
 
-  $supplierController = new CSupplier();
-  $suppliers = $supplierController->getAllSuppliers();
+  // include controllers using __DIR__ to make paths reliable
+  $inc1 = @include_once(__DIR__ . '/../../../../controller/cSupplier.php');
+  $inc2 = @include_once(__DIR__ . '/../../../../controller/cProduct.php');
 
-  $productController = new CProduct();
-  $products = $productController->getAllProducts();
+  // include warehouse controller to populate "Kho nguồn" select
+  $inc3 = @include_once(__DIR__ . '/../../../../controller/cWarehouse.php');
+
+  if (class_exists('CWarehouse')) {
+    $warehouseController = new CWarehouse();
+    $warehouses = $warehouseController->getAllWarehouses();
+    if (!is_array($warehouses)) $warehouses = [];
+  } else {
+    $warehouses = [];
+    error_log('index.php: CWarehouse class not found (include path issue)');
+    if (!isset($_SESSION['flash_receipt_error'])) $_SESSION['flash_receipt_error'] = 'Lỗi server: không tìm thấy controller kho.';
+  }
+
+  // If controllers aren't available, avoid fatal error and show a friendly message
+  if (class_exists('CSupplier')) {
+    $supplierController = new CSupplier();
+    $suppliers = $supplierController->getAllSuppliers();
+  } else {
+    $suppliers = [];
+    error_log('index.php: CSupplier class not found (include path issue)');
+    if (!isset($_SESSION['flash_receipt_error'])) $_SESSION['flash_receipt_error'] = 'Lỗi server: không tìm thấy controller nhà cung cấp.';
+  }
+
+  if (class_exists('CProduct')) {
+    $productController = new CProduct();
+    $products = $productController->getAllProducts();
+  } else {
+    $products = [];
+    error_log('index.php: CProduct class not found (include path issue)');
+    if (!isset($_SESSION['flash_receipt_error'])) $_SESSION['flash_receipt_error'] = 'Lỗi server: không tìm thấy controller sản phẩm.';
+  }
+
+  // sensible defaults if not in session - try multiple places where the app may store login info
+  $created_by = 'system';
+  if (isset($_SESSION['user_id'])) {
+    $created_by = $_SESSION['user_id'];
+  } elseif (isset($_SESSION['login'])) {
+    $login = $_SESSION['login'];
+    if (is_array($login) && isset($login['user_id'])) $created_by = $login['user_id'];
+    if (is_object($login) && isset($login->user_id)) $created_by = $login->user_id;
+  }
+
+  $warehouse_id = 'WH01';
+  if (isset($_SESSION['warehouse_id'])) {
+    $warehouse_id = $_SESSION['warehouse_id'];
+  } elseif (isset($login)) {
+    if (is_array($login) && isset($login['warehouse_id'])) $warehouse_id = $login['warehouse_id'];
+    if (is_object($login) && isset($login->warehouse_id)) $warehouse_id = $login->warehouse_id;
+  }
 ?>
 
 <!DOCTYPE html>
@@ -42,7 +90,14 @@
 <body>
   <div class="form-container">
     <h2><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu nhập hàng</h2>
-    <form method="post" action="save_receipt.php">
+    <?php
+      if (isset($_SESSION['flash_receipt'])) { echo '<div style="padding:10px;background:#e6ffed;border:1px solid #b7f0c6;margin-bottom:12px;color:#256029;">'.htmlspecialchars($_SESSION['flash_receipt']).'</div>'; unset($_SESSION['flash_receipt']); }
+      if (isset($_SESSION['flash_receipt_error'])) { echo '<div style="padding:10px;background:#ffecec;border:1px solid #f5c2c2;margin-bottom:12px;color:#8a1f1f;">'.htmlspecialchars($_SESSION['flash_receipt_error']).'</div>'; unset($_SESSION['flash_receipt_error']); }
+    ?>
+    <form method="post" action="receipts/process.php">
+      <!-- hidden meta fields required by process.php -->
+      <input type="hidden" name="warehouse_id" value="<?= htmlspecialchars($warehouse_id) ?>">
+      <input type="hidden" name="created_by" value="<?= htmlspecialchars($created_by) ?>">
 
       <!-- 🔹 Chọn loại phiếu nhập -->
       <label>Loại phiếu nhập</label>
@@ -50,7 +105,6 @@
         <option value="">-- Chọn loại phiếu --</option>
         <option value="purchase">Nhập từ nhà cung cấp</option>
         <option value="transfer">Nhập điều chuyển nội bộ</option>
-        <option value="adjustment">Nhập kiểm kê / điều chỉnh</option>
       </select>
 
       <!-- 🔹 Nhà cung cấp (chỉ hiện khi chọn purchase) -->
@@ -59,7 +113,7 @@
         <select name="supplier_id">
           <option value="">-- Chọn nhà cung cấp --</option>
           <?php foreach ($suppliers as $s) { ?>
-            <option value="<?= $s['_id'] ?>"><?= $s['supplier_name'] ?></option>
+            <option value="<?= $s['supplier_id'] ?>"><?= $s['supplier_name'] ?></option>
           <?php } ?>
         </select>
       </div>
@@ -69,22 +123,27 @@
         <label>Kho nguồn</label>
         <select name="source_warehouse_id">
           <option value="">-- Chọn kho nguồn --</option>
-          <option value="WH01">Kho tổng</option>
-          <option value="WH02">Kho chi nhánh</option>
+          <?php
+            if (!empty($warehouses) && is_array($warehouses)) {
+              foreach ($warehouses as $w) {
+                $val = isset($w['warehouse_id']) ? $w['warehouse_id'] : (isset($w['id']) ? $w['id'] : '');
+                $label = isset($w['warehouse_name']) ? $w['warehouse_name'] : (isset($w['name']) ? $w['name'] : $val);
+                echo '<option value="' . htmlspecialchars($val) . '">' . htmlspecialchars($label) . '</option>';
+              }
+            } else {
+              echo '<option value="">(Không có kho)</option>';
+            }
+          ?>
         </select>
       </div>
 
-      <!-- 🔹 Ghi chú (chỉ hiện khi chọn adjustment) -->
-      <div id="note-box" style="display:none;">
-        <label>Lý do / Ghi chú</label>
-        <textarea name="note" rows="3" placeholder="Nhập lý do nhập kho..."></textarea>
-      </div>
+      <!-- note-box removed because adjustment type was removed -->
 
       <!-- 🔹 Phần thêm sản phẩm -->
       <div id="product-section" style="display:none;">
         <label>Thêm sản phẩm</label>
         <div class="barcode-box">
-          <input type="text" id="barcode" placeholder="Nhập mã vạch..." autofocus>
+          <input type="text" id="barcode" name="barcode_input" placeholder="Nhập mã vạch..." autofocus>
           <button type="button" class="btn" onclick="startScanner()"><i class="fa-solid fa-camera"></i> Camera</button>
           <button type="button" class="btn" onclick="useScanner()"><i class="fa-solid fa-barcode"></i> Scanner</button>
         </div>
@@ -121,11 +180,10 @@
       const type = document.getElementById("type").value;
       document.getElementById("supplier-box").style.display = type === "purchase" ? "block" : "none";
       document.getElementById("source-box").style.display   = type === "transfer" ? "block" : "none";
-      document.getElementById("note-box").style.display     = type === "adjustment" ? "block" : "none";
       document.getElementById("product-section").style.display = type ? "block" : "none";
     }
 
-    // --- Quét barcode / thêm sản phẩm (giữ nguyên logic cũ) ---
+    // --- Quét barcode / thêm sản phẩm (giữ logic tìm sản phẩm) ---
     let rowIndex = 0;
     let productMap = {};
     let html5QrCode;
@@ -159,16 +217,17 @@
     }
 
     function fetchProduct(code) {
-      fetch("receipts/process.php?barcode=" + code)
+      fetch("receipts/process.php?barcode=" + encodeURIComponent(code))
         .then(res => res.json())
         .then(data => {
           if (data.success) {
             addOrUpdateRow(data.product);
             document.getElementById("barcode").value = "";
           } else {
-            alert("Không tìm thấy sản phẩm!");
+            alert(data.message || "Không tìm thấy sản phẩm!");
           }
-        });
+        })
+        .catch(err => alert('Lỗi khi tìm sản phẩm: ' + err));
     }
 
     function addOrUpdateRow(product) {
@@ -202,8 +261,8 @@
 
     function calcSubtotal(input) {
       const row = input.closest("tr");
-      const qty = row.querySelector("input[name*='[quantity]']").value || 0;
-      const price = row.querySelector("input[name*='[price]']").value || 0;
+      const qty = parseFloat(row.querySelector("input[name*='[quantity]']").value) || 0;
+      const price = parseFloat(row.querySelector("input[name*='[price]']").value) || 0;
       row.querySelector("input[name*='[subtotal]']").value = qty * price;
     }
   </script>

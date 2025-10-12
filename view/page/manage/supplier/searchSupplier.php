@@ -19,6 +19,10 @@ if ($q !== '') {
                         <th>ID</th>
                         <th>Tên nhà cung cấp</th>
                         <th>Liên hệ</th>
+                        <th>Tên người liên hệ</th>
+                        <th>Mã số thuế</th>
+                        <th>Quốc gia</th>
+                        <th>Mô tả</th>
                         <th>Trạng thái</th>
                     </tr>
                 </thead>
@@ -27,16 +31,24 @@ if ($q !== '') {
 
         foreach ($suppliers as $supplier) {
             $id       = $supplier['supplier_id'];
-            $name     = $supplier['supplier_name'];
-            $contact  = $supplier['contact'];
-            $status   = $supplier['status'];
+            $name     = isset($supplier['supplier_name']) ? $supplier['supplier_name'] : '';
+            $contact  = isset($supplier['contact']) ? $supplier['contact'] : '';
+            $contact_name = isset($supplier['contact_name']) ? $supplier['contact_name'] : '';
+            $tax_code = isset($supplier['tax_code']) ? $supplier['tax_code'] : '';
+            $country = isset($supplier['country']) ? $supplier['country'] : '';
+            $description = isset($supplier['description']) ? $supplier['description'] : '';
+            $status   = isset($supplier['status']) && $supplier['status'] == 1 ? 'Đang hoạt động' : 'Ngừng hoạt động';
 
             echo "
                 <tr onclick=\"window.location.href='index.php?page=supplier/updateSupplier&id={$id}'\">
                     <td>{$id}</td>
                     <td>{$name}</td>
                     <td>{$contact}</td>
-                    <td>" . ($status == 1 ? 'Đang hoạt động' : 'Ngừng hoạt động') . "</td>
+                    <td>{$contact_name}</td>
+                    <td>{$tax_code}</td>
+                    <td>{$country}</td>
+                    <td>{$description}</td>
+                    <td>{$status}</td>
                 </tr>
             ";
         }
@@ -108,4 +120,3 @@ if ($q !== '') {
         width: 300px; /* Tăng độ rộng của ô tìm kiếm */
     }
 </style>
-

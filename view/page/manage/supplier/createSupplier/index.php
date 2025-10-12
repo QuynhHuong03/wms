@@ -75,6 +75,18 @@ include_once(__DIR__ . "/../../../../../controller/cSupplier.php");
             <label for="contact">Liên hệ:</label>
             <input type="text" id="contact" name="contact" required>
 
+            <label for="contact_name">Tên người liên hệ:</label>
+            <input type="text" id="contact_name" name="contact_name" required>
+
+            <label for="tax_code">Mã số thuế:</label>
+            <input type="text" id="tax_code" name="tax_code" required>
+
+            <label for="country">Quốc gia:</label>
+            <input type="text" id="country" name="country" required>
+
+            <label for="description">Mô tả:</label>
+            <input type="text" id="description" name="description">
+
             <label for="created_at">Ngày tạo:</label>
             <input type="text" id="created_at" name="created_at" value="<?php echo date('Y-m-d H:i:s'); ?>" readonly>
 

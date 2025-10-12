@@ -144,7 +144,7 @@ h3 {
 
 .right {
   flex: 1.2;
-  /* background-image: url('../../../img/wms1.png'); */
+  background-image: url('../../../img/wms1.png');
   background-size: cover;
   background-position: center;
 }

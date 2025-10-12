@@ -53,7 +53,10 @@ body, html {
             // Điều hướng page
             if (isset($_GET['page'])) {
                 $page = $_GET['page'];
-                $path = $page;
+                
+                // Tách page path và parameters
+                $pageParts = explode('&', $page);
+                $path = $pageParts[0]; // Lấy phần đầu tiên (path thực)
 
                 // Nếu là thư mục thì load index.php
                 if (is_dir($path) && file_exists($path . "/index.php")) {
@@ -65,6 +68,7 @@ body, html {
                 }
                 else {
                     echo "<h3>Trang không tồn tại!</h3>";
+                    echo "<p>Đường dẫn: " . htmlspecialchars($path) . "</p>";
                 }
             } else {
                 // Trang mặc định khi mới vào

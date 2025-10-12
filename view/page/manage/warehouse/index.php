@@ -1,364 +1,318 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) session_start();
 include_once(__DIR__ . "/../../../../controller/cWarehouse.php");
 $cWarehouse = new CWarehouse();
 
 $warehouses = $cWarehouse->getAllWarehouses();
 ?>
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Quản lý kho</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <style>
-        /* CSS giống với Quản lý nhân viên */
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f9f9f9;
-            margin: 0;
-            padding: 0;
-        }
+<style>
+  .warehouse-list-container {
+    max-width: 1200px;
+    margin: 30px auto;
+    background: #fff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+  }
 
-        .container.qlkho {
-            width: 100%;
-            max-width: 1400px;
-            margin: 20px auto;
-            background: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-        }
+  .warehouse-list-container h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #333;
+  }
 
-        button {
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            background-color: #3b82f6;
-            color: white;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
-        }
+  .warehouse-list-container table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
 
-        button a {
-            text-decoration: none;
-            color: white;
-        }
+  .warehouse-list-container th,
+  .warehouse-list-container td {
+    padding: 10px 12px;
+    border: 1px solid #e1e4e8;
+    text-align: center;
+    font-size: 14px;
+  }
 
+  .warehouse-list-container th {
+    background: #f9fafb;
+  }
 
-        /* Header quản lý kho */
+  .warehouse-list-container tr:hover {
+    background: #f1f7ff;
+  }
 
-        .header-warehouse {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            margin: 20px 0;
-        }
+  .warehouse-list-container .btn {
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    text-decoration: none;
+    display: inline-block;
+  }
 
-        .header-left h3 {
-            margin: 0;
-            color: #333;
-        }
+  .warehouse-list-container .btn-edit {
+    background: #17a2b8;
+    color: #fff;
+  }
 
-        .header-left p {
-            margin: 4px 0 0;
-            color: #666;
-            font-size: 14px;
-        }
+  .warehouse-list-container .btn-delete {
+    background: #dc3545;
+    color: #fff;
+  }
 
-        /* Phần tìm kiếm + nút thêm */
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+  .warehouse-list-container .btn:hover {
+    opacity: 0.9;
+  }
 
-        /* Ô tìm kiếm */
-        .qlkho-search-container {
-            position: relative;
-        }
+  .warehouse-list-container .status {
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 8px;
+    display: inline-block;
+  }
 
-        .qlkho-search {
-            display: flex;
-            align-items: center;
-            gap: 10px; /* Tăng khoảng cách giữa icon và input */
-            padding: 8px 16px; /* Tăng padding */
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            background: #fff;
-            width: 400px; /* Kéo dài ô tìm kiếm */
-        }
+  .warehouse-list-container .active {
+    background: #d4edda;
+    color: #155724;
+  }
 
-        .qlkho-search i {
-            color: #666; /* Màu của icon */
-            font-size: 18px; /* Kích thước icon */
-        }
+  .warehouse-list-container .inactive {
+    background: #f8d7da;
+    color: #721c24;
+  }
 
-        .qlkho-search input {
-            border: none;
-            outline: none;
-            font-size: 14px;
-            padding: 4px 6px;
-            flex: 1; /* Để input chiếm toàn bộ không gian còn lại */
-        }
+  .warehouse-list-container .type-main {
+    background: #fde68a;
+    color: #92400e;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+  }
 
-        #searchResult {
-            position: absolute;
-            top: 110%;
-            left: 0;
-            right: 0;
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            max-height: 250px;
-            overflow-y: auto;
-            display: none;
-            z-index: 99;
-        }
+  .warehouse-list-container .type-branch {
+    background: #e0f2fe;
+    color: #1e3a8a;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+  }
 
-        /* Nút Thêm kho */
-        .btn-add-warehouse {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 16px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.3s;
-        }
+  .warehouse-list-container .top-actions {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
 
-        .btn-add-warehouse a {
-            color: white;
-            text-decoration: none;
-        }
+  .warehouse-list-container .btn-create {
+    background: #007bff;
+    color: #fff;
+    text-decoration: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+  }
 
-        .btn-add-warehouse:hover {
-            background: #2563eb;
-        }
+  .warehouse-list-container .btn-create:hover {
+    background: #0056b3;
+  }
 
-        /* Responsive nhỏ */
-        @media (max-width: 600px) {
-            .header-warehouse {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
+  .filters {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
 
-            .header-right {
-                width: 100%;
-                justify-content: flex-start;
-                gap: 8px;
-            }
+  .filters input {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+  }
 
-            .qlkho-search input {
-                width: 150px;
-            }
-        }
+  .filters select {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+  }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+  }
 
-        thead {
-            background-color: #3b82f6;
-            color: white;
-            font-size: 16px;
-            text-align: left;
-        }
+  .modal-content {
+    position: relative;
+    z-index: 1001;
+  }
 
-        thead th {
-            padding: 10px;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
+  .modal-overlay {
+    position: fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background: rgba(0,0,0,0.4);
+    z-index: 1000;
+  }
+</style>
 
-        tbody tr:nth-child(odd) {
-            background-color: #f2f2f2;
-        }
+<div class="warehouse-list-container">
+  <div class="top-actions">
+    <h2><i class="fa-solid fa-warehouse"></i> Danh sách kho</h2>
 
-        tbody tr:nth-child(even) {
-            background-color: #ffffff;
-        }
-
-        tbody td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        td a {
-            color: #3b82f6;
-            text-decoration: none;
-            font-size: 18px;
-        }
-
-        td a:hover {
-            color: #2563eb; /* Màu khi hover */
-        }
-
-        .status-active, .status-inactive {
-            background: none; /* Loại bỏ màu nền */
-            color: #333; /* Đổi màu chữ thành màu tối */
-            padding: 0; /* Loại bỏ padding */
-            font-size: 14px;
-            font-weight: normal; /* Loại bỏ font-weight */
-            display: inline-block;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-        }
-
-        .action-buttons a {
-            text-decoration: none;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .btn-edit {
-            background-color: #10b981;
-        }
-
-        .btn-edit:hover {
-            background-color: #059669;
-        }
-
-        .btn-delete {
-            margin-left: 10px;
-            color: red;
-        }
-
-        .btn-delete:hover {
-            color: #dc2626; /* Màu khi hover */
-            color: #dc2626;
-        }
-
-        .btn-edit i, .btn-delete i {
-            font-size: 16px;
-        }
-    </style>
-</head>
-<body>
-    <div class="header-warehouse">
-        <div class="header-left">
-            <h3>QUẢN LÝ KHO</h3>
-            <p>Danh sách kho tổng và kho chi nhánh</p>
-        </div>
-
-        <div class="header-right">
-            <div class="qlkho-search-container">
-                <div class="qlkho-search">
-                    <i class="fas fa-search"></i>
-                    <input id="searchInput" type="text" placeholder="Tìm kiếm...">
-                </div>
-                <div id="searchResult"></div>
-            </div>
-
-            <button class="btn-add-warehouse">
-                <a href="index.php?page=warehouse/createWarehouse">+ Thêm kho</a>
-            </button>
-        </div>
+    <div class="filters">
+      <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên kho...">
+      <select id="filter-type">
+        <option value="">Lọc theo loại kho</option>
+        <option value="Tổng">Kho tổng</option>
+        <option value="Chi nhánh">Kho chi nhánh</option>
+      </select>
+      <select id="filter-status">
+        <option value="">Lọc theo trạng thái</option>
+        <option value="Đang hoạt động">Đang hoạt động</option>
+        <option value="Ngừng hoạt động">Ngừng hoạt động</option>
+      </select>
+      <a href="index.php?page=warehouse/createWarehouse" class="btn-create"><i class="fa-solid fa-plus"></i> Thêm kho</a>
     </div>
+  </div>
 
-    <div class="container qlkho">
-        <?php
-        if (is_array($warehouses) && !empty($warehouses)) {
-            echo '<table>';
-            echo '
-                <thead>
-                    <tr>
-                        <th>ID</th> <!-- Thêm cột ID -->
-                        <th>Mã kho</th>
-                        <th>Tên kho</th>
-                        <th>Địa chỉ</th>
-                        <th>Loại kho</th>
-                        <th>Trạng thái</th>
-                        <th>Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-            ';
-            foreach ($warehouses as $warehouse) {
-                $statusText = $warehouse['status'] == 1 ? 'Đang hoạt động' : 'Ngừng hoạt động';
+  <table id="warehouse-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Mã kho</th>
+        <th>Tên kho</th>
+        <th>Địa chỉ</th>
+        <th>Loại kho</th>
+        <th>Trạng thái</th>
+        <th>Hành động</th>
+      </tr>
+    </thead>
+    <tbody>
+      <?php
+      if (is_array($warehouses) && !empty($warehouses)) {
+        foreach ($warehouses as $w) {
+          $statusText = $w['status'] == 1 ? 'Đang hoạt động' : 'Ngừng hoạt động';
+          $statusClass = $w['status'] == 1 ? 'active' : 'inactive';
 
-                echo "
-                    <tr>
-                        <td>{$warehouse['id']}</td> <!-- Hiển thị ID -->
-                        <td>{$warehouse['warehouse_id']}</td>
-                        <td>{$warehouse['warehouse_name']}</td>
-                        <td>{$warehouse['address']}</td>
-                        <td>{$warehouse['type_name']}</td>
-                        <td>{$statusText}</td>
-                        <td>
-                            <a href='index.php?page=warehouse/updateWarehouse&id={$warehouse['warehouse_id']}' title='Sửa' style='margin-right:10px; color:#3b82f6;'>
-                                <i class='fas fa-edit'></i>
-                            </a>
-                            <a href='#' class='btn-delete' data-id='{$warehouse['warehouse_id']}' title='Xóa' style='margin-left:10px; color:red;'>
-                                <i class='fas fa-trash-alt'></i>
-                            </a>
-                        </td>
-                    </tr>
-                ";
-            }
-            echo '</tbody></table>';
-        } else {
-            echo "<p>Không có kho nào.</p>";
+          $typeName = $w['type_name'] ?? '';
+          $typeClass = (mb_strtolower($typeName, 'UTF-8') === 'tổng' || str_contains(mb_strtolower($typeName, 'UTF-8'), 'tong')) 
+            ? 'type-main' : 'type-branch';
+
+          echo "
+            <tr data-type='{$typeName}' data-status='{$statusText}' data-name='{$w['warehouse_name']}'>
+              <td>{$w['id']}</td>
+              <td>{$w['warehouse_id']}</td>
+              <td>{$w['warehouse_name']}</td>
+              <td>{$w['address']}</td>
+              <td><span class='{$typeClass}'>{$typeName}</span></td>
+              <td><span class='status {$statusClass}'>{$statusText}</span></td>
+              <td>
+                <a href='index.php?page=warehouse/updateWarehouse&id={$w['warehouse_id']}' class='btn btn-edit'>
+                  <i class='fa-solid fa-pen'></i>
+                </a>
+                <a href='#' class='btn btn-delete' data-id='{$w['warehouse_id']}'>
+                  <i class='fa-solid fa-trash'></i>
+                </a>
+              </td>
+            </tr>
+          ";
         }
-        ?>
-        <div class="col-md-4" style="padding-top: 20px;">
-            <button>
-                <a href="index.php?page=manage" style="text-decoration: none; color: inherit;">Quay lại</a>
-            </button>
-        </div>
+      } else {
+        echo "<tr><td colspan='7'>Không có kho nào.</td></tr>";
+      }
+      ?>
+    </tbody>
+  </table>
+
+  <div style="margin-top:20px;">
+    <a href="index.php?page=manage" class="btn-create" style="background:#6b7280;">⬅ Quay lại</a>
+  </div>
+</div>
+
+<!-- Modal xác nhận xóa -->
+<div id="deleteModal" class="modal" style="display:none;">
+  <div class="modal-content" style="max-width:400px; margin:100px auto; background:#fff; padding:20px; border-radius:10px; box-shadow:0 4px 8px rgba(0,0,0,0.2); text-align:center;">
+    <h3 style="margin-top:0;">Xác nhận xóa</h3>
+    <p>Bạn có chắc chắn muốn xóa kho này?</p>
+    <div style="margin-top:20px;">
+      <button id="cancelBtn" style="background:#ccc; color:#333; margin-right:10px; padding:8px 16px; border:none; border-radius:8px; cursor:pointer;">Hủy</button>
+      <button id="confirmDeleteBtn" style="background:red; color:white; padding:8px 16px; border:none; border-radius:8px; cursor:pointer;">Xóa</button>
     </div>
+  </div>
+  <div class="modal-overlay"></div>
+</div>
 
-    <script>
-        const searchInput = document.getElementById('searchInput');
-        const searchResult = document.getElementById('searchResult');
+<script>
+  // --- Bộ lọc và tìm kiếm ---
+  const searchInput = document.getElementById('searchInput');
+  const typeFilter = document.getElementById('filter-type');
+  const statusFilter = document.getElementById('filter-status');
+  const rows = document.querySelectorAll('#warehouse-table tbody tr');
 
-        searchInput.addEventListener('input', function() {
-            const query = searchInput.value.trim();
-            if (query !== '') {
-                fetch(`../../../view/page/manage/warehouse/searchWarehouse.php?q=${query}`)
-                    .then(response => response.text())
-                    .then(data => {
-                        searchResult.innerHTML = data;
-                        searchResult.style.display = 'block';
-                    })
-                    .catch(error => console.error('Error:', error));
-            } else {
-                searchResult.style.display = 'none';
-            }
-        });
+  function applyFilters() {
+    const searchValue = searchInput.value.toLowerCase();
+    const typeValue = typeFilter.value.toLowerCase();
+    const statusValue = statusFilter.value.toLowerCase();
 
-        document.querySelectorAll('.btn-delete').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const warehouseId = this.dataset.id;
+    rows.forEach(row => {
+      const name = row.getAttribute('data-name').toLowerCase();
+      const type = row.getAttribute('data-type').toLowerCase();
+      const status = row.getAttribute('data-status').toLowerCase();
 
-                if (confirm('Bạn có chắc chắn muốn xóa kho này?')) {
-                    fetch(`../../../view/page/manage/warehouse/deleteWarehouse/deleteWarehouse.php?id=${warehouseId}`)
-                        .then(response => response.text())
-                        .then(data => {
-                            alert(data);
-                            window.location.reload(); // Reload lại trang sau khi xóa
-                        })
-                        .catch(err => console.error('Lỗi xóa kho:', err));
-                }
-            });
-        });
-    </script>
-</body>
-</html>
+      const matchName = !searchValue || name.includes(searchValue);
+      const matchType = !typeValue || type.includes(typeValue);
+      const matchStatus = !statusValue || status.includes(statusValue);
+
+      row.style.display = (matchName && matchType && matchStatus) ? '' : 'none';
+    });
+  }
+
+  [searchInput, typeFilter, statusFilter].forEach(el => {
+    el.addEventListener('input', applyFilters);
+    el.addEventListener('change', applyFilters);
+  });
+
+  // --- Modal Xóa ---
+  const deleteModal = document.getElementById('deleteModal');
+  const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+  const cancelBtn = document.getElementById('cancelBtn');
+  let deleteWarehouseId = null;
+
+  document.querySelectorAll('.btn-delete').forEach(btn => {
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      deleteWarehouseId = this.dataset.id;
+      deleteModal.style.display = 'block';
+    });
+  });
+
+  cancelBtn.addEventListener('click', function(){
+    deleteModal.style.display = 'none';
+    deleteWarehouseId = null;
+  });
+
+  confirmDeleteBtn.addEventListener('click', function(){
+    if(deleteWarehouseId){
+      fetch(`../../../view/page/manage/warehouse/deleteWarehouse/deleteWarehouse.php?id=` + deleteWarehouseId)
+        .then(response => response.text())
+        .then(() => {
+          deleteModal.style.display = 'none';
+          window.location.reload();
+        })
+        .catch(err => console.error('Lỗi xóa kho:', err));
+    }
+  });
+</script>

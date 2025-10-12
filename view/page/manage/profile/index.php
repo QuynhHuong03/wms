@@ -1,4 +1,5 @@
 <?php
+//session_start();
 include_once(__DIR__ . '/../../../../controller/cUsers.php');
 $p = new CUsers();
 
@@ -11,10 +12,15 @@ if (isset($_GET['id'])) {
     exit;
 }
 
-$user = $p->getUserwithRole($userId);
+$user = $p->getUserWithRole($userId);
 if (!$user) {
     echo "<p>Không có dữ liệu nhân viên.</p>";
     exit;
+}
+
+// Ensure compatibility with how controller returns role info
+if (isset($user['role']) && is_array($user['role'])) {
+  $user['role_name'] = $user['role']['role_name'] ?? $user['role']['name'] ?? ($user['role']['role_id'] ?? 'Chưa gán');
 }
 
 $initial = strtoupper(substr($user['name'] ?? $user['user_id'], 0, 1));
@@ -34,7 +40,7 @@ $initial = strtoupper(substr($user['name'] ?? $user['user_id'], 0, 1));
     }
     .container {
       max-width: 900px;
-      margin: 40px auto;
+      margin: 10px auto;
       background: #fff;
       border-radius: 15px;
       box-shadow: 0 8px 20px rgba(0,0,0,0.1);
@@ -230,7 +236,7 @@ select:focus {
             <input type="text" value="<?= ($user['status'] ?? 0) == 1 ? 'Đang hoạt động' : 'Ngừng hoạt động' ?>" disabled>
           </div>
         </div>
-        <button type="submit" id="updateBtn" class="btn">Cập nhật thông tin</button>
+  <button type="submit" id="updateBtn" class="btn" disabled>Cập nhật thông tin</button>
       </form>
     </div>
 
@@ -287,13 +293,16 @@ profileForm.addEventListener('submit', function(e) {
   const formData = new FormData(profileForm);
   formData.append('action', 'updateProfile');
 
-  fetch('process.php', {
+  fetch('profile/process.php', {
     method: 'POST',
     body: formData
   }).then(res => res.json()).then(data => {
     alert(data.message);
     if (data.status === 'success') {
       updateBtn.classList.remove('enabled');
+    }
+    if (data.redirect) {
+      window.location.href = data.redirect;
     }
   });
 });
@@ -326,13 +335,26 @@ passwordForm.addEventListener('submit', function(e) {
   const formData = new FormData(passwordForm);
   formData.append('action', 'changePassword');
 
-  fetch('process.php', {
+  fetch('profile/process.php', {
     method: 'POST',
     body: formData
   }).then(res => res.json()).then(data => {
-    alert(data.message);
+    // Show message and any debug info returned by the backend to help troubleshooting
+  let alertMsg = data.message || 'No message returned.';
+    if (data.debug) {
+      try {
+        alertMsg += '\n\nDebug: ' + JSON.stringify(data.debug);
+      } catch (e) {
+        alertMsg += '\n\nDebug available (could not stringify).';
+      }
+    }
+    alert(alertMsg);
     if (data.status === 'success') {
       passwordForm.reset();
+    }
+    if (data.redirect) {
+      // Give user a tiny moment to read the success message before redirect
+      setTimeout(() => window.location.href = data.redirect, 700);
     }
   }).catch(error => {
     alert('Có lỗi xảy ra khi đổi mật khẩu.');

@@ -233,7 +233,7 @@ $roleId = $users['role_id'] ?? 0;
 
   <?php elseif ($roleId == 2): ?>
     <!-- Quản lý kho tổng -->
-    <a href="index.php?page=duyetphieunhap" class="<?= $currentPage=='duyetphieunhap'?'active':'' ?>"><i class="fas fa-file-import"></i> Duyệt phiếu nhập kho</a>
+    <a href="index.php?page=receipts/approve" class="<?= $currentPage=='duyetphieunhap'?'active':'' ?>"><i class="fas fa-file-import"></i> Duyệt phiếu nhập kho</a>
     <a href="index.php?page=duyetphieuxuat" class="<?= $currentPage=='duyetphieuxuat'?'active':'' ?>"><i class="fas fa-file-export"></i> Duyệt phiếu xuất kho</a>
     <a href="index.php?page=tonkhochinhanh" class="<?= $currentPage=='tonkhochinhanh'?'active':'' ?>"><i class="fas fa-boxes"></i> Tồn kho chi nhánh</a>
     <a href="index.php?page=products" class="<?= $currentPage=='products'?'active':'' ?>"><i class="fas fa-tags"></i> Danh mục sản phẩm</a>

@@ -225,23 +225,6 @@ body {
       <!-- Vai trò -->
       <div class="form-group">
         <label for="role_id">Vai trò</label>
-<<<<<<< Updated upstream
-          <select name="role_id" id="role_id">
-            <?php
-              include("../../../controller/cRoles.php");
-              $obj = new CRoles();
-              $listRole = $obj->getAllRoles(); // trả về array
-              if ($listRole && is_array($listRole) && count($listRole) > 0) {
-                  foreach ($listRole as $r) {
-                      $selected = ($r['role_id'] == $user['role_id']) ? 'selected' : '';
-                      echo '<option value="' . htmlspecialchars($r['role_id']) . '" ' . $selected . '>' . htmlspecialchars($r['role_name']) . '</option>';
-                  }
-              } else {
-                  echo '<option value="">Không có dữ liệu vai trò</option>';
-              }
-            ?>
-          </select>
-=======
         <select name="role_id" id="role_id">
           <?php
             include("../../../controller/cRoles.php");
@@ -259,7 +242,6 @@ body {
           ?>
 
         </select>
->>>>>>> Stashed changes
         <span class="error-message"></span>
       </div>
 
@@ -274,28 +256,6 @@ body {
       </div>
 
       <!-- Kho làm việc -->
-<<<<<<< Updated upstream
-  <div class="form-group">
-    <label for="warehouse_id">Kho làm việc</label>
-    <select name="warehouse_id" id="warehouse_id">
-      <option value="">- Chọn kho -</option>
-      <?php
-        include_once(__DIR__ . "/../../../../../controller/cWarehouse.php");
-        $Obj = new CWarehouse();
-        $warehouses = $Obj->getAllWarehouses();
-        if ($warehouses && is_array($warehouses) && count($warehouses) > 0) {
-          foreach ($warehouses as $r) {
-            $selected = ($r['warehouse_id'] == $user['warehouse_id']) ? 'selected' : '';
-            echo '<option value="' . htmlspecialchars($r['warehouse_id']) . '" ' . $selected . '>' . htmlspecialchars($r['warehouse_name']) . '</option>';
-          }
-        } else {
-          echo '<option value="">Không có dữ liệu kho</option>';
-        }
-      ?>
-    </select>
-    <span class="error-message"></span>
-  </div>
-=======
 <div class="form-group">
     <label for="warehouse_id">Kho làm việc</label>
     <select name="warehouse_id" id="warehouse_id">
@@ -318,7 +278,6 @@ if (!empty($warehouses)) {
     </select>
     <span class="error-message"></span>
 </div>
->>>>>>> Stashed changes
 
       <!-- Nút thao tác -->
       <div class="form-actions">
@@ -387,7 +346,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const saveBtn = form.querySelector("button[name='btnUpdate']");
   const cancelBtn = document.getElementById("btnCancel");
 
-  // 🟢 Lưu dữ liệu gốc ban đầu
+  // Lưu dữ liệu gốc ban đầu
   const originalData = {};
   inputs.forEach((field) => {
     if (field.type === "checkbox" || field.type === "radio") {
@@ -397,7 +356,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // 🟢 Hàm reset khi nhấn Hủy
+  // Hàm reset khi nhấn Hủy
   cancelBtn.addEventListener("click", function () {
     // Reset lại giá trị ban đầu
     inputs.forEach((field) => {
