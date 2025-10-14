@@ -50,6 +50,7 @@ class CReceipt {
             $subtotal = $qty * $price;
             $cleanDetails[] = [
                 'product_id' => $d['product_id'],
+                'product_name' => $d['product_name'] ?? '',
                 'quantity' => $qty,
                 'unit_price' => $price,
                 'subtotal' => $subtotal

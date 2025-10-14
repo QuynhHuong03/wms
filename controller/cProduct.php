@@ -28,10 +28,12 @@ class CProduct {
 
 	// Cập nhật sản phẩm
 	// Cập nhật sản phẩm, cho phép đổi SKU
-	public function updateProduct($old_sku, $new_sku, $product_name, $barcode, $category_name, $supplier_name, $warehouse_id, $status, $image = null, $min_stock = null) {
+	public function updateProduct($old_sku, $new_sku, $product_name, $barcode, $category_id, $category_name, $supplier_id, $supplier_name, $status, $image = null, $min_stock = null)
+{
 		$p = new MProduct();
 		return $p->updateProduct($old_sku, $new_sku, $product_name, $barcode, $category_name, $supplier_name, $warehouse_id, $status, $image, $min_stock);
 	}
+	
 
 	// Tìm sản phẩm theo barcode
     public function getProductByBarcode($barcode) {

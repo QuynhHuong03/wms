@@ -11,7 +11,7 @@ class MReceipt {
         $con = $p->moKetNoi();
         $this->connObj = $p;
         if ($con) {
-            $this->col = $con->selectCollection('receipts');
+            $this->col = $con->selectCollection('transactions');
             // Không đóng kết nối ở đây để cursor trả về vẫn sử dụng được
         }
     }
