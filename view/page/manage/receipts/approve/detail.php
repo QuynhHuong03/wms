@@ -234,7 +234,7 @@ $status = (int)($receipt['status'] ?? 0);
             $subtotal = ($item['quantity'] ?? 0) * ($item['unit_price'] ?? 0);
             echo "<tr>
               <td>".htmlspecialchars($item['product_id'])."</td>
-              <td>".htmlspecialchars($item['product_name'] ?? $item['product_id'])."</td>
+              <td>".htmlspecialchars($item['product_name'])."</td>
               <td>".htmlspecialchars($item['quantity'])."</td>
               <td>".number_format($item['unit_price'], 0, ',', '.')." đ</td>
               <td>".number_format($subtotal, 0, ',', '.')." đ</td>

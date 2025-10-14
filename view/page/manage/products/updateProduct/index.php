@@ -9,6 +9,9 @@ $categories = (new CCategories())->getAllCategories();
 $suppliers = (new CSupplier())->getAllSuppliers();
 $models = (new CModel())->getAllModels();
 
+// Danh sách đơn vị
+$unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', 'chai', 'tuýp'];
+
 $product = null;
 if (isset($_GET['id'])) {
     $sku = $_GET['id'];
@@ -21,103 +24,241 @@ if (isset($_GET['id'])) {
     }
 }
 if (!$product) {
-    echo "<script>alert('Không tìm thấy sản phẩm.'); window.location.href = '../../index.php?page=products';</script>";
+    echo "<script>alert('Không tìm thấy sản phẩm.'); window.location.href='../../index.php?page=products';</script>";
     exit();
 }
 ?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <title>Cập nhật sản phẩm</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <style>
-        body { font-family: 'Arial', sans-serif; background-color: #f9f9f9; color: #333; margin: 0; }
-        .container { width: 90%; max-width: 800px; margin: 30px auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 25px 30px; }
-        h2 { text-align: center; color: #222; }
-        .form-group { margin-bottom: 18px; }
-        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 18px; color: #333; }
-        .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 18px; transition: border-color 0.2s; }
-        .form-group input:focus, .form-group select:focus { border-color: #3b82f6; outline: none; box-shadow: 0 0 5px rgba(59,130,246,0.3); }
-        .form-actions { text-align: center; margin-top: 20px; display: flex; justify-content: center; gap: 15px; }
-        .form-actions button, .form-actions a { background-color: #3b82f6; color: #fff; padding: 10px 20px; font-size: 15px; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s; text-decoration: none; display: inline-block; }
-        .form-actions button:hover, .form-actions a:hover { background-color: #2563eb; }
-        .form-actions .btn-secondary { background-color: #6b7280; }
-        .form-actions .btn-secondary:hover { background-color: #4b5563; }
-        .form-actions .btn-success { background-color: #16a34a; }
-        .form-actions .btn-success:hover { background-color: #15803d; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Cập nhật sản phẩm</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f6fa;
+      margin: 0;
+    }
+    .container {
+      width: 95%;
+      max-width: 1000px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      padding: 25px 35px;
+    }
+    h2 { text-align: center; color: #222; margin-bottom: 25px; }
+    form { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 30px; }
+    .form-group { display: flex; flex-direction: column; }
+    .form-group label { font-weight: 600; margin-bottom: 6px; color: #333; }
+    input, select, textarea {
+      padding: 9px 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 15px;
+      transition: all 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 5px rgba(59,130,246,0.3);
+      outline: none;
+    }
+    textarea { resize: vertical; min-height: 70px; }
+    .full-width { grid-column: 1 / 3; }
+    .conversion-box {
+      grid-column: 1 / 3;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 15px;
+    }
+    .conversion-item { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
+    .conversion-item select, .conversion-item input { flex: 1; }
+    .btn {
+      border: none; border-radius: 8px; cursor: pointer;
+      font-size: 14px; padding: 8px 14px; color: #fff; transition: all 0.2s;
+    }
+    .btn-success { background: #16a34a; } .btn-success:hover { background: #15803d; }
+    .btn-secondary { background: #6b7280; } .btn-secondary:hover { background: #4b5563; }
+    .btn-danger { background: #dc3545; } .btn-danger:hover { background: #b91c1c; }
+    .form-actions {
+      grid-column: 1 / 3;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 15px;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Cập nhật sản phẩm</h2>
+  <div class="container">
+    <h2><i class="fa-solid fa-pen-to-square"></i> Cập nhật sản phẩm</h2>
+
     <form action="products/updateProduct/process.php" method="post" enctype="multipart/form-data">
-            <input type="hidden" name="old_image" value="<?php echo $product['image'] ?? ''; ?>">
-            <input type="hidden" name="old_sku" value="<?php echo $product['sku']; ?>">
-            <div class="form-group">
-                <label for="new_sku">Mã SKU</label>
-                <input type="text" id="new_sku" name="new_sku" value="<?php echo $product['sku']; ?>" required>
-            </div>
-            <div class="form-group">
-                <label for="barcode">Barcode</label>
-                <input type="text" id="barcode" name="barcode" value="<?php echo $product['barcode'] ?? ''; ?>">
-            </div>
-            <div class="form-group">
-                <label for="product_name">Tên sản phẩm</label>
-                <input type="text" id="product_name" name="product_name" value="<?php echo $product['product_name'] ?? ''; ?>" required>
-            </div>
-            <div class="form-group">
-                <label for="category_name">Loại sản phẩm</label>
-                <select id="category_name" name="category_name" required>
-                    <option value="">-- Chọn loại sản phẩm --</option>
-                    <?php foreach ($categories as $cat): ?>
-                        <option value="<?php echo $cat['name'] ?? $cat['category_name'] ?? $cat['category_id']; ?>" <?php echo ($product['category_name'] ?? '') == ($cat['name'] ?? $cat['category_name'] ?? $cat['category_id']) ? 'selected' : ''; ?>>
-                            <?php echo $cat['name'] ?? $cat['category_name'] ?? $cat['category_id']; ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="supplier_name">Nhà cung cấp</label>
-                <select id="supplier_name" name="supplier_name" required>
-                    <option value="">-- Chọn nhà cung cấp --</option>
-                    <?php foreach ($suppliers as $sup): ?>
-                        <option value="<?php echo $sup['supplier_name'] ?? $sup['name'] ?? $sup['supplier_id']; ?>" <?php echo ($product['supplier_name'] ?? '') == ($sup['supplier_name'] ?? $sup['name'] ?? $sup['supplier_id']) ? 'selected' : ''; ?>>
-                            <?php echo $sup['supplier_name'] ?? $sup['name'] ?? $sup['supplier_id']; ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <!-- <div class="form-group">
-                <label for="warehouse_id">Kho</label>
-                <input type="text" id="warehouse_id" name="warehouse_id" value="<?php echo $product['warehouse_id'] ?? ''; ?>" required>
-            </div> -->
-            <div class="form-group">
-                <label for="status">Trạng thái</label>
-                <select id="status" name="status">
-                    <option value="1" <?php echo ($product['status'] ?? 1) == 1 ? 'selected' : ''; ?>>Hoạt động</option>
-                    <option value="0" <?php echo ($product['status'] ?? 1) == 0 ? 'selected' : ''; ?>>Ngừng hoạt động</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="min_stock">Tồn kho tối thiểu</label>
-                <input type="number" id="min_stock" name="min_stock" min="0" value="<?php echo $product['min_stock'] ?? 0; ?>" required>
-            </div>
-            <div class="form-group">
-                <label for="image">Hình ảnh sản phẩm</label>
-                <input type="file" id="image" name="image" accept="image/*">
-                <?php if (!empty($product['image'])): ?>
-                    <div style="margin-top:8px;">
-                        <span>Ảnh hiện tại:</span>
-                        <img src="../../../img/<?php echo $product['image']; ?>" alt="Ảnh sản phẩm" style="max-width:120px;max-height:120px;border-radius:8px;">
-                    </div>
-                <?php endif; ?>
-            </div>
-            <div class="form-actions">
-                <button type="submit" name="btnUpdate" class="btn-success"><i class="fas fa-save"></i> Cập nhật</button>
-                <a href="index.php?page=products" class="btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
-            </div>
-        </form>
-    </div>
+      <input type="hidden" name="old_sku" value="<?= $product['sku'] ?>">
+      <input type="hidden" name="old_image" value="<?= $product['image'] ?? '' ?>">
+
+      <div class="form-group">
+        <label for="product_name">Tên sản phẩm</label>
+        <input type="text" id="product_name" name="product_name" value="<?= $product['product_name'] ?? '' ?>" required>
+      </div>
+
+      <div class="form-group">
+        <label for="barcode">Barcode</label>
+        <input type="text" id="barcode" name="barcode" value="<?= $product['barcode'] ?? '' ?>">
+      </div>
+
+      <div class="form-group">
+        <label for="category_id">Loại sản phẩm</label>
+        <select id="category_id" name="category_id" required>
+          <option value="">-- Chọn loại sản phẩm --</option>
+          <?php foreach ($categories as $cat): ?>
+            <option value="<?= $cat['category_id']; ?>"
+              <?= ($product['category']['id'] ?? '') == $cat['category_id'] ? 'selected' : ''; ?>>
+              <?= $cat['name'] ?? $cat['category_name'] ?? $cat['category_id']; ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="supplier_id">Nhà cung cấp</label>
+        <select id="supplier_id" name="supplier_id" required>
+          <option value="">-- Chọn nhà cung cấp --</option>
+          <?php foreach ($suppliers as $sup): ?>
+            <option value="<?= $sup['supplier_id']; ?>"
+              <?= ($product['supplier']['id'] ?? '') == $sup['supplier_id'] ? 'selected' : ''; ?>>
+              <?= $sup['supplier_name'] ?? $sup['name'] ?? $sup['supplier_id']; ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="model_id">Model</label>
+        <select id="model_id" name="model_id">
+          <option value="">-- Chọn model --</option>
+          <?php foreach ($models as $m): ?>
+            <option value="<?= $m['model_id']; ?>"
+              <?= ($product['model']['id'] ?? '') == $m['model_id'] ? 'selected' : ''; ?>>
+              <?= $m['model_name'] ?? $m['model_id']; ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="base_unit">Đơn vị chính</label>
+        <select id="base_unit" name="base_unit" required>
+          <option value="">-- Chọn đơn vị --</option>
+          <?php foreach ($unitOptions as $u): ?>
+            <option value="<?= $u; ?>" <?= ($product['baseUnit'] ?? '') == $u ? 'selected' : ''; ?>>
+              <?= ucfirst($u); ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="min_stock">Tồn kho tối thiểu</label>
+        <input type="number" id="min_stock" name="min_stock" min="0" value="<?= $product['min_stock'] ?? 0 ?>" required>
+      </div>
+
+      <div class="form-group">
+        <label for="status">Trạng thái</label>
+        <select id="status" name="status">
+          <option value="1" <?= ($product['status'] ?? 1) == 1 ? 'selected' : ''; ?>>Hoạt động</option>
+          <option value="0" <?= ($product['status'] ?? 1) == 0 ? 'selected' : ''; ?>>Ngừng hoạt động</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="image">Hình ảnh sản phẩm</label>
+        <input type="file" id="image" name="image" accept="image/*">
+        <?php if (!empty($product['image'])): ?>
+          <div style="margin-top:8px;">
+            <span>Ảnh hiện tại:</span><br>
+            <img src="../../../img/<?= $product['image'] ?>" alt="Ảnh sản phẩm"
+                 style="max-width:120px;max-height:120px;border-radius:8px;">
+          </div>
+        <?php endif; ?>
+      </div>
+
+      <!-- Quy đổi -->
+      <div class="conversion-box">
+        <label><i class="fa-solid fa-arrows-rotate"></i> Đơn vị quy đổi</label>
+        <div id="conversion-container">
+          <?php
+          $conversions = $product['conversionUnits'] ?? [];
+          if (empty($conversions)) {
+            echo '<div class="conversion-item">
+                    <select name="conversion_unit[]">
+                      <option value="">-- Đơn vị --</option>';
+            foreach ($unitOptions as $u) echo "<option value='$u'>$u</option>";
+            echo '</select>
+                  <input type="number" step="0.01" name="conversion_factor[]" placeholder="Hệ số (vd: 10)">
+                 </div>';
+          } else {
+            foreach ($conversions as $conv) {
+              echo "<div class='conversion-item'>
+                      <select name='conversion_unit[]'>";
+              foreach ($unitOptions as $u) {
+                $selected = ($conv['unit'] ?? '') == $u ? 'selected' : '';
+                echo "<option value='$u' $selected>$u</option>";
+              }
+              echo "</select>
+                    <input type='number' step='0.01' name='conversion_factor[]'
+                      value='" . ($conv['factor'] ?? '') . "' placeholder='Hệ số (vd: 10)'>
+                    <button type='button' class='btn btn-danger removeConversion'><i class='fa-solid fa-xmark'></i></button>
+                    </div>";
+            }
+          }
+          ?>
+        </div>
+        <button type="button" id="addConversionBtn" class="btn btn-secondary" style="margin-top:8px;">
+          <i class="fa-solid fa-plus"></i> Thêm quy đổi
+        </button>
+      </div>
+
+      <div class="form-group full-width">
+        <label for="description">Mô tả</label>
+        <textarea id="description" name="description" rows="3"><?= $product['description'] ?? '' ?></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" name="btnUpdate" class="btn btn-success"><i class="fas fa-save"></i> Cập nhật</button>
+        <a href="index.php?page=products" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const addBtn = document.getElementById('addConversionBtn');
+    const container = document.getElementById('conversion-container');
+
+    addBtn.addEventListener('click', () => {
+      const div = document.createElement('div');
+      div.className = 'conversion-item';
+      div.innerHTML = `
+        <select name="conversion_unit[]">
+          <option value="">-- Đơn vị --</option>
+          <?php foreach ($unitOptions as $u): ?>
+            <option value="<?= $u; ?>"><?= ucfirst($u); ?></option>
+          <?php endforeach; ?>
+        </select>
+        <input type="number" step="0.01" name="conversion_factor[]" placeholder="Hệ số (vd: 10)">
+        <button type="button" class="btn btn-danger removeConversion"><i class="fa-solid fa-xmark"></i></button>
+      `;
+      container.appendChild(div);
+    });
+
+    document.addEventListener('click', e => {
+      if (e.target.closest('.removeConversion')) {
+        e.target.closest('.conversion-item').remove();
+      }
+    });
+  </script>
 </body>
 </html>

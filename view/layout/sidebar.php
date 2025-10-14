@@ -241,7 +241,17 @@ $roleId = $users['role_id'] ?? 0;
 
   <?php elseif ($roleId == 3): ?>
     <!-- Nhân viên kho tổng -->
-    <a href="index.php?page=receipts" class="<?= $currentPage=='receipts'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu nhập kho tổng</a>
+     <div class="submenu" id="submenu-reciepts">
+      <a href="javascript:void(0)" class="submenu-toggle">
+        <span><i class="fa-solid fa-file-circle-plus"></i> Phiếu nhập kho tổng</span>
+        <i class="fas fa-chevron-down arrow"></i>
+      </a>
+      <div class="submenu-items">
+        <a href="index.php?page=receipts" class="<?= $currentPage=='users'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu nhập kho</a>
+        <a href="index.php?page=receipts/approve" class="<?= $currentPage=='roles'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu nhập kho</a>
+      </div>
+    </div>
+    <!-- <a href="index.php?page=receipts" class=""><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu nhập kho tổng</a> -->
     <a href="index.php?page=phieuxuat" class="<?= $currentPage=='phieuxuat'?'active':'' ?>"><i class="fas fa-file-export"></i> Tạo phiếu xuất kho tổng</a>
     <a href="index.php?page=tonkho" class="<?= $currentPage=='tonkho'?'active':'' ?>"><i class="fas fa-boxes"></i> Xem tồn kho tổng</a>
     <a href="index.php?page=report" class="<?= $currentPage=='report'?'active':'' ?>"><i class="fas fa-chart-line"></i> Báo cáo tổng</a>

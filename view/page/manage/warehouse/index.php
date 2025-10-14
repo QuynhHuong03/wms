@@ -128,13 +128,7 @@ $warehouses = $cWarehouse->getAllWarehouses();
     align-items: center;
   }
 
-  .filters input {
-    padding: 6px 10px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    font-size: 14px;
-  }
-
+  .filters input,
   .filters select {
     padding: 6px 10px;
     border-radius: 6px;
@@ -191,7 +185,7 @@ $warehouses = $cWarehouse->getAllWarehouses();
   <table id="warehouse-table">
     <thead>
       <tr>
-        <th>ID</th>
+        <th>STT</th>
         <th>Mã kho</th>
         <th>Tên kho</th>
         <th>Địa chỉ</th>
@@ -203,20 +197,33 @@ $warehouses = $cWarehouse->getAllWarehouses();
     <tbody>
       <?php
       if (is_array($warehouses) && !empty($warehouses)) {
+        $i = 1;
         foreach ($warehouses as $w) {
-          $statusText = $w['status'] == 1 ? 'Đang hoạt động' : 'Ngừng hoạt động';
-          $statusClass = $w['status'] == 1 ? 'active' : 'inactive';
+          $statusText = ($w['status'] ?? 0) == 1 ? 'Đang hoạt động' : 'Ngừng hoạt động';
+          $statusClass = ($w['status'] ?? 0) == 1 ? 'active' : 'inactive';
 
-          $typeName = $w['type_name'] ?? '';
-          $typeClass = (mb_strtolower($typeName, 'UTF-8') === 'tổng' || str_contains(mb_strtolower($typeName, 'UTF-8'), 'tong')) 
+          $typeName = $w['type_name'] ?? ($w['type'] ?? 'Không rõ');
+          $typeClass = (mb_strtolower($typeName, 'UTF-8') === 'tổng' || str_contains(mb_strtolower($typeName, 'UTF-8'), 'tong'))
             ? 'type-main' : 'type-branch';
+
+          // Xử lý địa chỉ
+          $addressText = '';
+          if (isset($w['address']) && is_array($w['address'])) {
+            $parts = [];
+            if (!empty($w['address']['street'])) $parts[] = $w['address']['street'];
+            if (!empty($w['address']['city'])) $parts[] = $w['address']['city'];
+            if (!empty($w['address']['province'])) $parts[] = $w['address']['province'];
+            $addressText = implode(', ', $parts);
+          } else {
+            $addressText = htmlspecialchars($w['address_text'] ?? '');
+          }
 
           echo "
             <tr data-type='{$typeName}' data-status='{$statusText}' data-name='{$w['warehouse_name']}'>
-              <td>{$w['id']}</td>
+              <td>{$i}</td>
               <td>{$w['warehouse_id']}</td>
               <td>{$w['warehouse_name']}</td>
-              <td>{$w['address']}</td>
+              <td>{$addressText}</td>
               <td><span class='{$typeClass}'>{$typeName}</span></td>
               <td><span class='status {$statusClass}'>{$statusText}</span></td>
               <td>
@@ -229,6 +236,7 @@ $warehouses = $cWarehouse->getAllWarehouses();
               </td>
             </tr>
           ";
+          $i++;
         }
       } else {
         echo "<tr><td colspan='7'>Không có kho nào.</td></tr>";

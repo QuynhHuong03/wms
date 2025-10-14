@@ -208,9 +208,9 @@ $barcodeGenerator = new Picqer\Barcode\BarcodeGeneratorPNG();
           $id = $p['sku'];
           $name = $p['product_name'];
           $barcode = $p['barcode'];
-          $type = $p['category_name'] ?? '';
-          $supplier = $p['supplier_name'] ?? '';
-          $supplier_id = $p['supplier_id'] ?? '';
+          $type = $p['category']['name'] ?? '';
+          $supplier = $p['supplier']['name'] ?? '';
+          $supplier_id = $p['supplier']['id'] ?? '';
           $min_stock = $p['min_stock'] ?? '';
           $status = $p['status'];
 

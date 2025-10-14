@@ -6,76 +6,69 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnAdd"])) {
     $warehouse_id   = trim($_POST["warehouse_id"] ?? '');
     $warehouse_name = trim($_POST["warehouse_name"] ?? '');
     $address        = trim($_POST["address"] ?? '');
-    $status         = $_POST["status"] ?? 1;
-    $warehouse_type = $_POST["warehouse_type"] ?? 1;
-    $created_at     = date('Y-m-d H:i:s'); // Lấy ngày hiện tại
+    $status         = (int)($_POST["status"] ?? 1);
+    $warehouse_type = (int)($_POST["warehouse_type"] ?? 2);
+    $created_at     = date('Y-m-d H:i:s');
 
     $errors = [];
 
-    // Validate dữ liệu
+    // Validate cơ bản
     if ($warehouse_id === '' || !preg_match('/^[A-Za-z0-9_]+$/', $warehouse_id)) {
         $errors[] = "Mã kho không hợp lệ.";
     }
-
-    if ($warehouse_name === '' || !preg_match('/^[\p{L}\s]+$/u', $warehouse_name)) {
-        $errors[] = "Tên kho không hợp lệ.";
+    if ($warehouse_name === '') {
+        $errors[] = "Tên kho không được để trống.";
     }
-
     if ($address === '') {
         $errors[] = "Địa chỉ không được để trống.";
     }
 
-    if ($status === '') {
-        $errors[] = "Vui lòng chọn trạng thái.";
-    }
-
-    if (count($errors) > 0) {
-        // Hiển thị thông báo lỗi và dừng xử lý
-        echo "<script>
-            alert('Lỗi: " . implode("\\n", $errors) . "');
-            setTimeout(() => { window.location.href = '../../index.php?page=warehouse/createWarehause'; }, 1000);
-        </script>";
+    if (!empty($errors)) {
+        echo "<script>alert('Lỗi: " . implode("\\n", $errors) . "'); history.back();</script>";
         exit();
     }
 
     $cWarehouse = new CWarehouse();
-
-    // Kiểm tra mã kho đã tồn tại
     $existingWarehouses = $cWarehouse->getAllWarehouses();
-    foreach ($existingWarehouses as $warehouse) {
-        if ($warehouse['warehouse_id'] === $warehouse_id) {
-            echo "<script>
-                alert('Mã kho đã tồn tại. Vui lòng chọn mã khác.');
-                setTimeout(() => { window.location.href = '../../index.php?page=warehouse/createWarehause'; }, 1000);
-            </script>";
+
+    // Nếu chưa có kho tổng => tự động tạo kho tổng
+    $hasMainWarehouse = false;
+    foreach ($existingWarehouses as $wh) {
+        if ((int)$wh['warehouse_type'] === 1) {
+            $hasMainWarehouse = true;
+            break;
+        }
+    }
+    if (!$hasMainWarehouse) {
+        $warehouse_type = 1; // Tự tạo kho tổng đầu tiên
+    }
+
+    // Kiểm tra trùng mã kho
+    foreach ($existingWarehouses as $wh) {
+        if ($wh['warehouse_id'] === $warehouse_id) {
+            echo "<script>alert('Mã kho đã tồn tại.'); history.back();</script>";
             exit();
         }
     }
 
-    // Thêm kho chi nhánh
-    $result = $cWarehouse->addBranchWarehouse($warehouse_id, $warehouse_name, $address, $status, $created_at);
+    // Gọi model thêm
+    $data = [
+        'warehouse_id'   => $warehouse_id,
+        'warehouse_name' => $warehouse_name,
+        'address'        => $address,
+        'status'         => $status,
+        'warehouse_type' => $warehouse_type,
+        'created_at'     => $created_at
+    ];
+
+    $result = $cWarehouse->addWarehouse($data);
 
     if ($result) {
-        // Hiển thị thông báo thành công và chuyển hướng
-        echo "<script>
-            alert('Thêm kho chi nhánh thành công!');
-            setTimeout(() => { window.location.href = '../../index.php?page=warehouse'; }, 1000);
-        </script>";
-        exit();
+        echo "<script>alert('Thêm kho thành công!'); window.location.href='../../index.php?page=warehouse';</script>";
     } else {
-        // Hiển thị thông báo thất bại và chuyển hướng
-        echo "<script>
-            alert('Thêm kho thất bại. Vui lòng thử lại.');
-            setTimeout(() => { window.location.href = '../../index.php?page=warehouse/createWarehause'; }, 1000);
-        </script>";
-        exit();
+        echo "<script>alert('Thêm kho thất bại!'); history.back();</script>";
     }
 } else {
-    // Nếu không phải phương thức POST hoặc không có nút btnAdd
-    echo "<script>
-        alert('Yêu cầu không hợp lệ.');
-        setTimeout(() => { window.location.href = '../../index.php?page=warehouse/createWarehause'; }, 1000);
-    </script>";
-    exit();
+    echo "<script>alert('Yêu cầu không hợp lệ.'); window.location.href='../../index.php?page=warehouse';</script>";
 }
 ?>

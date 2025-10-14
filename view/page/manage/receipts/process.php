@@ -83,6 +83,7 @@ try {
                 if ($qty <= 0) continue;
                 $details[] = [
                     'product_id' => $p['product_id'],
+                    'product_name' => $p['product_name'] ?? '',
                     'quantity' => $qty,
                     'unit_price' => $price
                 ];

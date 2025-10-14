@@ -3,62 +3,100 @@ session_start();
 include_once(__DIR__ . "/../../../../../controller/cProduct.php");
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnUpdate"])) {
-    $old_sku = trim($_POST["old_sku"] ?? '');
-    $new_sku = trim($_POST["new_sku"] ?? '');
-    $barcode = trim($_POST["barcode"] ?? '');
-    $product_name = trim($_POST["product_name"] ?? '');
-    $category_name = trim($_POST["category_name"] ?? '');
-    $supplier_name = trim($_POST["supplier_name"] ?? '');
-    $warehouse_id = trim($_POST["warehouse_id"] ?? '');
-    $status = $_POST["status"] ?? 1;
-    $min_stock = $_POST["min_stock"] ?? 0;
-    // Xử lý upload hình ảnh mới
-    $image = '';
+    $old_sku       = trim($_POST["old_sku"] ?? '');
+    $product_name  = trim($_POST["product_name"] ?? '');
+    $barcode       = trim($_POST["barcode"] ?? '');
+    $category_id   = trim($_POST["category_id"] ?? '');
+    $supplier_id   = trim($_POST["supplier_id"] ?? '');
+    $model_id      = trim($_POST["model_id"] ?? '');
+    $status        = (int)($_POST["status"] ?? 1);
+    $min_stock     = (int)($_POST["min_stock"] ?? 0);
+    $description   = trim($_POST["description"] ?? '');
+    $base_unit     = trim($_POST["base_unit"] ?? '');
+    $conversion_units = $_POST["conversion_unit"] ?? [];
+    $conversion_factors = $_POST["conversion_factor"] ?? [];
+
+    // --- Upload hình ảnh ---
+    $image = $_POST['old_image'] ?? '';
     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
         $uploadDir = __DIR__ . '/../../../../../img/';
         $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
-        $imageFileName = uniqid('product_') . '.' . $ext;
-        $targetPath = $uploadDir . $imageFileName;
-        if (move_uploaded_file($_FILES['image']['tmp_name'], $targetPath)) {
-            $image = $imageFileName;
-        }
-    } else {
-        // Nếu không upload ảnh mới, giữ nguyên ảnh cũ
-        $image = trim($_POST['old_image'] ?? '');
+        $fileName = uniqid('product_') . '.' . $ext;
+        $target = $uploadDir . $fileName;
+        if (move_uploaded_file($_FILES['image']['tmp_name'], $target)) $image = $fileName;
     }
-            // Removed misplaced HTML input tag causing syntax error
 
+    // --- Validate ---
     $errors = [];
-    if ($new_sku === '') {
-        $errors[] = "SKU không được để trống.";
-    }
-    if ($product_name === '') {
-        $errors[] = "Tên sản phẩm không được để trống.";
-    }
-    if ($category_name === '') {
-        $errors[] = "Loại sản phẩm không được để trống.";
-    }
-    if ($supplier_name === '') {
-        $errors[] = "Nhà cung cấp không được để trống.";
-    }
-    if ($warehouse_id === '') {
-        $errors[] = "Kho không được để trống.";
-    }
-    if (count($errors) > 0) {
-        echo "<script>alert('Lỗi: " . implode("\\n", $errors) . "'); window.location.href = '../../index.php?page=products/updateProduct&id=$old_sku';</script>";
+    if ($product_name === '') $errors[] = "Tên sản phẩm không được để trống.";
+    if ($category_id === '')  $errors[] = "Loại sản phẩm không được để trống.";
+    if ($supplier_id === '')  $errors[] = "Nhà cung cấp không được để trống.";
+    if ($base_unit === '')    $errors[] = "Phải chọn đơn vị tính chính.";
+    if (!empty($errors)) {
+        echo "<script>alert('Lỗi:\\n" . implode("\\n", $errors) . "'); history.back();</script>";
         exit();
     }
 
-    $cProduct = new CProduct();
-    $result = $cProduct->updateProduct($old_sku, $new_sku, $product_name, $barcode, $category_name, $supplier_name, $warehouse_id, $status, $image, $min_stock);
-    if ($result) {
-        echo "<script>alert('Cập nhật sản phẩm thành công!'); window.location.href = '../../index.php?page=products';</script>";
-        exit();
-    } else {
-        echo "<script>alert('Cập nhật sản phẩm thất bại!'); window.location.href = '../../index.php?page=products/updateProduct&id=$old_sku';</script>";
-        exit();
+    // --- Lấy thông tin phụ ---
+    include_once(__DIR__ . '/../../../../../controller/cCategories.php');
+    include_once(__DIR__ . '/../../../../../controller/cSupplier.php');
+    include_once(__DIR__ . '/../../../../../controller/cModel.php');
+
+    $catObj = new CCategories();
+    $categories = $catObj->getAllCategories();
+    $cat = array_values(array_filter($categories, fn($c) => $c['category_id'] == $category_id))[0] ?? [];
+    $category_name = $cat['name'] ?? $cat['category_name'] ?? '';
+
+    $supObj = new CSupplier();
+    $suppliers = $supObj->getAllSuppliers();
+    $sup = array_values(array_filter($suppliers, fn($s) => $s['supplier_id'] == $supplier_id))[0] ?? [];
+    $supplier_name = $sup['supplier_name'] ?? $sup['name'] ?? '';
+
+    $modelObj = new CModel();
+    $models = $modelObj->getAllModels();
+    $model = array_values(array_filter($models, fn($m) => $m['model_id'] == $model_id))[0] ?? [];
+    $model_code = $model['model_code'] ?? '';
+
+    // --- Chuẩn hóa conversionUnits ---
+    $conversionList = [];
+    foreach ($conversion_units as $i => $unit) {
+        $unit = trim($unit);
+        $factor = isset($conversion_factors[$i]) ? (float)$conversion_factors[$i] : 0;
+        if ($unit !== '' && $factor > 0) {
+            $conversionList[] = ['unit' => $unit, 'factor' => $factor];
+        }
     }
+
+    // --- Dữ liệu cập nhật ---
+    $updateData = [
+        'product_name' => $product_name,
+        'barcode' => $barcode,
+        'category' => ['id' => $category_id, 'name' => $category_name],
+        'supplier' => ['id' => $supplier_id, 'name' => $supplier_name],
+        'model' => ['id' => $model_id, 'code' => $model_code],
+        'baseUnit' => $base_unit,
+        'conversionUnits' => $conversionList,
+        'min_stock' => $min_stock,
+        'status' => $status,
+        'description' => $description,
+        'image' => $image,
+        'updated_at' => date('Y-m-d H:i:s')
+    ];
+
+    // --- Gọi DB ---
+    $p = new CProduct();
+    $mongo = new MProduct();
+    $col = $mongo->getAllProducts();
+    $con = (new clsKetNoi())->moKetNoi();
+    if ($con) {
+        $collection = $con->selectCollection('products');
+        $collection->updateOne(['sku' => $old_sku], ['$set' => $updateData]);
+        (new clsKetNoi())->dongKetNoi($con);
+    }
+
+    echo "<script>alert('Cập nhật sản phẩm thành công!'); window.location.href='../../index.php?page=products';</script>";
+    exit();
 } else {
-    echo "<script>alert('Yêu cầu không hợp lệ.'); window.location.href = '../../index.php?page=products';</script>";
+    echo "<script>alert('Yêu cầu không hợp lệ.'); window.location.href='../../index.php?page=products';</script>";
     exit();
 }

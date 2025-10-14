@@ -62,7 +62,7 @@ if ($isManager) {
           <option value="transfer">Phiếu chuyển kho</option>
         </select>
 
-        <a href="index.php?page=receipts" class="btn-create"><i class="fa-solid fa-plus"></i> Tạo phiếu mới</a>
+        <!-- <a href="index.php?page=receipts" class="btn-create"><i class="fa-solid fa-plus"></i> Tạo phiếu mới</a> -->
       </div>
     </div>
 
