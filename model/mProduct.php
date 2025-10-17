@@ -153,25 +153,107 @@ class MProduct {
     }
 
     // 🔎 Tìm sản phẩm theo barcode
-    public function getProductByBarcode($barcode) {
+public function getProductByBarcode($barcode) {
+    $p = new clsKetNoi();
+    $con = $p->moKetNoi();
+    if ($con) {
+        try {
+            $col = $con->selectCollection('products');
+            $doc = $col->findOne(['barcode' => $barcode]);
+            $p->dongKetNoi($con);
+
+            if ($doc) {
+                $product = json_decode(json_encode($doc), true);
+
+                // ✅ Xử lý đúng _id từ MongoDB
+                $id = '';
+                if (isset($product['_id'])) {
+                    if (is_array($product['_id']) && isset($product['_id']['$oid'])) {
+                        $id = (string)$product['_id']['$oid'];
+                    } else {
+                        $id = (string)$product['_id'];
+                    }
+                }
+
+                return [
+                    '_id' => $id,
+                    'sku' => $product['sku'] ?? '',
+                    'barcode' => $product['barcode'] ?? '',
+                    'product_name' => $product['product_name'] ?? '',
+                    'purchase_price' => $product['purchase_price'] ?? 0,
+                    'baseUnit' => $product['baseUnit'] ?? 'cái',
+                    'conversionUnits' => $product['conversionUnits'] ?? [],
+                    'supplier' => $product['supplier']['name'] ?? '',
+                    'category' => $product['category']['name'] ?? '',
+                    'current_stock' => $product['current_stock'] ?? 0,
+                ];
+            }
+            return null;
+
+        } catch (\Exception $e) {
+            $p->dongKetNoi($con);
+            die("Lỗi query MongoDB: " . $e->getMessage());
+        }
+    }
+    return null;
+}
+
+    // 🔎 Tìm sản phẩm theo _id
+    public function getProductById($productId) {
         $p = new clsKetNoi();
         $con = $p->moKetNoi();
         if ($con) {
             try {
                 $col = $con->selectCollection('products');
-                $doc = $col->findOne(['barcode' => $barcode]);
+                
+                // Xử lý _id (có thể là ObjectId hoặc string)
+                try {
+                    $filter = ['_id' => new MongoDB\BSON\ObjectId($productId)];
+                } catch (\Exception $e) {
+                    // Nếu không phải ObjectId, thử tìm theo string
+                    $filter = ['_id' => $productId];
+                }
+                
+                $doc = $col->findOne($filter);
                 $p->dongKetNoi($con);
+
                 if ($doc) {
-                    return json_decode(json_encode($doc), true);
+                    $product = json_decode(json_encode($doc), true);
+
+                    // ✅ Xử lý đúng _id từ MongoDB
+                    $id = '';
+                    if (isset($product['_id'])) {
+                        if (is_array($product['_id']) && isset($product['_id']['$oid'])) {
+                            $id = (string)$product['_id']['$oid'];
+                        } else {
+                            $id = (string)$product['_id'];
+                        }
+                    }
+
+                    return [
+                        '_id' => $id,
+                        'sku' => $product['sku'] ?? '',
+                        'barcode' => $product['barcode'] ?? '',
+                        'product_name' => $product['product_name'] ?? '',
+                        'purchase_price' => $product['purchase_price'] ?? 0,
+                        'baseUnit' => $product['baseUnit'] ?? 'cái',
+                        'conversionUnits' => $product['conversionUnits'] ?? [],
+                        'supplier' => $product['supplier']['name'] ?? '',
+                        'category' => $product['category']['name'] ?? '',
+                        'current_stock' => $product['current_stock'] ?? 0,
+                    ];
                 }
                 return null;
+
             } catch (\Exception $e) {
                 $p->dongKetNoi($con);
-                die("Lỗi query MongoDB: " . $e->getMessage());
+                error_log("Lỗi getProductById: " . $e->getMessage());
+                return null;
             }
         }
         return null;
     }
+
 
     // 📦 Tổng số SKU duy nhất
     public function getTotalSKU() {

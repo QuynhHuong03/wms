@@ -20,7 +20,7 @@ class MReceipt {
     public function getLastReceipt() {
         if (!$this->col) return null;
         try {
-            return $this->col->findOne([], ['sort' => ['receipt_id' => -1]]);
+            return $this->col->findOne([], ['sort' => ['transaction_id' => -1]]);
         } catch (\Exception $e) {
             error_log('getLastReceipt error: ' . $e->getMessage());
             return null;
@@ -125,7 +125,7 @@ class MReceipt {
     public function getReceiptById($receipt_id) {
         if (!$this->col) return null;
         try {
-            return $this->col->findOne(['receipt_id' => $receipt_id]);
+            return $this->col->findOne(['transaction_id' => $receipt_id]);
         } catch (\Exception $e) {
             error_log('getReceiptById error: ' . $e->getMessage());
             return null;
@@ -137,7 +137,7 @@ class MReceipt {
         if (!$this->col) return false;
         try {
             $result = $this->col->updateOne(
-                ['receipt_id' => $receipt_id],
+                ['transaction_id' => $receipt_id],
                 ['$set' => $updateData]
             );
             return $result->getModifiedCount() > 0;
@@ -151,7 +151,7 @@ class MReceipt {
     public function deleteReceipt($receipt_id) {
         if (!$this->col) return false;
         try {
-            $result = $this->col->deleteOne(['receipt_id' => $receipt_id]);
+            $result = $this->col->deleteOne(['transaction_id' => $receipt_id]);
             return $result->getDeletedCount() > 0;
         } catch (\Exception $e) {
             error_log('deleteReceipt error: ' . $e->getMessage());

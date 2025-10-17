@@ -11,8 +11,8 @@ class CReceipt {
     // Sinh mã phiếu tự động IR0001, IR0002, ...
     public function generateReceiptId() {
         $last = $this->mReceipt->getLastReceipt();
-        if (!$last || !isset($last['receipt_id'])) return 'IR0001';
-        $lastId = $last['receipt_id'];
+        if (!$last || !isset($last['transaction_id'])) return 'IR0001';
+        $lastId = $last['transaction_id'];
         if (preg_match('/(\d+)$/', $lastId, $m)) {
             $num = intval($m[1]) + 1;
             return 'IR' . str_pad($num, 4, '0', STR_PAD_LEFT);
@@ -27,7 +27,7 @@ class CReceipt {
         }
 
         $doc = [];
-        $doc['receipt_id'] = $this->generateReceiptId();
+        $doc['transaction_id'] = $this->generateReceiptId();
         $doc['type'] = $payload['type'];
         $doc['warehouse_id'] = $payload['warehouse_id'];
         $doc['source_warehouse_id'] = $payload['source_warehouse_id'] ?? null;
@@ -53,6 +53,7 @@ class CReceipt {
                 'product_name' => $d['product_name'] ?? '',
                 'quantity' => $qty,
                 'unit_price' => $price,
+                'unit' => $d['unit'] ?? 'cái', // ✅ Thêm đơn vị
                 'subtotal' => $subtotal
             ];
             $total += $subtotal;

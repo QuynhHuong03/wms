@@ -40,4 +40,10 @@ class CProduct {
         $p = new MProduct();
         return $p->getProductByBarcode($barcode);
     }
+
+    // Tìm sản phẩm theo _id
+    public function getProductById($productId) {
+        $p = new MProduct();
+        return $p->getProductById($productId);
+    }
 }
