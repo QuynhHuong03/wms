@@ -7,7 +7,7 @@ $categories = (new CCategories())->getAllCategories();
 $suppliers = (new CSupplier())->getAllSuppliers();
 $models = (new CModel())->getAllModels();
 
-// Danh sách đơn vị có sẵn
+// Đơn vị có sẵn
 $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', 'chai', 'tuýp'];
 ?>
 <!DOCTYPE html>
@@ -109,6 +109,11 @@ $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', '
       gap: 15px;
       margin-top: 15px;
     }
+    .hint {
+      font-size: 13px;
+      color: #555;
+      margin-top: 4px;
+    }
   </style>
 </head>
 <body>
@@ -176,10 +181,11 @@ $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', '
             <option value="<?= $u; ?>"><?= ucfirst($u); ?></option>
           <?php endforeach; ?>
         </select>
+        <p class="hint">Đơn vị chính là đơn vị nhỏ nhất (ví dụ: cái, chiếc)</p>
       </div>
 
       <div class="form-group">
-        <label for="purchase_price">Giá nhập</label>
+        <label for="purchase_price">Giá nhập (theo đơn vị chính)</label>
         <input type="number" id="purchase_price" name="purchase_price" min="0" value="0" required>
       </div>
 
@@ -196,9 +202,10 @@ $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', '
         </select>
       </div>
 
-      <!-- Quy đổi -->
+      <!-- Đơn vị quy đổi -->
       <div class="conversion-box">
         <label><i class="fa-solid fa-arrows-rotate"></i> Đơn vị quy đổi</label>
+        <p class="hint">Ví dụ: 1 thùng = 10 hộp, 1 hộp = 10 cái</p>
         <div id="conversion-container">
           <div class="conversion-item">
             <select name="conversion_unit[]">

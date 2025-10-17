@@ -157,6 +157,108 @@ $barcodeGenerator = new Picqer\Barcode\BarcodeGeneratorPNG();
     background: rgba(0,0,0,0.4);
     z-index: 1000;
   }
+  
+.action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: #555;
+  padding: 6px;
+  border-radius: 50%;
+  transition: 0.2s;
+}
+
+.action-btn:hover {
+  background: #f1f3f5;
+  color: #007bff;
+}
+
+/* Menu icon bật ra */
+.icon-menu {
+  display: none; /* Ẩn mặc định */
+  position: absolute;
+  top: 65%;
+  right: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 10;
+  gap: 8px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Icon trong menu */
+.icon-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.icon-item.edit {
+  color: #007bff;
+  background: #e7f0ff;
+}
+
+.icon-item.edit:hover {
+  background: #007bff;
+  color: #fff;
+}
+
+.icon-item.delete {
+  color: #dc3545;
+  background: #fde8ea;
+}
+
+.icon-item.delete:hover {
+  background: #dc3545;
+  color: #fff;
+}
+
+
+/* Mục trong menu */
+.action-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #333;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.action-item i {
+  font-size: 14px;
+}
+
+/* Hiệu ứng hover */
+.action-item:hover {
+  background: #f0f6ff;
+  color: #007bff;
+}
+
+/* Phân biệt hai nút */
+.action-item:nth-child(2):hover {
+  background: #ffeaea;
+  color: #dc3545;
+}
+
+
+
 </style>
 
 <div class="product-list-container">
@@ -186,7 +288,11 @@ $barcodeGenerator = new Picqer\Barcode\BarcodeGeneratorPNG();
       </a>
     </div>
   </div>
-
+<?php
+function formatCurrency($amount) {
+  return number_format((float)$amount, 0, ',', '.') . '₫';
+}
+?>
   <table id="product-table">
     <thead>
       <tr>
@@ -196,6 +302,9 @@ $barcodeGenerator = new Picqer\Barcode\BarcodeGeneratorPNG();
         <th>Barcode</th>
         <th>Loại</th>
         <th>Nhà cung cấp</th>
+        <th>Giá nhập gần nhất</th>
+        <!-- <th>Giá vốn bình quân</th> -->
+        <th>Tồn hiện tại</th>
         <th>Tồn kho tối thiểu</th>
         <th>Trạng thái</th>
         <th>Hành động</th>
@@ -211,6 +320,7 @@ $barcodeGenerator = new Picqer\Barcode\BarcodeGeneratorPNG();
           $type = $p['category']['name'] ?? '';
           $supplier = $p['supplier']['name'] ?? '';
           $supplier_id = $p['supplier']['id'] ?? '';
+          
           $min_stock = $p['min_stock'] ?? '';
           $status = $p['status'];
 
@@ -229,7 +339,7 @@ $barcodeGenerator = new Picqer\Barcode\BarcodeGeneratorPNG();
           }
 
           $statusClass = $status == 1 ? 'status-active' : 'status-inactive';
-          $statusText = $status == 1 ? 'Đang bán' : 'Ngừng bán';
+          $statusText = $status == 1 ? 'Có sẵn' : 'Hết hàng';
 
           echo "
             <tr data-status='{$status}' data-supplier='{$supplier_id}'>
@@ -239,12 +349,19 @@ $barcodeGenerator = new Picqer\Barcode\BarcodeGeneratorPNG();
               <td>{$barcodeImg}</td>
               <td>{$type}</td>
               <td>{$supplier}</td>
+              <td></td>
+              <td></td>
               <td>{$min_stock}</td>
               <td><span class='status {$statusClass}'>{$statusText}</span></td>
-              <td>
-                <a href='index.php?page=products/updateProduct&id={$id}' class='btn btn-edit'><i class='fa-solid fa-pen'></i></a>
-                <a href='#' class='btn btn-delete' data-id='{$id}'><i class='fa-solid fa-trash'></i></a>
-              </td>
+              <td style='position: relative;'>
+  <button class='action-btn'><i class='fa-solid fa-gear'></i></button>
+  <div class='icon-menu'>
+    <a href='index.php?page=products/updateProduct&id={$id}' class='icon-item edit'><i class='fa-solid fa-pen'></i></a>
+    <a href='#' class='icon-item delete btn-delete' data-id='{$id}'><i class='fa-solid fa-trash'></i></a>
+  </div>
+</td>
+
+
             </tr>";
         }
       } else {
@@ -327,4 +444,21 @@ $barcodeGenerator = new Picqer\Barcode\BarcodeGeneratorPNG();
         .catch(err => console.error('Lỗi xóa sản phẩm:', err));
     }
   });
+
+// --- Menu icon hành động ---
+document.querySelectorAll('.action-btn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    const menu = btn.nextElementSibling;
+    const isVisible = menu.style.display === 'flex';
+    document.querySelectorAll('.icon-menu').forEach(m => m.style.display = 'none');
+    menu.style.display = isVisible ? 'none' : 'flex';
+  });
+});
+
+document.addEventListener('click', () => {
+  document.querySelectorAll('.icon-menu').forEach(menu => menu.style.display = 'none');
+});
+
+
 </script>

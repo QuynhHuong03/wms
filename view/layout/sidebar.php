@@ -233,10 +233,28 @@ $roleId = $users['role_id'] ?? 0;
 
   <?php elseif ($roleId == 2): ?>
     <!-- Quản lý kho tổng -->
-    <a href="index.php?page=receipts/approve" class="<?= $currentPage=='duyetphieunhap'?'active':'' ?>"><i class="fas fa-file-import"></i> Duyệt phiếu nhập kho</a>
-    <a href="index.php?page=duyetphieuxuat" class="<?= $currentPage=='duyetphieuxuat'?'active':'' ?>"><i class="fas fa-file-export"></i> Duyệt phiếu xuất kho</a>
-    <a href="index.php?page=tonkhochinhanh" class="<?= $currentPage=='tonkhochinhanh'?'active':'' ?>"><i class="fas fa-boxes"></i> Tồn kho chi nhánh</a>
-    <a href="index.php?page=products" class="<?= $currentPage=='products'?'active':'' ?>"><i class="fas fa-tags"></i> Danh mục sản phẩm</a>
+    <div class="submenu" id="submenu-reciepts">
+      <a href="javascript:void(0)" class="submenu-toggle">
+        <span><i class="fa-solid fa-file-circle-plus"></i> Phiếu nhập kho tổng</span>
+        <i class="fas fa-chevron-down arrow"></i>
+      </a>
+      <div class="submenu-items">
+        <a href="index.php?page=receipts" class="<?= $currentPage=='users'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu nhập kho</a>
+        <a href="index.php?page=receipts/approve" class="<?= $currentPage=='roles'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Duyệt phiếu nhập kho</a>
+      </div>
+    </div>
+    <div class="submenu" id="submenu-reciepts">
+      <a href="javascript:void(0)" class="submenu-toggle">
+        <span><i class="fas fa-file-export"></i> Phiếu xuất kho tổng</span>
+        <i class="fas fa-chevron-down arrow"></i>
+      </a>
+      <div class="submenu-items">
+        <a href="index.php?page=exports" class="<?= $currentPage=='users'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu xuất kho</a>
+        <a href="index.php?page=exports/approve" class="<?= $currentPage=='roles'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu xuất kho</a>
+      </div>
+    </div>
+    <a href="index.php?page=locations" class="<?= $currentPage=='locations'?'active':'' ?>"><i class="fas fa-boxes"></i> Sơ đồ vị trí kho </a>
+    <!-- <a href="index.php?page=products" class="<?= $currentPage=='products'?'active':'' ?>"><i class="fas fa-tags"></i> Danh mục sản phẩm</a> -->
     <a href="index.php?page=report" class="<?= $currentPage=='report'?'active':'' ?>"><i class="fas fa-chart-line"></i> Báo cáo thống kê</a>
 
   <?php elseif ($roleId == 3): ?>
@@ -252,7 +270,16 @@ $roleId = $users['role_id'] ?? 0;
       </div>
     </div>
     <!-- <a href="index.php?page=receipts" class=""><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu nhập kho tổng</a> -->
-    <a href="index.php?page=phieuxuat" class="<?= $currentPage=='phieuxuat'?'active':'' ?>"><i class="fas fa-file-export"></i> Tạo phiếu xuất kho tổng</a>
+    <div class="submenu" id="submenu-reciepts">
+      <a href="javascript:void(0)" class="submenu-toggle">
+        <span><i class="fas fa-file-export"></i> Phiếu xuất kho tổng</span>
+        <i class="fas fa-chevron-down arrow"></i>
+      </a>
+      <div class="submenu-items">
+        <a href="index.php?page=exports" class="<?= $currentPage=='users'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu xuất kho</a>
+        <a href="index.php?page=exports/approve" class="<?= $currentPage=='roles'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu xuất kho</a>
+      </div>
+    </div>
     <a href="index.php?page=tonkho" class="<?= $currentPage=='tonkho'?'active':'' ?>"><i class="fas fa-boxes"></i> Xem tồn kho tổng</a>
     <a href="index.php?page=report" class="<?= $currentPage=='report'?'active':'' ?>"><i class="fas fa-chart-line"></i> Báo cáo tổng</a>
 

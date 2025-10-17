@@ -1,33 +1,28 @@
 <?php
 // process.php
-// Supports two modes:
-//  - GET with `barcode` => return JSON product info (AJAX)
-//  - POST form submit => create receipt via CReceipt, set session flash and redirect back
+// Hỗ trợ 2 chế độ:
+//  - GET ?barcode=... => trả JSON thông tin sản phẩm (AJAX)
+//  - POST => lưu phiếu nhập qua CReceipt
 
-// Disable display errors to client
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
-// Start session if not already
 if (session_status() === PHP_SESSION_NONE) session_start();
-
-// Use output buffering to avoid accidental output breaking redirects / JSON
 ob_start();
 
-// Include controllers
 $incProduct = @include_once(__DIR__ . '/../../../../controller/cProduct.php');
 $incReceipt = @include_once(__DIR__ . '/../../../../controller/cReceipt.php');
-$buffer = ob_get_clean(); // discard any unintended output from includes
+$buffer = ob_get_clean();
 
 if ($incProduct === false) {
-    error_log('process.php: Không thể include cProduct.php (path check)');
+    error_log('process.php: Không thể include cProduct.php');
 }
 if ($incReceipt === false) {
-    error_log('process.php: Không thể include cReceipt.php (path check)');
+    error_log('process.php: Không thể include cReceipt.php');
 }
 
 try {
-    // --- GET: barcode lookup (AJAX expects JSON) ---
+    // --- GET: tra cứu sản phẩm theo barcode ---
     if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['barcode'])) {
         header('Content-Type: application/json; charset=UTF-8');
 
@@ -38,7 +33,7 @@ try {
         }
 
         if (!class_exists('CProduct')) {
-            error_log('process.php: class CProduct không tồn tại sau include');
+            error_log('process.php: class CProduct không tồn tại');
             echo json_encode(["success" => false, "message" => "Lỗi server"]);
             exit;
         }
@@ -47,24 +42,45 @@ try {
         $product = $p->getProductByBarcode($barcode);
 
         if ($product) {
-            echo json_encode([
-                "success" => true,
-                "product" => [
-                    "_id" => isset($product['sku']) ? $product['sku'] : ($product['_id'] ?? ''),
-                    "name" => $product['product_name'] ?? ($product['name'] ?? ''),
-                    "unit" => $product['unit'] ?? "Cái",
-                    "import_price" => isset($product['import_price']) ? $product['import_price'] : 0
-                ]
-            ]);
+            // ✅ Chuẩn hóa dữ liệu trả về
+            $baseUnit = $product['baseUnit'] ?? 'Cái';
+            $conversionUnits = $product['conversionUnits'] ?? [];
+$id = '';
+if (isset($product['_id'])) {
+    if ($product['_id'] instanceof MongoDB\BSON\ObjectId) {
+        $id = (string)$product['_id']; // ✅ chuyển ObjectId -> chuỗi
+    } elseif (is_array($product['_id']) && isset($product['_id']['$oid'])) {
+        $id = (string)$product['_id']['$oid']; // ✅ trường hợp từ JSON
+    } else {
+        $id = (string)$product['_id'];
+    }
+}
+
+echo json_encode([
+    "success" => true,
+    "product" => [
+        "_id" => $id, // ✅ luôn có chuỗi _id
+        "sku" => $product['sku'] ?? '',
+        "barcode" => $product['barcode'] ?? '',
+        "product_name" => $product['product_name'] ?? '',
+        "baseUnit" => $baseUnit,
+        "conversionUnits" => $conversionUnits,
+        "purchase_price" => $product['purchase_price'] ?? 0
+    ]
+]);
+
         } else {
             echo json_encode(["success" => false, "message" => "Không tìm thấy sản phẩm"]);
         }
         exit;
     }
 
-    // --- POST: form submission to create a receipt ---
+    // --- POST: tạo phiếu nhập ---
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        // Build payload for CReceipt
+        // ✅ DEBUG: Log dữ liệu POST để kiểm tra
+        error_log('=== DEBUG POST DATA ===');
+        error_log('POST products: ' . print_r($_POST['products'] ?? [], true));
+        
         $type = $_POST['type'] ?? null;
         $warehouse_id = $_POST['warehouse_id'] ?? ($_SESSION['warehouse_id'] ?? null);
         $created_by = $_POST['created_by'] ?? ($_SESSION['user_id'] ?? 'system');
@@ -72,21 +88,26 @@ try {
         $source_warehouse_id = $_POST['source_warehouse_id'] ?? null;
         $note = $_POST['note'] ?? null;
 
-        // collect details
         $details = [];
         if (isset($_POST['products']) && is_array($_POST['products'])) {
             foreach ($_POST['products'] as $p) {
-                // expected fields from the form: product_id, quantity, price
                 if (empty($p['product_id'])) continue;
-                $qty = isset($p['quantity']) ? (int)$p['quantity'] : 0;
+                $qty = isset($p['quantity']) ? (float)$p['quantity'] : 0;
                 $price = isset($p['price']) ? (float)$p['price'] : 0.0;
                 if ($qty <= 0) continue;
-                $details[] = [
+
+                $detail = [
                     'product_id' => $p['product_id'],
                     'product_name' => $p['product_name'] ?? '',
                     'quantity' => $qty,
-                    'unit_price' => $price
+                    'unit_price' => $price,
+                    'unit' => $p['unit'] ?? '' // thêm đơn vị tính nếu có
                 ];
+                
+                // ✅ DEBUG: Log từng detail
+                error_log('Detail item: ' . print_r($detail, true));
+                
+                $details[] = $detail;
             }
         }
 
@@ -104,15 +125,14 @@ try {
         if (!class_exists('CReceipt')) {
             error_log('process.php: CReceipt class missing');
             $_SESSION['flash_receipt_error'] = 'Lỗi server: không thể xử lý yêu cầu.';
-            // client-side redirect back to form (use JS so redirects work even after output)
             echo "<script>window.location.href = '../../index.php';</script>";
             exit;
         }
 
         $rc = new CReceipt();
         $result = $rc->createReceipt($payload);
+
         if (is_array($result) && isset($result[0]) && $result[0] === true) {
-            $insertedId = $result[1];
             $_SESSION['flash_receipt'] = 'Tạo phiếu thành công.';
             echo "<script>alert('Tạo phiếu thành công!'); window.location.href = '../index.php?page=receipts';</script>";
             exit;
@@ -124,8 +144,7 @@ try {
         }
     }
 
-    // If reached here, unsupported method
-    // If reached here, method not allowed — notify client via JS so page-based flow handles it
+    // --- method không hợp lệ ---
     echo "<script>alert('Method not allowed'); window.location.href = '../../index.php';</script>";
 
 } catch (\Throwable $e) {
@@ -134,8 +153,27 @@ try {
         header('Content-Type: application/json; charset=UTF-8');
         echo json_encode(["success" => false, "message" => "Lỗi server"]);
     } else {
-        if (session_status() === PHP_SESSION_NONE) session_start();
         $_SESSION['flash_receipt_error'] = 'Lỗi server';
         echo "<script>alert('Lỗi server'); window.location.href = '../../index.php';</script>";
     }
 }
+?>
+
+<form method="post" action="receipts/process.php">
+    <input type="hidden" name="type" value="import">
+    <input type="hidden" name="warehouse_id" value="warehouse_1">
+    <input type="hidden" name="created_by" value="system">
+    <input type="hidden" name="supplier_id" value="supplier_1">
+    <input type="hidden" name="source_warehouse_id" value="warehouse_2">
+    <input type="hidden" name="note" value="Note for import">
+
+    <input type="text" name="products[0][product_id]" value="product_1">
+    <input type="number" name="products[0][quantity]" value="10">
+    <input type="number" name="products[0][price]" value="100.0">
+
+    <input type="text" name="products[1][product_id]" value="product_2">
+    <input type="number" name="products[1][quantity]" value="5">
+    <input type="number" name="products[1][price]" value="200.0">
+
+    <button type="submit">Tạo phiếu nhập</button>
+</form>
