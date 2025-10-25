@@ -1,9 +1,41 @@
 <?php
 include_once(__DIR__ . "/../../../../controller/clocation.php");
+include_once(__DIR__ . "/../../../../model/mInventory.php");
+
+if (session_status() === PHP_SESSION_NONE) session_start();
+
 $c = new CLocation();
+$mInventory = new MInventory();
 $locations = $c->listLocations();
 // Normalize
 if ($locations === false) $locations = [];
+
+// Get current warehouse ID
+$warehouseId = $_SESSION['login']['warehouse_id'] ?? $_SESSION['login']['warehouse'] ?? '';
+
+// Load inventory data to get actual quantities
+$inventoryData = [];
+if ($warehouseId) {
+    try {
+        $allInventory = $mInventory->getInventoryByWarehouse($warehouseId);
+        foreach ($allInventory as $inv) {
+            $zoneId = $inv['zone_id'] ?? '';
+            $rackId = $inv['rack_id'] ?? '';
+            $binId = $inv['bin_id'] ?? '';
+            $qty = isset($inv['qty']) ? (int)$inv['qty'] : 0;
+            
+            if ($zoneId && $rackId && $binId) {
+                $key = $zoneId . '|' . $rackId . '|' . $binId;
+                if (!isset($inventoryData[$key])) {
+                    $inventoryData[$key] = 0;
+                }
+                $inventoryData[$key] += $qty;
+            }
+        }
+    } catch (Exception $e) {
+        error_log('Error loading inventory: ' . $e->getMessage());
+    }
+}
 ?>
 <!DOCTYPE html>
 <html>
@@ -70,21 +102,46 @@ if ($locations === false) $locations = [];
         /* Bins grid inside a rack */
         .bins{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:10px}
         .bin{
-            border:1px solid var(--border);
-            border-radius:8px;
-            padding:8px;
+            border:3px solid var(--border);
+            border-radius:10px;
+            padding:10px 8px;
             text-align:center;
             background:#fff;
-            transition:transform .12s ease,box-shadow .12s ease;
-            min-height:64px;
+            transition:all .2s ease;
+            min-height:80px;
             display:flex;
             flex-direction:column;
             justify-content:center;
-            gap:6px;
+            gap:4px;
+            position:relative;
         }
-        .bin:hover{transform:translateY(-4px);box-shadow:0 6px 14px rgba(16,24,40,0.06)}
-        .bin.full{border-color:var(--danger);background:linear-gradient(180deg,#fff6f6,#fff)}
-        .bin.empty{opacity:.9;background:linear-gradient(180deg,#fbfbff,#fff)}
+        .bin:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,0.12)}
+        
+        /* Màu nhạt, trong suốt theo data-status từ warehouse_structure */
+        .bin[data-status="empty"]{
+            background:rgba(209, 250, 229, 0.5);
+            border-color:#10b981;
+            color:#065f46;
+        }
+        .bin[data-status="empty"] .muted{color:#047857;opacity:0.9}
+        
+        .bin[data-status="partial"]{
+            background:rgba(254, 243, 199, 0.5);
+            border-color:#f59e0b;
+            color:#92400e;
+        }
+        .bin[data-status="partial"] .muted{color:#b45309;opacity:0.9}
+        
+        .bin[data-status="full"]{
+            background:rgba(254, 202, 202, 0.5);
+            border-color:#ef4444;
+            color:#991b1b;
+        }
+        .bin[data-status="full"] .muted{color:#b91c1c;opacity:0.9}
+        
+        /* Fallback cho class-based (backward compatibility) */
+        .bin.full{border-color:#dc2626;background:linear-gradient(135deg, #fca5a5 0%, #f87171 100%)}
+        .bin.empty{background:linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%);border-color:#059669}
         .bin .code{font-weight:700;font-size:13px;margin-bottom:4px}
         .bin .meta{font-size:12px;color:var(--muted)}
         .controls{display:flex;gap:8px;align-items:center}
@@ -128,6 +185,13 @@ if ($locations === false) $locations = [];
         .toast{background:#111827;color:#fff;padding:10px 14px;border-radius:8px;margin-top:8px;box-shadow:0 8px 20px rgba(2,6,23,0.12)}
         .toast.success{background:#059669}
         .toast.error{background:#dc2626}
+        /* Status option styling */
+        .status-option{position:relative}
+        .status-option:hover{background:#f9fafb}
+        .status-option input[type="radio"]:checked + div{font-weight:700}
+        .status-option[data-status="empty"]:has(input:checked){background:#d1fae5;border-color:#10b981}
+        .status-option[data-status="partial"]:has(input:checked){background:#fef3c7;border-color:#f59e0b}
+        .status-option[data-status="full"]:has(input:checked){background:#fecaca;border-color:#dc2626}
     </style>
 </head>
 <body>
@@ -154,6 +218,110 @@ if ($locations === false) $locations = [];
                         <button type="button" class="btn small ghost" onclick="closeAddBinModal()">Hủy</button>
                         <button type="submit" class="btn small">Thêm</button>
                     </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Bin Modal (Name + Status) -->
+    <div id="editBinModal" class="modal" role="dialog" aria-hidden="true">
+        <div class="modal-backdrop" onclick="closeEditBinModal()"></div>
+        <div class="modal-panel" role="document" style="max-width:480px">
+            <h3>✏️ Chỉnh sửa Bin</h3>
+            <form id="editBinForm" onsubmit="return submitEditBin(event)">
+                <input type="hidden" id="editBinZoneId">
+                <input type="hidden" id="editBinRackId">
+                <input type="hidden" id="editBinBinId">
+                
+                <div style="margin-bottom:16px;padding:12px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb">
+                    <div style="font-size:13px;color:#6b7280;margin-bottom:4px">Vị trí:</div>
+                    <div style="font-weight:600" id="editBinLocation"></div>
+                </div>
+                
+                <div style="margin-bottom:16px">
+                    <label style="display:block;margin-bottom:8px;font-weight:600">
+                        📝 Tên Bin:
+                    </label>
+                    <input type="text" id="editBinName" class="form-control" placeholder="Nhập tên bin" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px">
+                    <div style="font-size:12px;color:#6b7280;margin-top:4px">Ví dụ: Bin hàng điện tử, Kệ sách, v.v.</div>
+                </div>
+                
+                <div style="margin-bottom:16px">
+                    <label style="display:block;margin-bottom:8px;font-weight:600">
+                        📍 Trạng thái:
+                    </label>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+                        <label style="display:flex;align-items:center;padding:10px;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;transition:all 0.2s" class="status-option" data-status="empty">
+                            <input type="radio" name="binStatus" value="empty" id="statusEmpty" style="margin-right:8px">
+                            <div>
+                                <div style="font-weight:600;font-size:13px">Empty</div>
+                                <div style="font-size:11px;color:#6b7280">Trống</div>
+                            </div>
+                        </label>
+                        <label style="display:flex;align-items:center;padding:10px;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;transition:all 0.2s" class="status-option" data-status="partial">
+                            <input type="radio" name="binStatus" value="partial" id="statusPartial" style="margin-right:8px">
+                            <div>
+                                <div style="font-weight:600;font-size:13px">Partial</div>
+                                <div style="font-size:11px;color:#6b7280">Một phần</div>
+                            </div>
+                        </label>
+                        <label style="display:flex;align-items:center;padding:10px;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;transition:all 0.2s" class="status-option" data-status="full">
+                            <input type="radio" name="binStatus" value="full" id="statusFull" style="margin-right:8px">
+                            <div>
+                                <div style="font-weight:600;font-size:13px">Full</div>
+                                <div style="font-size:11px;color:#6b7280">Đầy</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                
+                <div style="display:flex;gap:8px;justify-content:flex-end">
+                    <button type="button" class="btn small ghost" onclick="closeEditBinModal()">Hủy</button>
+                    <button type="submit" class="btn small">💾 Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Quantity Modal -->
+    <div id="editQuantityModal" class="modal" role="dialog" aria-hidden="true">
+        <div class="modal-backdrop" onclick="closeEditQuantityModal()"></div>
+        <div class="modal-panel" role="document" style="max-width:420px">
+            <h3>📦 Chỉnh sửa số lượng</h3>
+            <form id="editQuantityForm" onsubmit="return submitEditQuantity(event)">
+                <input type="hidden" id="editQtyZoneId">
+                <input type="hidden" id="editQtyRackId">
+                <input type="hidden" id="editQtyBinId">
+                
+                <div style="margin-bottom:16px;padding:12px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb">
+                    <div style="font-size:13px;color:#6b7280;margin-bottom:4px">Vị trí:</div>
+                    <div style="font-weight:600" id="editQtyLocation"></div>
+                </div>
+                
+                <div style="margin-bottom:16px">
+                    <label style="display:block;margin-bottom:8px;font-weight:600">
+                        Số lượng hiện tại (từ Inventory):
+                    </label>
+                    <div style="padding:12px;background:#dbeafe;border:2px solid #3b82f6;border-radius:8px;font-size:18px;font-weight:700;color:#1e40af;text-align:center" id="editQtyCurrentQty">
+                        0
+                    </div>
+                </div>
+                
+                <div style="margin-bottom:16px">
+                    <label style="display:block;margin-bottom:8px;font-weight:600">
+                        Số lượng mới:
+                        <span style="color:#dc2626;font-weight:400;font-size:13px">(sẽ cập nhật vào Inventory)</span>
+                    </label>
+                    <input type="number" id="editQtyNewValue" class="form-control" min="0" placeholder="Nhập số lượng mới" required style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:8px;font-size:16px">
+                </div>
+                
+                <div style="padding:10px;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:6px;margin-bottom:16px;font-size:13px">
+                    <strong>⚠️ Lưu ý:</strong> Thao tác này sẽ cập nhật số lượng trong bảng <code>inventory</code>. Không ảnh hưởng đến <code>warehouse_structure</code>.
+                </div>
+                
+                <div style="display:flex;gap:8px;justify-content:flex-end">
+                    <button type="button" class="btn small ghost" onclick="closeEditQuantityModal()">Hủy</button>
+                    <button type="submit" class="btn small">💾 Lưu</button>
                 </div>
             </form>
         </div>
@@ -226,20 +394,31 @@ if ($locations === false) $locations = [];
                                                 $bin_id = $bin['bin_id'] ?? '';
                                                 $code = $bin['code'] ?? '';
                                                 $bin_name = $bin['name'] ?? '';
-                                                $quantity = $bin['quantity'] ?? 0;
                                                 $status = $bin['status'] ?? 'empty';
+                                                
+                                                // Get quantity from inventory data
+                                                $locationKey = $zone_id . '|' . $rack_id . '|' . $bin_id;
+                                                $quantity = isset($inventoryData[$locationKey]) ? $inventoryData[$locationKey] : 0;
+                                                
                                                 // Prefer displaying explicit name; else show code; else fallback to bin_id
                                                 $bin_title = $bin_name !== '' ? $bin_name : ($code !== '' ? $code : ($bin_id !== '' ? $bin_id : 'Bin'));
                                             ?>
-                                                            <div class="bin <?= $bin ? ($quantity > 0 ? 'full' : '') : 'empty' ?>" data-bin="<?= htmlspecialchars($bin_id) ?>">
+                                                            <div class="bin" data-bin="<?= htmlspecialchars($bin_id) ?>" data-status="<?= htmlspecialchars($status) ?>">
                                                 <?php if ($bin): ?>
                                                     <div><strong><?=htmlspecialchars($bin_title)?></strong></div>
-                                                                    <div class="muted">Quantity: <?=htmlspecialchars($quantity)?></div>
-                                                    <div class="muted"><?=htmlspecialchars($status)?></div>
+                                                                    <div class="muted" style="cursor:pointer;color:#2563eb;font-weight:600" onclick="editBinQuantity('<?=htmlspecialchars($zone_id)?>','<?=htmlspecialchars($rack_id)?>','<?=htmlspecialchars($bin_id)?>',<?=htmlspecialchars($quantity)?>)" title="Click để sửa số lượng">
+                                                        📦 Qty: <?=htmlspecialchars($quantity)?>
+                                                    </div>
+                                                    <div class="muted" style="cursor:pointer;color:#2563eb" onclick="editBinStatus('<?=htmlspecialchars($zone_id)?>','<?=htmlspecialchars($rack_id)?>','<?=htmlspecialchars($bin_id)?>','<?=htmlspecialchars($status)?>')" title="Click để đổi trạng thái">
+                                                        📍 <?=htmlspecialchars($status)?>
+                                                    </div>
                                                     <div style="margin-top:6px">
                                                         <?php $bin_numeric_id = isset($bin['id']) ? $bin['id'] : ''; ?>
-                                                        <button class="btn small secondary" onclick="editBin('<?=htmlspecialchars($zone_id)?>','<?=htmlspecialchars($rack_id)?>','<?=htmlspecialchars($bin_id)?>')">Edit</button>
-                                                        <button class="btn small" style="background:#ef4444" onclick="deleteBin('<?=htmlspecialchars($zone_id)?>','<?=htmlspecialchars($rack_id)?>','<?=htmlspecialchars($bin_id)?>','<?=htmlspecialchars((string)$bin_numeric_id)?>')">Del</button>
+                                                        <button class="btn small secondary" onclick="editBinName('<?=htmlspecialchars($zone_id)?>','<?=htmlspecialchars($rack_id)?>','<?=htmlspecialchars($bin_id)?>','<?=htmlspecialchars($bin_name)?>')" title="Đổi tên"><i class="fas fa-edit"></i></button>
+                                                        <?php if ($quantity == 0): ?>
+                                                        <button class="btn small" style="background:#f59e0b" onclick="clearBinProduct('<?=htmlspecialchars($zone_id)?>','<?=htmlspecialchars($rack_id)?>','<?=htmlspecialchars($bin_id)?>')" title="Xóa sản phẩm"><i class="fas fa-broom"></i></button>
+                                                        <?php endif; ?>
+                                                        <button class="btn small" style="background:#ef4444" onclick="deleteBin('<?=htmlspecialchars($zone_id)?>','<?=htmlspecialchars($rack_id)?>','<?=htmlspecialchars($bin_id)?>','<?=htmlspecialchars((string)$bin_numeric_id)?>')" title="Xóa"><i class="fas fa-trash-alt"></i></button>
                                                     </div>
                                                         <?php else: ?>
                                                     <div class="muted">Trống</div>
@@ -407,14 +586,128 @@ if ($locations === false) $locations = [];
             else { payload.zone_id = zone_id; payload.rack_id = rack_id; payload.bin_id = bin_id; }
             post(payload).then(res=>{alert(JSON.stringify(res)); if(res.success) location.reload();});
         }
-        function editBin(zone_id,rack_id,bin_id){
-            const quantity = prompt('Quantity:');
-            post({action:'update_bin',zone_id,rack_id,bin_id,binData:{quantity:parseInt(quantity)}}).then(res=>{alert(JSON.stringify(res)); if(res.success) location.reload();});
-        }
 
         function deleteRack(zone_id, rack_id){
             if(!confirm('Xóa rack này cùng toàn bộ bin bên trong?')) return;
             post({action:'delete_rack', zone_id, rack_id}).then(res=>{ alert(JSON.stringify(res)); if(res.success) location.reload(); });
+        }
+
+        function editBinName(zone_id, rack_id, bin_id, current_name){
+            // Get current bin data including status
+            fetch(API, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({action: 'get_bin_data', zone_id, rack_id, bin_id})
+            })
+            .then(res => res.json())
+            .then(data => {
+                const current_status = data.status || 'empty';
+                openEditBinModal(zone_id, rack_id, bin_id, current_name, current_status);
+            })
+            .catch(() => {
+                // Fallback: open with default status
+                openEditBinModal(zone_id, rack_id, bin_id, current_name, 'empty');
+            });
+        }
+
+        function openEditBinModal(zone_id, rack_id, bin_id, current_name, current_status){
+            document.getElementById('editBinZoneId').value = zone_id;
+            document.getElementById('editBinRackId').value = rack_id;
+            document.getElementById('editBinBinId').value = bin_id;
+            document.getElementById('editBinLocation').textContent = zone_id + ' / ' + rack_id + ' / ' + bin_id;
+            document.getElementById('editBinName').value = current_name || '';
+            
+            // Set radio button based on current status
+            const statusRadios = document.getElementsByName('binStatus');
+            statusRadios.forEach(radio => {
+                radio.checked = (radio.value === current_status);
+            });
+            
+            document.getElementById('editBinModal').setAttribute('aria-hidden', 'false');
+        }
+
+        function closeEditBinModal(){
+            document.getElementById('editBinModal').setAttribute('aria-hidden', 'true');
+        }
+
+        function submitEditBin(e){
+            e.preventDefault();
+            const zone_id = document.getElementById('editBinZoneId').value;
+            const rack_id = document.getElementById('editBinRackId').value;
+            const bin_id = document.getElementById('editBinBinId').value;
+            const new_name = document.getElementById('editBinName').value.trim();
+            
+            const statusRadios = document.getElementsByName('binStatus');
+            let new_status = 'empty';
+            statusRadios.forEach(radio => {
+                if(radio.checked) new_status = radio.value;
+            });
+            
+            closeEditBinModal();
+            showToast({success: true, message: 'Đang cập nhật...'});
+            
+            post({
+                action: 'update_bin_full',
+                zone_id,
+                rack_id,
+                bin_id,
+                name: new_name,
+                status: new_status
+            }).then(res => {
+                showToast(res);
+                if(res.success) {
+                    setTimeout(() => location.reload(), 600);
+                }
+            });
+            
+            return false;
+        }
+
+        function clearBinProduct(zone_id, rack_id, bin_id){
+            if(!confirm('Xóa sản phẩm khỏi bin này? (chỉ xóa khi số lượng = 0)')) return;
+            post({action:'clear_bin_product',zone_id,rack_id,bin_id}).then(res=>{
+                showToast(res); 
+                if(res.success) location.reload();
+            });
+        }
+
+        function editBinQuantity(zone_id, rack_id, bin_id, current_qty){
+            document.getElementById('editQtyZoneId').value = zone_id;
+            document.getElementById('editQtyRackId').value = rack_id;
+            document.getElementById('editQtyBinId').value = bin_id;
+            document.getElementById('editQtyLocation').textContent = zone_id + ' / ' + rack_id + ' / ' + bin_id;
+            document.getElementById('editQtyCurrentQty').textContent = current_qty;
+            document.getElementById('editQtyNewValue').value = current_qty;
+            document.getElementById('editQuantityModal').setAttribute('aria-hidden', 'false');
+        }
+
+        function closeEditQuantityModal(){
+            document.getElementById('editQuantityModal').setAttribute('aria-hidden', 'true');
+        }
+
+        function submitEditQuantity(e){
+            e.preventDefault();
+            const zone_id = document.getElementById('editQtyZoneId').value;
+            const rack_id = document.getElementById('editQtyRackId').value;
+            const bin_id = document.getElementById('editQtyBinId').value;
+            const new_qty = parseInt(document.getElementById('editQtyNewValue').value || '0', 10);
+            
+            if(new_qty < 0){
+                alert('Số lượng phải >= 0');
+                return false;
+            }
+            
+            closeEditQuantityModal();
+            showToast({success: true, message: 'Đang cập nhật số lượng...'});
+            
+            post({action:'update_bin_quantity', zone_id, rack_id, bin_id, quantity: new_qty}).then(res=>{
+                showToast(res); 
+                if(res.success) {
+                    setTimeout(() => location.reload(), 600);
+                }
+            });
+            
+            return false;
         }
 
 		// Matrix editor (grid generator removed) — preview-only mode retained below

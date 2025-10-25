@@ -249,8 +249,7 @@ $roleId = $users['role_id'] ?? 0;
         <i class="fas fa-chevron-down arrow"></i>
       </a>
       <div class="submenu-items">
-        <a href="index.php?page=exports" class="<?= $currentPage=='users'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu xuất kho</a>
-        <a href="index.php?page=exports/approve" class="<?= $currentPage=='roles'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu xuất kho</a>
+        <a href="index.php?page=exports" class="<?= $currentPage=='roles'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu xuất kho</a>
       </div>
     </div>
     <a href="index.php?page=locations" class="<?= $currentPage=='locations'?'active':'' ?>"><i class="fas fa-boxes"></i> Sơ đồ vị trí kho </a>
@@ -280,16 +279,35 @@ $roleId = $users['role_id'] ?? 0;
         <a href="index.php?page=exports/approve" class="<?= $currentPage=='roles'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu xuất kho</a>
       </div>
     </div>
-    <a href="index.php?page=tonkho" class="<?= $currentPage=='tonkho'?'active':'' ?>"><i class="fas fa-boxes"></i> Xem tồn kho tổng</a>
+    <a href="index.php?page=inventory" class="<?= $currentPage=='inventory'?'active':'' ?>"><i class="fas fa-boxes"></i> Xem tồn kho tổng</a>
     <a href="index.php?page=report" class="<?= $currentPage=='report'?'active':'' ?>"><i class="fas fa-chart-line"></i> Báo cáo tổng</a>
 
   <?php elseif ($roleId == 4): ?>
     <!-- Quản lý kho chi nhánh -->
-    <a href="index.php?page=duyetphieunhapchinhanh" class="<?= $currentPage=='duyetphieunhapchinhanh'?'active':'' ?>"><i class="fas fa-file-import"></i> Duyệt phiếu nhập kho chi nhánh</a>
-    <a href="index.php?page=duyetphieuxuatchinhanh" class="<?= $currentPage=='duyetphieuxuatchinhanh'?'active':'' ?>"><i class="fas fa-file-export"></i> Duyệt phiếu xuất kho chi nhánh</a>
-    <a href="index.php?page=tonkhochinhanh" class="<?= $currentPage=='tonkhochinhanh'?'active':'' ?>"><i class="fas fa-boxes"></i> Xem tồn kho chi nhánh</a>
-    <a href="index.php?page=reportchinhanh" class="<?= $currentPage=='reportchinhanh'?'active':'' ?>"><i class="fas fa-chart-line"></i> Báo cáo chi nhánh</a>
-
+    <div class="submenu" id="submenu-reciepts">
+      <a href="javascript:void(0)" class="submenu-toggle">
+        <span><i class="fa-solid fa-file-circle-plus"></i> Phiếu nhập kho </span>
+        <i class="fas fa-chevron-down arrow"></i>
+      </a>
+      <div class="submenu-items">
+        <a href="index.php?page=receipts" class="<?= $currentPage=='users'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu nhập kho</a>
+        <a href="index.php?page=receipts/approve" class="<?= $currentPage=='roles'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Duyệt phiếu nhập kho</a>
+      </div>
+    </div>
+    <div class="submenu" id="submenu-reciepts">
+      <a href="javascript:void(0)" class="submenu-toggle">
+        <span><i class="fas fa-file-export"></i> Phiếu xuất kho </span>
+        <i class="fas fa-chevron-down arrow"></i>
+      </a>
+      <div class="submenu-items">
+        <a href="index.php?page=exports" class="<?= $currentPage=='users'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu xuất kho</a>
+        <a href="index.php?page=exports/approve" class="<?= $currentPage=='roles'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu xuất kho</a>
+      </div>
+    </div>
+    <a href="index.php?page=locations" class="<?= $currentPage=='locations'?'active':'' ?>"><i class="fas fa-boxes"></i> Sơ đồ vị trí kho </a>
+    <!-- <a href="index.php?page=products" class="<?= $currentPage=='products'?'active':'' ?>"><i class="fas fa-tags"></i> Danh mục sản phẩm</a> -->
+    <a href="index.php?page=report" class="<?= $currentPage=='report'?'active':'' ?>"><i class="fas fa-chart-line"></i> Báo cáo thống kê</a>
+    <a href="index.php?page=goodsReceiptRequest" class="<?= $currentPage=='goodsReceiptRequest'?'active':'' ?>"><i class="fas fa-chart-line"></i> Phiếu yêu cầu nhập hàng</a>
   <?php elseif ($roleId == 5): ?>
     <!-- Nhân viên kho chi nhánh -->
     <a href="index.php?page=phieunhapchinhanh" class="<?= $currentPage=='phieunhapchinhanh'?'active':'' ?>"><i class="fas fa-file-import"></i> Tạo phiếu nhập kho chi nhánh</a>

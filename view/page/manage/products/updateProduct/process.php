@@ -8,7 +8,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnUpdate"])) {
     $barcode       = trim($_POST["barcode"] ?? '');
     $category_id   = trim($_POST["category_id"] ?? '');
     $supplier_id   = trim($_POST["supplier_id"] ?? '');
-    $model_id      = trim($_POST["model_id"] ?? '');
+    $model         = trim($_POST["model"] ?? ''); // Model là text
     $status        = (int)($_POST["status"] ?? 1);
     $min_stock     = (int)($_POST["min_stock"] ?? 0);
     $description   = trim($_POST["description"] ?? '');
@@ -40,7 +40,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnUpdate"])) {
     // --- Lấy thông tin phụ ---
     include_once(__DIR__ . '/../../../../../controller/cCategories.php');
     include_once(__DIR__ . '/../../../../../controller/cSupplier.php');
-    include_once(__DIR__ . '/../../../../../controller/cModel.php');
 
     $catObj = new CCategories();
     $categories = $catObj->getAllCategories();
@@ -51,11 +50,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnUpdate"])) {
     $suppliers = $supObj->getAllSuppliers();
     $sup = array_values(array_filter($suppliers, fn($s) => $s['supplier_id'] == $supplier_id))[0] ?? [];
     $supplier_name = $sup['supplier_name'] ?? $sup['name'] ?? '';
-
-    $modelObj = new CModel();
-    $models = $modelObj->getAllModels();
-    $model = array_values(array_filter($models, fn($m) => $m['model_id'] == $model_id))[0] ?? [];
-    $model_code = $model['model_code'] ?? '';
 
     // --- Chuẩn hóa conversionUnits ---
     $conversionList = [];
@@ -73,7 +67,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnUpdate"])) {
         'barcode' => $barcode,
         'category' => ['id' => $category_id, 'name' => $category_name],
         'supplier' => ['id' => $supplier_id, 'name' => $supplier_name],
-        'model' => ['id' => $model_id, 'code' => $model_code],
+        'model' => $model, // Model là text
         'baseUnit' => $base_unit,
         'conversionUnits' => $conversionList,
         'min_stock' => $min_stock,

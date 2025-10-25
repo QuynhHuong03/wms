@@ -20,9 +20,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnAdd"])) {
     $product_name    = trim($_POST["product_name"] ?? '');
     $category_id     = trim($_POST["category_id"] ?? '');
     $supplier_id     = trim($_POST["supplier_id"] ?? '');
-    $model_id        = trim($_POST["model_id"] ?? '');
+    $model           = trim($_POST["model"] ?? ''); // Model là text input
     $status          = (int)($_POST["status"] ?? 1);
-    $purchase_price  = (float)($_POST["purchase_price"] ?? 0);
     $min_stock       = (int)($_POST["min_stock"] ?? 0);
     $description     = trim($_POST["description"] ?? '');
     $base_unit       = trim($_POST["base_unit"] ?? '');
@@ -38,7 +37,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnAdd"])) {
     if ($category_id === '')  $errors[] = "Loại sản phẩm không được để trống.";
     if ($supplier_id === '')  $errors[] = "Nhà cung cấp không được để trống.";
     if ($base_unit === '')    $errors[] = "Phải chọn đơn vị tính chính.";
-    if ($purchase_price < 0)  $errors[] = "Giá nhập không hợp lệ.";
     if ($min_stock < 0)       $errors[] = "Tồn kho tối thiểu không hợp lệ.";
 
     if (!empty($errors)) {
@@ -49,7 +47,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnAdd"])) {
     // --- Lấy thông tin liên quan ---
     include_once(__DIR__ . '/../../../../../controller/cCategories.php');
     include_once(__DIR__ . '/../../../../../controller/cSupplier.php');
-    include_once(__DIR__ . '/../../../../../controller/cModel.php');
 
     $categoryObj = new CCategories();
     $categories = $categoryObj->getAllCategories();
@@ -64,13 +61,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnAdd"])) {
     $supplier = reset($supplier);
     $supplier_name = $supplier['supplier_name'] ?? $supplier['name'] ?? '';
 
-    $modelObj = new CModel();
-    $models = $modelObj->getAllModels();
-    $model = array_filter($models, fn($m) => $m['model_id'] == $model_id);
-    $model = reset($model);
-    $model_code = $model['model_code'] ?? '';
-
-    // --- Lấy ID tự tăng & sinh SKU ---
+    // --- Lấy ID tự tăng & sinh SKU từ category_code + ID ---
     $cProduct = new CProduct();
     $products = $cProduct->getAllProducts();
     $maxId = 0;
@@ -78,7 +69,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnAdd"])) {
         if (isset($product['id']) && $product['id'] > $maxId) $maxId = $product['id'];
     }
     $nextId = $maxId + 1;
-    $sku = $category_code . '-' . $model_code . '-' . $nextId;
+    $sku = $category_code . '-' . str_pad($nextId, 4, '0', STR_PAD_LEFT); // VD: LAPTOP-0001
 
     // --- Kiểm tra trùng SKU ---
     foreach ($products as $p) {
@@ -115,13 +106,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnAdd"])) {
             'id' => $supplier_id,
             'name' => $supplier_name
         ],
-        'model' => [
-            'id' => $model_id,
-            'code' => $model_code
-        ],
+        'model' => $model, // Model là text
         'baseUnit' => $base_unit,
         'conversionUnits' => $conversionList,
-        'purchase_price' => $purchase_price,
         'min_stock' => $min_stock,
         'description' => $description,
         'status' => $status,

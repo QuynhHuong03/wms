@@ -1,11 +1,9 @@
 <?php
 include_once(__DIR__ . '/../../../../../controller/cCategories.php');
 include_once(__DIR__ . '/../../../../../controller/cSupplier.php');
-include_once(__DIR__ . '/../../../../../controller/cModel.php');
 
 $categories = (new CCategories())->getAllCategories();
 $suppliers = (new CSupplier())->getAllSuppliers();
-$models = (new CModel())->getAllModels();
 
 // Đơn vị có sẵn
 $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', 'chai', 'tuýp'];
@@ -138,15 +136,8 @@ $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', '
       </div>
 
       <div class="form-group">
-        <label for="model_id">Model</label>
-        <select id="model_id" name="model_id">
-          <option value="">-- Chọn model --</option>
-          <?php foreach ($models as $m): ?>
-            <option value="<?= $m['model_id']; ?>">
-              <?= $m['model_name'] ?? $m['model_id']; ?>
-            </option>
-          <?php endforeach; ?>
-        </select>
+        <label for="model">Model</label>
+        <input type="text" id="model" name="model" placeholder="Nhập model sản phẩm (VD: XS-2024)">
       </div>
 
       <div class="form-group">
@@ -182,11 +173,6 @@ $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', '
           <?php endforeach; ?>
         </select>
         <p class="hint">Đơn vị chính là đơn vị nhỏ nhất (ví dụ: cái, chiếc)</p>
-      </div>
-
-      <div class="form-group">
-        <label for="purchase_price">Giá nhập (theo đơn vị chính)</label>
-        <input type="number" id="purchase_price" name="purchase_price" min="0" value="0" required>
       </div>
 
       <div class="form-group">

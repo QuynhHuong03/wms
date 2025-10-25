@@ -29,8 +29,8 @@ $created_date  = fmtDate($receipt['created_at'] ?? '');
 $approved_date = fmtDate($receipt['approved_at'] ?? '');
 
 // 🔹 Trạng thái
-$statusText  = ['Chờ duyệt', 'Đã duyệt', 'Từ chối'];
-$statusClass = ['pending', 'approved', 'rejected'];
+$statusText  = ['Chờ duyệt', 'Đã duyệt', 'Từ chối', 'Đã hoàn tất'];
+$statusClass = ['pending', 'approved', 'rejected', 'located'];
 $status = (int)($receipt['status'] ?? 0);
 ?>
 <!DOCTYPE html>
@@ -58,6 +58,7 @@ $status = (int)($receipt['status'] ?? 0);
     .pending{background:#fff3cd;color:#856404;}
     .approved{background:#d4edda;color:#155724;}
     .rejected{background:#f8d7da;color:#721c24;}
+  .located{background:#cce5ff;color:#004085;}
     table {width:100%;border-collapse:collapse;margin:20px 0;}
     th,td {border:1px solid #e1e4e8;padding:10px 12px;text-align:center;font-size:15px;}
     th {background:#f9fafb;font-weight:600;}
@@ -200,6 +201,12 @@ $status = (int)($receipt['status'] ?? 0);
       <button class="btn btn-reject" onclick="confirmAction('reject', '<?= $receipt['transaction_id'] ?>')">
         <i class="fa-solid fa-xmark"></i> Từ chối
       </button>
+    <?php endif; ?>
+
+    <?php if ($status === 1 || $status === 3): ?>
+      <a href="index.php?page=receipts/locate&id=<?= $receipt['transaction_id'] ?>" class="btn btn-approve" title="Xem/Sửa vị trí đã xếp">
+        <i class="fa-solid fa-location-dot"></i> Xem/Sửa vị trí đã xếp
+      </a>
     <?php endif; ?>
   </div>
 </div>

@@ -2,12 +2,10 @@
 include_once(__DIR__ . '/../../../../../controller/cProduct.php');
 include_once(__DIR__ . '/../../../../../controller/cCategories.php');
 include_once(__DIR__ . '/../../../../../controller/cSupplier.php');
-include_once(__DIR__ . '/../../../../../controller/cModel.php');
 
 $cProduct = new CProduct();
 $categories = (new CCategories())->getAllCategories();
 $suppliers = (new CSupplier())->getAllSuppliers();
-$models = (new CModel())->getAllModels();
 
 // Danh sách đơn vị
 $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', 'chai', 'tuýp'];
@@ -137,16 +135,8 @@ if (!$product) {
       </div>
 
       <div class="form-group">
-        <label for="model_id">Model</label>
-        <select id="model_id" name="model_id">
-          <option value="">-- Chọn model --</option>
-          <?php foreach ($models as $m): ?>
-            <option value="<?= $m['model_id']; ?>"
-              <?= ($product['model']['id'] ?? '') == $m['model_id'] ? 'selected' : ''; ?>>
-              <?= $m['model_name'] ?? $m['model_id']; ?>
-            </option>
-          <?php endforeach; ?>
-        </select>
+        <label for="model">Model</label>
+        <input type="text" id="model" name="model" value="<?= is_string($product['model'] ?? '') ? $product['model'] : ($product['model']['code'] ?? '') ?>" placeholder="Nhập model sản phẩm (VD: XS-2024)">
       </div>
 
       <div class="form-group">

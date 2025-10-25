@@ -526,6 +526,207 @@ if (!$data) {
                 echo json_encode(['success' => (bool)$res, 'message' => $res ? 'Xóa thành công' : 'Xóa thất bại']);
             }
             break;
+        case 'update_bin_status':
+            // Update only the status field of a bin
+            // payload: { action:'update_bin_status', zone_id, rack_id, bin_id, status }
+            $status = $data['status'] ?? 'empty';
+            $validStatuses = ['empty', 'partial', 'full'];
+            if (!in_array($status, $validStatuses)) {
+                echo json_encode(['success' => false, 'message' => 'Trạng thái không hợp lệ']);
+                break;
+            }
+            $res = $c->updateBin($data['zone_id'] ?? '', $data['rack_id'] ?? '', $data['bin_id'] ?? '', ['status' => $status]);
+            if (is_array($res)) {
+                if (!empty($res['success'])) $res['message'] = $res['message'] ?? 'Cập nhật trạng thái thành công';
+                else $res['message'] = $res['message'] ?? 'Cập nhật trạng thái thất bại';
+                echo json_encode($res);
+            } else {
+                echo json_encode(['success' => (bool)$res, 'message' => $res ? 'Cập nhật trạng thái thành công' : 'Cập nhật trạng thái thất bại']);
+            }
+            break;
+        case 'get_bin_data':
+            // Get bin data for editing
+            // payload: { action:'get_bin_data', zone_id, rack_id, bin_id }
+            $zone_id = $data['zone_id'] ?? '';
+            $rack_id = $data['rack_id'] ?? '';
+            $bin_id = $data['bin_id'] ?? '';
+            
+            if (!$zone_id || !$rack_id || !$bin_id) {
+                echo json_encode(['success' => false, 'message' => 'Thiếu thông tin']);
+                break;
+            }
+            
+            try {
+                $bin = null;
+                if ($sessionWarehouseId) {
+                    $binData = $c->m->getBinFromWarehouse($sessionWarehouseId, $zone_id, $rack_id, ['bin_id' => $bin_id]);
+                    $bin = $binData['bin'] ?? null;
+                } else {
+                    $binData = $c->m->getBinFromZone($zone_id, $rack_id, ['bin_id' => $bin_id]);
+                    $bin = $binData;
+                }
+                
+                if ($bin) {
+                    echo json_encode([
+                        'success' => true,
+                        'name' => $bin['name'] ?? '',
+                        'status' => $bin['status'] ?? 'empty',
+                        'quantity' => $bin['quantity'] ?? 0
+                    ]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Không tìm thấy bin']);
+                }
+            } catch (\Throwable $e) {
+                echo json_encode(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()]);
+            }
+            break;
+        case 'update_bin_full':
+            // Update both name and status of a bin
+            // payload: { action:'update_bin_full', zone_id, rack_id, bin_id, name, status }
+            $zone_id = $data['zone_id'] ?? '';
+            $rack_id = $data['rack_id'] ?? '';
+            $bin_id = $data['bin_id'] ?? '';
+            $name = $data['name'] ?? '';
+            $status = $data['status'] ?? 'empty';
+            
+            $validStatuses = ['empty', 'partial', 'full'];
+            if (!in_array($status, $validStatuses)) {
+                echo json_encode(['success' => false, 'message' => 'Trạng thái không hợp lệ']);
+                break;
+            }
+            
+            $updateData = [
+                'name' => $name,
+                'status' => $status
+            ];
+            
+            $res = $c->updateBin($zone_id, $rack_id, $bin_id, $updateData);
+            if (is_array($res)) {
+                if (!empty($res['success'])) $res['message'] = $res['message'] ?? 'Cập nhật thành công';
+                else $res['message'] = $res['message'] ?? 'Cập nhật thất bại';
+                echo json_encode($res);
+            } else {
+                echo json_encode(['success' => (bool)$res, 'message' => $res ? 'Cập nhật thành công' : 'Cập nhật thất bại']);
+            }
+            break;
+        case 'clear_bin_product':
+            // Clear product from bin (only if quantity is 0)
+            // payload: { action:'clear_bin_product', zone_id, rack_id, bin_id }
+            $zone_id = $data['zone_id'] ?? '';
+            $rack_id = $data['rack_id'] ?? '';
+            $bin_id = $data['bin_id'] ?? '';
+            
+            if (!$zone_id || !$rack_id || !$bin_id) {
+                echo json_encode(['success' => false, 'message' => 'Thiếu thông tin zone/rack/bin']);
+                break;
+            }
+            
+            // Check if bin has quantity = 0 first (from inventory)
+            try {
+                include_once(__DIR__ . '/../../../../model/mInventory.php');
+                $mInv = new MInventory();
+                
+                // Get total quantity from inventory
+                $totalQty = 0;
+                if ($sessionWarehouseId) {
+                    $totalQty = $mInv->sumQuantityByBin($sessionWarehouseId, $zone_id, $rack_id, $bin_id);
+                }
+                
+                if ($totalQty > 0) {
+                    echo json_encode(['success' => false, 'message' => 'Chỉ có thể xóa sản phẩm khi số lượng = 0 trong inventory']);
+                    break;
+                }
+                
+                // Clear product and set status to empty
+                $res = $c->updateBin($zone_id, $rack_id, $bin_id, [
+                    'product' => null,
+                    'status' => 'empty',
+                    'quantity' => 0
+                ]);
+                
+                if (is_array($res)) {
+                    if (!empty($res['success'])) $res['message'] = $res['message'] ?? 'Đã xóa sản phẩm khỏi bin';
+                    else $res['message'] = $res['message'] ?? 'Xóa sản phẩm thất bại';
+                    echo json_encode($res);
+                } else {
+                    echo json_encode(['success' => (bool)$res, 'message' => $res ? 'Đã xóa sản phẩm khỏi bin' : 'Xóa sản phẩm thất bại']);
+                }
+            } catch (\Throwable $e) {
+                echo json_encode(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()]);
+            }
+            break;
+        case 'update_bin_quantity':
+            // Update bin quantity in inventory
+            // payload: { action:'update_bin_quantity', zone_id, rack_id, bin_id, quantity }
+            $zone_id = $data['zone_id'] ?? '';
+            $rack_id = $data['rack_id'] ?? '';
+            $bin_id = $data['bin_id'] ?? '';
+            $quantity = isset($data['quantity']) ? (int)$data['quantity'] : 0;
+            
+            if (!$zone_id || !$rack_id || !$bin_id) {
+                echo json_encode(['success' => false, 'message' => 'Thiếu thông tin zone/rack/bin']);
+                break;
+            }
+            
+            if ($quantity < 0) {
+                echo json_encode(['success' => false, 'message' => 'Số lượng phải >= 0']);
+                break;
+            }
+            
+            try {
+                include_once(__DIR__ . '/../../../../model/mInventory.php');
+                $mInv = new MInventory();
+                
+                if (!$sessionWarehouseId) {
+                    echo json_encode(['success' => false, 'message' => 'Không xác định được warehouse']);
+                    break;
+                }
+                
+                // Find existing inventory entry for this bin
+                $existingEntry = $mInv->findEntry([
+                    'warehouse_id' => $sessionWarehouseId,
+                    'zone_id' => $zone_id,
+                    'rack_id' => $rack_id,
+                    'bin_id' => $bin_id
+                ]);
+                
+                $success = false;
+                if ($existingEntry) {
+                    // Update existing entry
+                    $entryId = $existingEntry['_id'];
+                    $success = $mInv->updateEntry($entryId, ['qty' => $quantity]);
+                } else if ($quantity > 0) {
+                    // Insert new entry only if quantity > 0
+                    $entryData = [
+                        'warehouse_id' => $sessionWarehouseId,
+                        'zone_id' => $zone_id,
+                        'rack_id' => $rack_id,
+                        'bin_id' => $bin_id,
+                        'qty' => $quantity,
+                        'product_id' => '',
+                        'product_sku' => '',
+                        'product_name' => 'Manual Entry',
+                        'receipt_id' => 'MANUAL-' . date('YmdHis'),
+                        'receipt_code' => 'MANUAL',
+                        'note' => 'Cập nhật thủ công từ quản lý locations',
+                        'received_at' => new MongoDB\BSON\UTCDateTime(),
+                        'type' => 'manual'
+                    ];
+                    $success = $mInv->insertEntry($entryData);
+                } else {
+                    // quantity = 0 and no existing entry, nothing to do
+                    $success = true;
+                }
+                
+                if ($success) {
+                    echo json_encode(['success' => true, 'message' => 'Cập nhật số lượng thành công']);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Không thể cập nhật số lượng']);
+                }
+            } catch (\Throwable $e) {
+                echo json_encode(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()]);
+            }
+            break;
         default:
             echo json_encode(['success'=>false,'message'=>'Unknown action']);
     }

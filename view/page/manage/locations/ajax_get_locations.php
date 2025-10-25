@@ -10,6 +10,7 @@ if ($ROOT === false) { echo '<div style="color:red">Path error</div>'; exit; }
 
 // Load controller
 require_once($ROOT . '/controller/clocation.php');
+require_once($ROOT . '/model/mInventory.php');
 
 // Start session in case controller depends on it
 if (session_status() === PHP_SESSION_NONE) @session_start();
@@ -18,6 +19,7 @@ $warehouseId = isset($_GET['warehouse_id']) ? trim($_GET['warehouse_id']) : null
 
 $c = new CLocation();
 $m = new MLocation();
+$mInventory = new MInventory();
 
 // If no warehouse id passed, try from session
 if (!$warehouseId) {
@@ -36,6 +38,48 @@ if (!$loc || empty($loc['zones'])) {
     exit;
 }
 
+// Load all inventory data for this warehouse to map to bins
+$inventoryData = [];
+try {
+    $allInventory = $mInventory->getInventoryByWarehouse($warehouseId);
+    // Group by location (zone_id, rack_id, bin_id)
+    foreach ($allInventory as $inv) {
+        $zoneId = $inv['zone_id'] ?? '';
+        $rackId = $inv['rack_id'] ?? '';
+        $binId = $inv['bin_id'] ?? '';
+        $productId = $inv['product_id'] ?? '';
+        $productName = $inv['product_name'] ?? '';
+        $qty = isset($inv['qty']) ? (int)$inv['qty'] : 0;
+        
+        if ($zoneId && $rackId && $binId) {
+            $key = $zoneId . '|' . $rackId . '|' . $binId;
+            if (!isset($inventoryData[$key])) {
+                $inventoryData[$key] = [
+                    'quantity' => 0,
+                    'product_id' => '',
+                    'product_name' => '',
+                    'products' => []
+                ];
+            }
+            
+            $inventoryData[$key]['quantity'] += $qty;
+            
+            // Store product info (use first product if multiple)
+            if (empty($inventoryData[$key]['product_id']) && $productId) {
+                $inventoryData[$key]['product_id'] = $productId;
+                $inventoryData[$key]['product_name'] = $productName;
+            }
+            
+            // Track all products in this bin
+            if ($productId && !in_array($productId, $inventoryData[$key]['products'])) {
+                $inventoryData[$key]['products'][] = $productId;
+            }
+        }
+    }
+} catch (Exception $e) {
+    error_log('Error loading inventory data: ' . $e->getMessage());
+}
+
 // Basic styles (scoped)
 ?>
 <style>
@@ -48,9 +92,18 @@ if (!$loc || empty($loc['zones'])) {
 .rack-title{font-weight:600;margin:0 0 6px;color:#374151;font-size:13px}
 /* Compact bins and allow more columns */
 .bin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px}
-.bin{border:1px solid #e5e7eb;border-radius:8px;padding:6px 4px;text-align:center;background:#fff}
+.bin{border:2px solid #e5e7eb;border-radius:8px;padding:6px 4px;text-align:center;background:#fff;cursor:pointer;transition:all 0.2s}
+.bin:hover{transform:translateY(-2px);box-shadow:0 4px 8px rgba(0,0,0,0.15)}
 .bin .code{font-weight:700;font-size:11px;line-height:1.2}
-.bin .meta{font-size:10px;color:#6b7280}
+/* Quantity line */
+.bin .qty{font-size:10px;line-height:1.2;opacity:.85;margin-top:2px}
+/* Status colors - dựa vào dữ liệu inventory */
+.bin[data-status="empty"]{background:#d1fae5;border-color:#10b981;color:#065f46}
+.bin[data-status="empty"] .qty{color:#047857;opacity:1;font-weight:600}
+.bin[data-status="partial"]{background:#fef3c7;border-color:#f59e0b;color:#78350f}
+.bin[data-status="partial"] .qty{color:#92400e;opacity:1;font-weight:600}
+.bin[data-status="full"]{background:#fecaca;border-color:#dc2626;color:#7f1d1d}
+.bin[data-status="full"] .qty{color:#991b1b;opacity:1;font-weight:700}
 </style>
 <div class="location-wrap">
 <?php foreach ($loc['zones'] as $z): ?>
@@ -67,12 +120,53 @@ if (!$loc || empty($loc['zones'])) {
             <div class="muted">Chưa có bin.</div>
           <?php else: ?>
             <div class="bin-grid">
-              <?php foreach ($bins as $b): ?>
-                <div class="bin">
-                  <div class="code"><?= htmlspecialchars($b['code'] ?? ($b['bin_id'] ?? '')) ?></div>
-                  <div class="meta">
-                    <?= isset($b['current_load']) ? ((int)$b['current_load']) : 0 ?>/<?= isset($b['capacity']) ? ((int)$b['capacity']) : 0 ?>
-                  </div>
+              <?php foreach ($bins as $b): 
+                $binId = $b['bin_id'] ?? ($b['id'] ?? '');
+                $binCode = $b['code'] ?? $binId;
+                $cap = $b['capacity'] ?? 0;
+                
+                // Lấy status từ cột status trong warehouse_structure (bin)
+                $status = $b['status'] ?? 'empty';
+                
+                // Get data from inventory for quantity and product only
+                $zoneId = $z['_id'] ?? ($z['zone_id'] ?? '');
+                $rackId = $r['rack_id'] ?? '';
+                $locationKey = $zoneId . '|' . $rackId . '|' . $binId;
+                
+                $qty = 0;
+                $product = '';
+                $productId = '';
+                
+                if (isset($inventoryData[$locationKey])) {
+                    $qty = $inventoryData[$locationKey]['quantity'];
+                    $productId = $inventoryData[$locationKey]['product_id'];
+                    $product = $inventoryData[$locationKey]['product_name'];
+                    if (!$product && $productId) {
+                        $product = $productId;
+                    }
+                }
+                
+                $productLabel = is_string($product) ? trim($product) : '';
+                
+                $titleParts = [];
+                $titleParts[] = 'Trạng thái: ' . htmlspecialchars($status);
+                $titleParts[] = 'Sản phẩm: ' . ($productLabel !== '' ? htmlspecialchars($productLabel) : '(trống)');
+                $titleParts[] = 'Số lượng: ' . (int)$qty;
+                if ((int)$cap > 0) { $titleParts[] = 'Sức chứa: ' . (int)$cap; }
+                $titleText = implode(' | ', $titleParts);
+              ?>
+       <div class="bin" 
+         data-zone="<?= htmlspecialchars($zoneId) ?>"
+                     data-rack="<?= htmlspecialchars($rackId) ?>"
+                     data-bin="<?= htmlspecialchars($binId) ?>"
+                     data-code="<?= htmlspecialchars($binCode) ?>"
+                     data-quantity="<?= (int)$qty ?>"
+                     data-capacity="<?= (int)$cap ?>"
+                     data-status="<?= htmlspecialchars($status) ?>"
+                     data-product="<?= htmlspecialchars($productId) ?>"
+                     title="<?= $titleText ?>">
+                  <div class="code"><?= htmlspecialchars($binCode) ?></div>
+                  <div class="qty"><?= number_format((int)$qty, 0, ',', '.') ?></div>
                 </div>
               <?php endforeach; ?>
             </div>

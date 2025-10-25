@@ -9,14 +9,17 @@ $user_id = $_SESSION['login']['user_id'] ?? 'U001';
 $role = $_SESSION['login']['role'] ?? 'staff';
 $role_name = $_SESSION['login']['role_name'] ?? '';
 $role_id = $_SESSION['login']['role_id'] ?? '';
+$warehouse_id = $_SESSION['warehouse_id'] ?? ($_SESSION['login']['warehouse_id'] ?? null);
 
 $allowedRoles = ['manager', 'admin', 'QL_Kho_Tong', 'QL_Kho_CN'];
 $allowedRoleIds = [2, 4];
 $isManager = in_array($role, $allowedRoles) || in_array($role_name, $allowedRoles) || in_array($role_id, $allowedRoleIds);
 
-if ($isManager) {
-  $receipts = $cReceipt->getAllReceipts();
+// Lấy phiếu theo warehouse_id của người đăng nhập
+if ($warehouse_id) {
+  $receipts = $cReceipt->getReceiptsByWarehouse($warehouse_id);
 } else {
+  // Nếu không có warehouse_id, lấy theo user_id như cũ
   $receipts = $cReceipt->getReceiptsByUserWithUserInfo($user_id);
 }
 ?>
@@ -79,6 +82,7 @@ if ($isManager) {
   <table id="receipt-table">
     <thead>
       <tr>
+        <th>STT</th>
         <th>Mã phiếu</th>
         <th>Ngày tạo</th>
         <th>Người tạo</th>
@@ -92,13 +96,14 @@ if ($isManager) {
     <tbody>
       <?php 
       if ($receipts && iterator_count($receipts) > 0) {
+        $stt = 1; // Khởi tạo STT
         foreach ($receipts as $r) {
           $status = (int)($r['status'] ?? 0);
           switch ($status) {
             case 0: $class='pending'; $text='Chờ duyệt'; break;
             case 1: $class='approved'; $text='Đã duyệt'; break;
             case 2: $class='rejected'; $text='Từ chối'; break;
-            case 3: $class='located'; $text='Hoàn tất xếp hàng'; break;
+            case 3: $class='located'; $text='Đã hoàn tất'; break;
             default: $class='pending'; $text='Không xác định';
           }
 
@@ -115,6 +120,7 @@ if ($isManager) {
 
           echo "
             <tr data-status='$class' data-type='{$r['type']}'>
+              <td>$stt</td>
               <td>{$r['transaction_id']}</td>
               <td>$created_date</td>
               <td>".($r['creator_name'] ?? $r['created_by'])."</td>
@@ -123,7 +129,10 @@ if ($isManager) {
               <td><span class='status $class'>$text</span></td>
               <td>{$total} đ</td>
               <td>
-                <a href='index.php?page=receipts/approve/detail&id={$r['transaction_id']}' class='btn btn-view'><i class='fa-solid fa-eye'></i></a>
+                <a href='index.php?page=receipts/approve/detail&id={$r['transaction_id']}' class='btn btn-view' title='Xem chi tiết'>
+                  <i class='fa-solid fa-eye'></i> Xem
+                </a>
+
           ";
 
           // Nếu là quản lý và phiếu đang chờ duyệt
@@ -137,16 +146,26 @@ if ($isManager) {
           // Nếu là nhân viên và phiếu đã duyệt (được phép xếp hàng)
           if (!$isManager && $status === 1) {
             echo "
-              <a href='index.php?page=receipts/locate&id={$r['transaction_id']}' class='btn btn-locate'>
-                <i class='fa-solid fa-boxes-stacked'></i> Xếp hàng
-              </a>
+                <a href='index.php?page=receipts/locate&id={$r['transaction_id']}' class='btn btn-locate' title='Xếp hàng'>
+                  <i class=\"fa-solid fa-dolly\"></i> Xếp hàng
+                </a>
+            ";
+          }
+
+          // Nút 'Vị trí' cho duyệt/hoàn tất (quản lý hoặc nhân viên đều xem lại/sửa được)
+          if (($status === 1 && $isManager) || $status === 3) {
+            echo "
+                <a href='index.php?page=receipts/locate&id={$r['transaction_id']}' class='btn btn-locate' title='Xem/Sửa vị trí đã xếp'>
+                  <i class=\"fa-solid fa-location-dot\"></i> Vị trí
+                </a>
             ";
           }
 
           echo "</td></tr>";
+          $stt++; // Tăng STT sau mỗi dòng
         }
       } else {
-        echo "<tr><td colspan='8'>Không có phiếu nhập nào.</td></tr>";
+        echo "<tr><td colspan='9'>Không có phiếu nhập nào.</td></tr>";
       } ?>
     </tbody>
   </table>

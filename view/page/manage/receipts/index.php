@@ -88,6 +88,7 @@
           <input type="text" id="barcode" name="barcode_input" placeholder="Nhập mã vạch..." autofocus>
           <button type="button" class="btn" onclick="startScanner()"><i class="fa-solid fa-camera"></i> Camera</button>
           <button type="button" class="btn" onclick="useScanner()"><i class="fa-solid fa-barcode"></i> Scanner</button>
+          <button type="button" class="btn" onclick="openManualModal()"><i class="fa-solid fa-plus"></i> Thêm thủ công</button>
         </div>
         <div id="reader"></div>
         <button type="button" class="btn btn-danger" onclick="stopScanner()"><i class="fa-solid fa-power-off"></i> Tắt camera</button>
@@ -117,6 +118,34 @@
 
   <script src="https://unpkg.com/html5-qrcode"></script>
   <script>
+    // Manual add modal
+    function openManualModal(){
+      const name = prompt('Tên sản phẩm');
+      if (name === null) return;
+      const sku = prompt('Mã SP (SKU)');
+      if (sku === null) return;
+      const unit = prompt('Đơn vị (ví dụ: Cái)') || 'Cái';
+      const qtyStr = prompt('Số lượng', '1');
+      if (qtyStr === null) return;
+      const priceStr = prompt('Giá nhập', '0');
+      if (priceStr === null) return;
+      const qty = Math.max(1, parseFloat(qtyStr)||1);
+      const price = Math.max(0, parseFloat(priceStr)||0);
+      const tempId = 'manual_' + Date.now();
+      const product = { _id: tempId, sku: sku || tempId, product_name: name || sku || tempId, baseUnit: unit, conversionUnits: [], purchase_price: price };
+      // Ensure row is added and then set qty/price
+      addOrUpdateRow(product);
+      // Set the last inserted row quantities and price if needed
+      const row = document.querySelector(`#row-${rowIndex-1}`);
+      if (row) {
+        const qtyInput = row.querySelector("input[name*='[quantity]']");
+        const priceInput = row.querySelector("input[name*='[price]']");
+        if (qtyInput) qtyInput.value = qty;
+        if (priceInput) priceInput.value = price;
+        calcSubtotal(qtyInput || priceInput);
+      }
+    }
+
     function toggleFields() {
       const type = document.getElementById("type").value;
       document.getElementById("supplier-box").style.display = type === "purchase" ? "block" : "none";
