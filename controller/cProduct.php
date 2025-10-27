@@ -46,4 +46,22 @@ class CProduct {
         $p = new MProduct();
         return $p->getProductById($productId);
     }
+
+    // Lấy sản phẩm dưới mức tồn kho tối thiểu
+    public function getProductsBelowMinStock($warehouseId) {
+        $p = new MProduct();
+        return $p->getProductsBelowMinStock($warehouseId);
+    }
+
+    // Lấy tất cả sản phẩm có trong kho
+    public function getAllProductsInWarehouse($warehouseId) {
+        $p = new MProduct();
+        return $p->getAllProductsInWarehouse($warehouseId);
+    }
+
+    // Lấy tồn kho của sản phẩm tại các kho khác
+    public function getStockByWarehouses($productId) {
+        $p = new MProduct();
+        return $p->getStockByWarehouses($productId);
+    }
 }

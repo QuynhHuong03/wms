@@ -1057,6 +1057,67 @@ class MLocation {
 		}
 		return null;
 	}
+	
+	// Update bin quantity in warehouse_structure
+	public function updateBinQuantity($warehouseId, $zoneId, $rackId, $binId, $qtyChange) {
+		$p = new clsKetNoi();
+		$con = $p->moKetNoi();
+		if (!$con) return false;
+		
+		try {
+			$col = $con->selectCollection('locations');
+			
+			// Find the location document for this warehouse
+			$doc = $col->findOne(['warehouse_id' => $warehouseId]);
+			if (!$doc) {
+				error_log("updateBinQuantity: Location not found for warehouse $warehouseId");
+				return false;
+			}
+			
+			// Navigate to the specific bin and update quantity
+			$zones = $doc['zones'] ?? [];
+			$updated = false;
+			
+			foreach ($zones as $zIdx => $zone) {
+				if (($zone['_id'] ?? '') !== $zoneId && ($zone['zone_id'] ?? '') !== $zoneId) continue;
+				
+				$racks = $zone['racks'] ?? [];
+				foreach ($racks as $rIdx => $rack) {
+					if (($rack['rack_id'] ?? '') !== $rackId) continue;
+					
+					$bins = $rack['bins'] ?? [];
+					foreach ($bins as $bIdx => $bin) {
+						if (($bin['bin_id'] ?? ($bin['id'] ?? '')) !== $binId) continue;
+						
+						// Update quantity
+						$currentQty = $bin['quantity'] ?? ($bin['current_load'] ?? 0);
+						$newQty = max(0, $currentQty + $qtyChange);
+						
+						$zones[$zIdx]['racks'][$rIdx]['bins'][$bIdx]['quantity'] = $newQty;
+						$updated = true;
+						
+						error_log("Updated bin $binId quantity: $currentQty + $qtyChange = $newQty");
+						break 3;
+					}
+				}
+			}
+			
+			if ($updated) {
+				$result = $col->updateOne(
+					['warehouse_id' => $warehouseId],
+					['$set' => ['zones' => $zones]]
+				);
+				return $result->getModifiedCount() > 0;
+			}
+			
+			return false;
+		} catch (\Exception $e) {
+			error_log('updateBinQuantity error: ' . $e->getMessage());
+			return false;
+		} finally {
+			$p->dongKetNoi($con);
+		}
+	}
 }
 
 ?>

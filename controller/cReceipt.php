@@ -10,14 +10,10 @@ class CReceipt {
 
     // Sinh mã phiếu tự động IR0001, IR0002, ...
     public function generateReceiptId() {
-        $last = $this->mReceipt->getLastReceipt();
-        if (!$last || !isset($last['transaction_id'])) return 'IR0001';
-        $lastId = $last['transaction_id'];
-        if (preg_match('/(\d+)$/', $lastId, $m)) {
-            $num = intval($m[1]) + 1;
-            return 'IR' . str_pad($num, 4, '0', STR_PAD_LEFT);
-        }
-        return 'IR0001';
+        // ✅ Lấy số thứ tự lớn nhất và tăng lên 1
+        $maxNum = $this->mReceipt->getMaxReceiptNumber();
+        $newNum = $maxNum + 1;
+        return 'IR' . str_pad($newNum, 4, '0', STR_PAD_LEFT);
     }
 
     // Tạo phiếu nhập mới
@@ -78,6 +74,12 @@ class CReceipt {
     return iterator_to_array($data);
     }
 
+    // Lấy phiếu theo warehouse_id
+    public function getReceiptsByWarehouse($warehouseId) {
+    $data = $this->mReceipt->getReceiptsByWarehouse($warehouseId);
+    return iterator_to_array($data);
+    }
+
     // Lấy chi tiết 1 phiếu nhập
     public function getReceiptById($id) {
     return $this->mReceipt->getReceiptById($id);
@@ -121,6 +123,43 @@ class CReceipt {
     // Xóa phiếu 
     public function deleteReceipt($id) {
         return $this->mReceipt->deleteReceipt($id);
+    }
+
+    // Lưu số lượng cần xếp cho từng sản phẩm trong phiếu (sau khi duyệt)
+    // $qtyMap: [product_id => qty_to_locate]
+    public function saveLocateQuantities($transactionId, $qtyMap) {
+        if (!$transactionId || !is_array($qtyMap)) {
+            return ['success' => false, 'message' => 'Thiếu dữ liệu'];
+        }
+
+        $receipt = $this->mReceipt->getReceiptById($transactionId);
+        if (!$receipt) return ['success' => false, 'message' => 'Không tìm thấy phiếu'];
+
+        $status = (int)($receipt['status'] ?? 0);
+        if ($status !== 1) {
+            // Chỉ cho phép nhập số lượng cần xếp khi phiếu đã duyệt
+            return ['success' => false, 'message' => 'Phiếu chưa ở trạng thái Đã duyệt'];
+        }
+
+        $details = $receipt['details'] ?? [];
+        $changed = false;
+        foreach ($details as &$d) {
+            $pid = $d['product_id'] ?? '';
+            if ($pid && array_key_exists($pid, $qtyMap)) {
+                $val = (int)$qtyMap[$pid];
+                $max = (int)($d['quantity'] ?? 0);
+                if ($val < 0) $val = 0;
+                if ($val > $max) $val = $max;
+                $d['qty_to_locate'] = $val;
+                $changed = true;
+            }
+        }
+        unset($d);
+
+        if (!$changed) return ['success' => false, 'message' => 'Không có sản phẩm khớp để cập nhật'];
+
+        $ok = $this->mReceipt->updateReceipt($transactionId, ['details' => $details]);
+        return ['success' => (bool)$ok, 'updated' => $changed];
     }
 }
 ?>

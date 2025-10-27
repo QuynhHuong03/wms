@@ -20,10 +20,41 @@ class MReceipt {
     public function getLastReceipt() {
         if (!$this->col) return null;
         try {
-            return $this->col->findOne([], ['sort' => ['transaction_id' => -1]]);
+            // ✅ Sort theo created_at để lấy phiếu được tạo gần nhất
+            return $this->col->findOne([], ['sort' => ['created_at' => -1]]);
         } catch (\Exception $e) {
             error_log('getLastReceipt error: ' . $e->getMessage());
             return null;
+        }
+    }
+
+    // ✅ Lấy số thứ tự lớn nhất từ transaction_id (IR0001 => 1)
+    public function getMaxReceiptNumber() {
+        if (!$this->col) return 0;
+        try {
+            // Lấy tất cả transaction_id và tìm số lớn nhất
+            $receipts = $this->col->find([], [
+                'projection' => ['transaction_id' => 1],
+                'sort' => ['transaction_id' => -1],
+                'limit' => 100 // Lấy 100 phiếu gần nhất để tìm max (tối ưu performance)
+            ]);
+            
+            $maxNum = 0;
+            foreach ($receipts as $r) {
+                if (isset($r['transaction_id'])) {
+                    if (preg_match('/IR(\d+)$/', $r['transaction_id'], $m)) {
+                        $num = intval($m[1]);
+                        if ($num > $maxNum) {
+                            $maxNum = $num;
+                        }
+                    }
+                }
+            }
+            
+            return $maxNum;
+        } catch (\Exception $e) {
+            error_log('getMaxReceiptNumber error: ' . $e->getMessage());
+            return 0;
         }
     }
 
@@ -121,6 +152,41 @@ class MReceipt {
         }
     }
 
+    // Lấy phiếu theo warehouse_id với thông tin người dùng
+    public function getReceiptsByWarehouse($warehouse_id) {
+        if (!$this->col) return new ArrayObject([]);
+        try {
+            // Sử dụng aggregation pipeline
+            $pipeline = [
+                ['$match' => ['warehouse_id' => $warehouse_id]],
+                [
+                    '$lookup' => [
+                        'from' => 'users',
+                        'localField' => 'created_by',
+                        'foreignField' => 'user_id',
+                        'as' => 'creator_info'
+                    ]
+                ],
+                [
+                    '$addFields' => [
+                        'creator_name' => [
+                            '$ifNull' => [
+                                ['$arrayElemAt' => ['$creator_info.name', 0]],
+                                '$created_by'
+                            ]
+                        ]
+                    ]
+                ],
+                ['$sort' => ['created_at' => -1]]
+            ];
+            
+            return $this->col->aggregate($pipeline);
+        } catch (\Exception $e) {
+            error_log('getReceiptsByWarehouse error: ' . $e->getMessage());
+            return new ArrayObject([]);
+        }
+    }
+
     // Lấy 1 phiếu theo receipt_id (chuỗi IR0001) hoặc theo _id nếu muốn
     public function getReceiptById($receipt_id) {
         if (!$this->col) return null;
@@ -189,6 +255,27 @@ class MReceipt {
         } catch (\Exception $e) {
             error_log('getReceiptsByDateRange error: ' . $e->getMessage());
             return new ArrayObject([]);
+        }
+    }
+    
+    // Get latest receipt by product and warehouse
+    public function getLatestReceiptByProduct($productId, $warehouseId) {
+        if (!$this->col) return null;
+        try {
+            // Find receipts containing this product in items array
+            $filter = [
+                'warehouse_id' => $warehouseId,
+                'items.product_id' => $productId
+            ];
+            
+            $receipt = $this->col->findOne($filter, [
+                'sort' => ['created_at' => -1, 'received_at' => -1]
+            ]);
+            
+            return $receipt ? json_decode(json_encode($receipt), true) : null;
+        } catch (\Exception $e) {
+            error_log('getLatestReceiptByProduct error: ' . $e->getMessage());
+            return null;
         }
     }
 }

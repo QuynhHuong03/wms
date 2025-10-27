@@ -139,13 +139,21 @@ class MWarehouse
                 $p->dongKetNoi($con);
                 if ($doc) {
                     $item = json_decode(json_encode($doc), true);
-                    $item['address_text'] = "{$item['address']['street']}, {$item['address']['city']}, {$item['address']['province']}";
+                    // Xử lý address_text nếu có address
+                    if (isset($item['address'])) {
+                        $item['address_text'] = "{$item['address']['street']}, {$item['address']['city']}, {$item['address']['province']}";
+                    }
+                    // Đảm bảo có trường name (fallback từ warehouse_name)
+                    if (!isset($item['name']) && isset($item['warehouse_name'])) {
+                        $item['name'] = $item['warehouse_name'];
+                    }
                     return $item;
                 }
                 return null;
             } catch (\Exception $e) {
                 $p->dongKetNoi($con);
-                die("❌ Lỗi MongoDB (getWarehouseById): " . $e->getMessage());
+                error_log("❌ Lỗi MongoDB (getWarehouseById): " . $e->getMessage());
+                return null;
             }
         }
         return null;

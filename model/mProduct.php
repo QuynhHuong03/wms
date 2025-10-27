@@ -234,6 +234,7 @@ public function getProductByBarcode($barcode) {
                         '_id' => $id,
                         'sku' => $product['sku'] ?? '',
                         'barcode' => $product['barcode'] ?? '',
+                        'name' => $product['product_name'] ?? '',
                         'product_name' => $product['product_name'] ?? '',
                         'purchase_price' => $product['purchase_price'] ?? 0,
                         'baseUnit' => $product['baseUnit'] ?? 'cái',
@@ -248,6 +249,54 @@ public function getProductByBarcode($barcode) {
             } catch (\Exception $e) {
                 $p->dongKetNoi($con);
                 error_log("Lỗi getProductById: " . $e->getMessage());
+                return null;
+            }
+        }
+        return null;
+    }
+
+    // Lấy sản phẩm theo SKU
+    public function getProductBySKU($sku) {
+        $p = new clsKetNoi();
+        $con = $p->moKetNoi();
+        if ($con) {
+            try {
+                $col = $con->selectCollection('products');
+                $doc = $col->findOne(['sku' => $sku]);
+                $p->dongKetNoi($con);
+
+                if ($doc) {
+                    $product = json_decode(json_encode($doc), true);
+
+                    // Xử lý _id
+                    $id = '';
+                    if (isset($product['_id'])) {
+                        if (is_array($product['_id']) && isset($product['_id']['$oid'])) {
+                            $id = (string)$product['_id']['$oid'];
+                        } else {
+                            $id = (string)$product['_id'];
+                        }
+                    }
+
+                    return [
+                        '_id' => $id,
+                        'sku' => $product['sku'] ?? '',
+                        'barcode' => $product['barcode'] ?? '',
+                        'name' => $product['product_name'] ?? '',
+                        'product_name' => $product['product_name'] ?? '',
+                        'purchase_price' => $product['purchase_price'] ?? 0,
+                        'baseUnit' => $product['baseUnit'] ?? 'cái',
+                        'conversionUnits' => $product['conversionUnits'] ?? [],
+                        'supplier' => $product['supplier']['name'] ?? '',
+                        'category' => $product['category']['name'] ?? '',
+                        'current_stock' => $product['current_stock'] ?? 0,
+                    ];
+                }
+                return null;
+
+            } catch (\Exception $e) {
+                $p->dongKetNoi($con);
+                error_log("Lỗi getProductBySKU: " . $e->getMessage());
                 return null;
             }
         }
@@ -290,6 +339,241 @@ public function getProductByBarcode($barcode) {
             }
         }
         return 0;
+    }
+
+    // ⚠️ Lấy sản phẩm dưới mức tồn kho tối thiểu (min_stock) theo kho
+    // ⭐ CẬP NHẬT: Chỉ lấy sản phẩm CÓ trong inventory của warehouse đó
+    public function getProductsBelowMinStock($warehouseId) {
+        $p = new clsKetNoi();
+        $con = $p->moKetNoi();
+        if ($con) {
+            try {
+                $colProducts = $con->selectCollection('products');
+                $colInventory = $con->selectCollection('inventory');
+                
+                // ⭐ Lấy danh sách product_id CÓ TRONG inventory của warehouse này
+                $inventoryPipeline = [
+                    ['$match' => ['warehouse_id' => $warehouseId]],
+                    ['$group' => [
+                        '_id' => '$product_id',
+                        'current_stock' => ['$sum' => '$qty']
+                    ]]
+                ];
+                
+                $inventoryData = $colInventory->aggregate($inventoryPipeline)->toArray();
+                $stockMap = [];
+                $productIdsInWarehouse = [];
+                
+                foreach ($inventoryData as $item) {
+                    $productId = (string)($item['_id'] ?? '');
+                    $stockMap[$productId] = (int)($item['current_stock'] ?? 0);
+                    $productIdsInWarehouse[] = $productId;
+                }
+                
+                // ⭐ CHỈ lấy sản phẩm có trong inventory của kho này
+                if (empty($productIdsInWarehouse)) {
+                    $p->dongKetNoi($con);
+                    return [];
+                }
+                
+                // Chuyển đổi sang ObjectId nếu cần
+                $productObjectIds = [];
+                foreach ($productIdsInWarehouse as $pid) {
+                    try {
+                        $productObjectIds[] = new MongoDB\BSON\ObjectId($pid);
+                    } catch (\Exception $e) {
+                        // Nếu không phải ObjectId, giữ nguyên string
+                        $productObjectIds[] = $pid;
+                    }
+                }
+                
+                // Lấy thông tin sản phẩm CHỈ từ danh sách có trong inventory
+                $products = $colProducts->find([
+                    '_id' => ['$in' => $productObjectIds],
+                    'min_stock' => ['$exists' => true, '$gt' => 0]
+                ])->toArray();
+                
+                $results = [];
+                foreach ($products as $product) {
+                    $productJson = json_decode(json_encode($product), true);
+                    
+                    // Lấy product_id
+                    $productId = '';
+                    if (isset($productJson['_id'])) {
+                        if (is_array($productJson['_id']) && isset($productJson['_id']['$oid'])) {
+                            $productId = $productJson['_id']['$oid'];
+                        } else {
+                            $productId = (string)$productJson['_id'];
+                        }
+                    }
+                    
+                    $minStock = (int)($productJson['min_stock'] ?? 0);
+                    $currentStock = (int)($stockMap[$productId] ?? 0);
+                    
+                    // Chỉ lấy sản phẩm có tồn kho < min_stock
+                    if ($currentStock < $minStock) {
+                        $shortage = $minStock - $currentStock;
+                        $shortagePercent = $minStock > 0 ? (($shortage / $minStock) * 100) : 0;
+                        
+                        $productJson['current_stock'] = $currentStock;
+                        $productJson['shortage'] = $shortage;
+                        $productJson['shortage_percent'] = $shortagePercent;
+                        
+                        $results[] = $productJson;
+                    }
+                }
+                
+                // Sort theo shortage_percent giảm dần (sản phẩm thiếu nhiều nhất trước)
+                usort($results, function($a, $b) {
+                    $percentA = $a['shortage_percent'] ?? 0;
+                    $percentB = $b['shortage_percent'] ?? 0;
+                    if ($percentA == $percentB) {
+                        return ($b['shortage'] ?? 0) - ($a['shortage'] ?? 0);
+                    }
+                    return $percentB <=> $percentA;
+                });
+                
+                $p->dongKetNoi($con);
+                return $results;
+            } catch (\Exception $e) {
+                $p->dongKetNoi($con);
+                error_log("Lỗi getProductsBelowMinStock: " . $e->getMessage());
+                return [];
+            }
+        }
+        return [];
+    }
+
+    // ⭐ Lấy TẤT CẢ sản phẩm có trong inventory của kho với thông tin đầy đủ
+    public function getAllProductsInWarehouse($warehouseId) {
+        $p = new clsKetNoi();
+        $con = $p->moKetNoi();
+        if ($con) {
+            try {
+                $colProducts = $con->selectCollection('products');
+                $colInventory = $con->selectCollection('inventory');
+                
+                // Lấy tồn kho từ inventory
+                $inventoryPipeline = [
+                    ['$match' => ['warehouse_id' => $warehouseId]],
+                    ['$group' => [
+                        '_id' => '$product_id',
+                        'current_stock' => ['$sum' => '$qty']
+                    ]]
+                ];
+                
+                $inventoryData = $colInventory->aggregate($inventoryPipeline)->toArray();
+                $stockMap = [];
+                $productIdsInWarehouse = [];
+                
+                foreach ($inventoryData as $item) {
+                    $productId = (string)($item['_id'] ?? '');
+                    $stockMap[$productId] = (int)($item['current_stock'] ?? 0);
+                    $productIdsInWarehouse[] = $productId;
+                }
+                
+                if (empty($productIdsInWarehouse)) {
+                    $p->dongKetNoi($con);
+                    return [];
+                }
+                
+                // Chuyển đổi sang ObjectId nếu cần
+                $productObjectIds = [];
+                foreach ($productIdsInWarehouse as $pid) {
+                    try {
+                        $productObjectIds[] = new MongoDB\BSON\ObjectId($pid);
+                    } catch (\Exception $e) {
+                        $productObjectIds[] = $pid;
+                    }
+                }
+                
+                // Lấy thông tin sản phẩm
+                $products = $colProducts->find([
+                    '_id' => ['$in' => $productObjectIds]
+                ])->toArray();
+                
+                $results = [];
+                foreach ($products as $product) {
+                    $productJson = json_decode(json_encode($product), true);
+                    
+                    // Lấy product_id
+                    $productId = '';
+                    if (isset($productJson['_id'])) {
+                        if (is_array($productJson['_id']) && isset($productJson['_id']['$oid'])) {
+                            $productId = $productJson['_id']['$oid'];
+                        } else {
+                            $productId = (string)$productJson['_id'];
+                        }
+                    }
+                    
+                    $currentStock = (int)($stockMap[$productId] ?? 0);
+                    $minStock = (int)($productJson['min_stock'] ?? 0);
+                    
+                    $productJson['current_stock'] = $currentStock;
+                    $productJson['needs_restock'] = ($minStock > 0 && $currentStock < $minStock);
+                    $productJson['shortage'] = $productJson['needs_restock'] ? ($minStock - $currentStock) : 0;
+                    
+                    $results[] = $productJson;
+                }
+                
+                $p->dongKetNoi($con);
+                return $results;
+            } catch (\Exception $e) {
+                $p->dongKetNoi($con);
+                error_log("Lỗi getAllProductsInWarehouse: " . $e->getMessage());
+                return [];
+            }
+        }
+        return [];
+    }
+
+    // 📊 Lấy tồn kho của sản phẩm tại các kho khác
+    // ⭐ CẬP NHẬT: Lấy từ inventory
+    public function getStockByWarehouses($productId) {
+        $p = new clsKetNoi();
+        $con = $p->moKetNoi();
+        if ($con) {
+            try {
+                $colInventory = $con->selectCollection('inventory');
+                $colWarehouses = $con->selectCollection('warehouses');
+                
+                // Lấy tồn kho từ inventory
+                $pipeline = [
+                    ['$match' => ['product_id' => $productId]],
+                    ['$group' => [
+                        '_id' => '$warehouse_id',
+                        'quantity' => ['$sum' => '$qty']
+                    ]]
+                ];
+                
+                $stockData = $colInventory->aggregate($pipeline)->toArray();
+                $result = [];
+                
+                foreach ($stockData as $item) {
+                    $warehouseId = $item['_id'] ?? '';
+                    $qty = (int)($item['quantity'] ?? 0);
+                    
+                    if ($warehouseId && $qty > 0) {
+                        // Lấy tên kho
+                        $warehouse = $colWarehouses->findOne(['warehouse_id' => $warehouseId]);
+                        $warehouseName = $warehouse['warehouse_name'] ?? $warehouseId;
+                        
+                        $result[$warehouseId] = [
+                            'warehouse_name' => $warehouseName,
+                            'quantity' => $qty
+                        ];
+                    }
+                }
+                
+                $p->dongKetNoi($con);
+                return $result;
+            } catch (\Exception $e) {
+                $p->dongKetNoi($con);
+                error_log("Lỗi getStockByWarehouses: " . $e->getMessage());
+                return [];
+            }
+        }
+        return [];
     }
 }
 ?>
