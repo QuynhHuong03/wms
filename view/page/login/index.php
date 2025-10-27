@@ -27,126 +27,204 @@ if (isset($_POST["btDangnhap"])) {
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 body {
-  font-family: "Segoe UI", Arial, sans-serif;
-  height: 100vh;
-  display: flex;
-  background: #f3f4f6;
+    /* Đổi font sang một font hiện đại hơn, ví dụ: Inter, hoặc giữ lại Segoe UI */
+    font-family: 'Inter', "Segoe UI", Arial, sans-serif;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Nền màu trắng nhẹ hoặc gradient tinh tế */
+    background: linear-gradient(135deg, #f0f4f8 0%, #e0e7ee 100%);
+    color: #1f2937; /* Màu chữ cơ bản */
 }
 
+/* --- Container Chính --- */
 .container {
-  display: flex;
-  width: 100%;
-  height: 100vh;
+    display: flex;
+    width: 90%;
+    max-width: 1100px;
+    height: 80vh;
+    min-height: 550px;
+    border-radius: 20px;
+    overflow: hidden; /* Cần thiết cho việc bo góc */
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15); /* Bóng đổ lớn hơn, ấn tượng hơn */
+    background-color: #ffffff; /* Đảm bảo nền là màu trắng */
 }
 
+/* --- Phần Đăng Nhập (Left) --- */
 .left {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #f9fafb;
-  padding: 40px;
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    background-color: #ffffff;
 }
 
 .card {
-  background: #fff;
-  padding: 40px;
-  border-radius: 16px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-  width: 100%;
-  max-width: 500px;
-  text-align: center;
+    /* Loại bỏ box-shadow ở đây vì đã có ở .container */
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    width: 100%;
+    max-width: 380px; /* Giảm max-width để form trông gọn gàng hơn */
+    text-align: center;
 }
 
 .logo {
-  width: 100px;
-  margin-bottom: 15px;
+    width: 80px; /* Nhỏ lại một chút */
+    height: 80px;
+    object-fit: contain;
+    margin-bottom: 20px;
 }
 
 h2 {
-  margin-bottom: 6px;
-  color: #111827;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: #111827;
 }
+
 h3 {
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin-bottom: 20px;
-  color: #374151;
+    font-size: 1rem; /* Nhỏ hơn, dùng làm phụ đề */
+    font-weight: 400;
+    margin-bottom: 30px;
+    color: #6b7280;
 }
 
 .error-message {
-  color: #dc2626;
-  margin-bottom: 15px;
+    color: #ef4444; /* Màu đỏ nổi bật hơn */
+    background-color: #fee2e2;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #fca5a5;
+    font-weight: 500;
 }
 .error-field {
-  color: #dc2626;
-  font-size: 0.85rem;
-  margin: 4px 0 12px 28px;
-  text-align: left;
+    color: #ef4444;
+    font-size: 0.8rem;
+    margin: 4px 0 12px 0; /* Căn lề trái */
+    text-align: left;
 }
 
+/* --- Nhóm Input --- */
 .input-group {
-  display: flex;
-  align-items: center;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  padding: 10px 12px;
-  margin-bottom: 15px;
-  background: #f9fafb;
-}
-.input-group i {
-  color: #6b7280;
-  margin-right: 8px;
-}
-.input-group input {
-  width: 100%;
-  border: none;
-  outline: none;
-  background: transparent;
-  font-size: 1rem;
-}
-.input-group input:focus {
-  background: #fff;
+    display: flex;
+    align-items: center;
+    border: 2px solid #e5e7eb; /* Độ dày border */
+    border-radius: 12px; /* Bo góc nhiều hơn */
+    padding: 12px 15px; /* Tăng padding */
+    margin-bottom: 15px;
+    background: #ffffff;
+    transition: border-color 0.3s, box-shadow 0.3s;
 }
 
+.input-group:focus-within {
+    border-color: #3b82f6; /* Màu xanh khi focus */
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); /* Hiệu ứng focus ring */
+}
+
+.input-group i {
+    color: #9ca3af; /* Màu icon xám nhạt */
+    margin-right: 12px;
+    font-size: 1.1rem;
+}
+
+.input-group input {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 1rem;
+    color: #1f2937;
+}
+
+/* --- Nút Đăng Nhập --- */
 .button {
-  width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  color: white;
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: bold;
-  transition: 0.3s;
+    width: 100%;
+    padding: 14px; /* Tăng padding cho nút */
+    border-radius: 12px; /* Bo góc nhiều hơn */
+    color: white;
+    background: linear-gradient(135deg, #2563eb, #3b82f6);
+    border: none;
+    cursor: pointer;
+    font-size: 1.05rem;
+    font-weight: 600;
+    transition: 0.3s ease;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
 }
 .button:hover {
-  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+    transform: translateY(-1px);
+}
+.button:active {
+    transform: translateY(0);
 }
 
 .forgot {
-  margin-top: 12px;
-  font-size: 0.9rem;
+    margin-top: 20px;
+    font-size: 0.9rem;
 }
 .forgot a {
-  color: #2563eb;
-  text-decoration: none;
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 500;
 }
 .forgot a:hover {
-  text-decoration: underline;
+    text-decoration: underline;
+    color: #1d4ed8;
 }
 
+/* --- Phần Hình Ảnh (Right) --- */
 .right {
-  flex: 1.2;
-  background-image: url('../../../img/wms1.png');
-  background-size: cover;
-  background-position: center;
+    flex: 1.5; /* Làm phần hình ảnh lớn hơn */
+    background-image: url('../../../img/wms1.png');
+    background-size: cover;
+    background-position: center;
+    /* Thêm lớp overlay màu nhẹ để hình ảnh trông hài hòa hơn */
+    position: relative;
+}
+.right::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(30, 64, 175, 0.1); /* Overlay màu xanh dương nhẹ */
+    border-radius: 0 20px 20px 0;
+}
+
+/* --- Responsive design cho màn hình nhỏ hơn --- */
+@media (max-width: 900px) {
+    .right {
+        display: none; /* Ẩn phần hình ảnh trên màn hình nhỏ */
+    }
+    .container {
+        width: 90%;
+        max-width: 450px;
+        height: auto;
+        min-height: 0;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border-radius: 16px;
+    }
+    .left {
+        flex: 1;
+    }
+    .card {
+        max-width: 100%;
+    }
+    body {
+        padding: 20px;
+    }
 }
 </style>
 </head>

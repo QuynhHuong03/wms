@@ -7,14 +7,14 @@ include_once(__DIR__ . "/../../../../../controller/cWarehouse.php");
 $created_by = $_SESSION['user_id'] ?? ($_SESSION['login']['user_id'] ?? 'system');
 $warehouse_id = $_SESSION['warehouse_id'] ?? ($_SESSION['login']['warehouse_id'] ?? 'WH01');
 
-// ⭐ Xác định xem có phải kho chi nhánh không
+// Xác định xem có phải kho chi nhánh không
 $isWarehouseMain = ($warehouse_id === 'KHO_TONG_01' || strpos($warehouse_id, 'TONG') !== false);
 
 // Lấy danh sách sản phẩm dưới min_stock trong kho (ưu tiên hàng đầu)
 $productController = new CProduct();
 $productsBelowMin = $productController->getProductsBelowMinStock($warehouse_id);
 
-// ⭐ Lấy TẤT CẢ sản phẩm trong HỆ THỐNG (không chỉ có trong kho)
+// Lấy TẤT CẢ sản phẩm trong HỆ THỐNG (không chỉ có trong kho)
 $allProducts = $productController->getAllProducts();
 
 // Lấy thông tin tồn kho từ inventory của kho hiện tại
@@ -74,7 +74,7 @@ $warehouses = $warehouseController->getAllWarehouses() ?? [];
   <title>Tạo phiếu yêu cầu nhập hàng</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
-    body {font-family: "Segoe UI", Tahoma, sans-serif;background:#f3f6fa;margin:0;padding:20px;}
+    body {font-family: "Segoe UI", Tahoma, sans-serif;background:#f3f6fa;margin:0}
     .form-container {max-width:1200px;margin:auto;background:#fff;padding:25px 30px;
       border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.08);}
     h2 {text-align:center;margin-bottom:25px;color:#333;font-weight:600;}
@@ -159,11 +159,11 @@ $warehouses = $warehouseController->getAllWarehouses() ?? [];
         <label><strong>Mức độ ưu tiên:</strong></label>
         <label>
           <input type="radio" name="priority" value="normal" checked> 
-          <span>🟢 Bình thường</span>
+          <span> Bình thường</span>
         </label>
         <label class="urgent-label">
           <input type="radio" name="priority" value="urgent"> 
-          <span>🔴 KHẨN CẤP</span>
+          <span> Khẩn cấp</span>
         </label>
       </div>
 
@@ -267,7 +267,7 @@ $warehouses = $warehouseController->getAllWarehouses() ?? [];
           <i class="fa-solid fa-box"></i> Tất cả sản phẩm trong hệ thống (<?= count($productsNormal) ?>)
         </h3>
         <div style="margin-bottom:10px;">
-          <input type="text" id="searchProduct" placeholder="🔍 Tìm kiếm sản phẩm..." 
+          <input type="text" id="searchProduct" placeholder=" Tìm kiếm sản phẩm..." 
                  style="width:300px;padding:8px;border-radius:6px;border:1px solid #ccc;"
                  onkeyup="filterProducts()">
           <span style="margin-left:15px;color:#666;font-size:13px;">

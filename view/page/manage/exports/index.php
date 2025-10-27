@@ -154,7 +154,7 @@ if ($con) {
 
   <div class="top-actions">
     <div class="filters">
-      <input type="text" id="filter-search" placeholder="🔍 Tìm mã phiếu, kho..." style="width:250px;">
+      <input type="text" id="filter-search" placeholder=" Tìm mã phiếu, kho..." style="width:250px;">
       <input type="date" id="filter-date-from" placeholder="Từ ngày">
       <input type="date" id="filter-date-to" placeholder="Đến ngày">
       <button class="btn btn-print" onclick="filterTable()" style="background:#6c757d;">

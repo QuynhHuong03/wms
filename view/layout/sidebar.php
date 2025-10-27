@@ -22,354 +22,468 @@ $roleId = $users['role_id'] ?? 0;
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
-  body {
+body {
     margin: 0;
-    font-family: Arial, sans-serif;
-  }
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background-color: #f4f7fa; 
+}
 
-  .sidebar {
-    width: 300px;
+.sidebar {
+    width: 360px; 
     background-color: #ffffff;
-    color: black;
+    color: #1f2937;
     min-height: 100vh;
-    padding: 20px 10px;
+    padding: 15px 15px 0 15px;
     border-right: 1px solid #e5e7eb;
-    transition: transform 0.3s ease;
-  }
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s ease, transform 0.3s ease;
+    position: relative;
+}
 
-  .sidebar h3 {
-    font-size: 18px;
-    margin-bottom: 20px;
-    border-bottom: 1px solid #e5e7eb;
-    padding-bottom: 10px;
-    padding-top: 10px;
-  }
-
-  .sidebar a {
-    display: block;
-    padding: 10px 15px;
-    color: #4b5563;
-    font-size: 16px;
-    text-decoration: none;
-    border-radius: 6px;
+.sidebar-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f3f4f6;
+}
+.sidebar-header img {
+    width: 150px;
+    height: auto;
+    object-fit: contain;
     margin-bottom: 5px;
-    transition: 0.2s;
-  }
+}
+.sidebar h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
 
-  .sidebar a:hover,
-  .sidebar a.active {
-    background-color: rgba(237, 244, 250, 1);
-    color: blue;
-  }
+.menu-links {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 5px;
+}
 
-  .sidebar a i {
-    margin-right: 10px;
-  }
+.menu-links::-webkit-scrollbar {
+    width: 6px;
+}
+.menu-links::-webkit-scrollbar-thumb {
+    background: #e0e7eb;
+    border-radius: 10px;
+}
+.menu-links::-webkit-scrollbar-thumb:hover {
+    background: #c3ced4;
+}
 
-   /* Footer user info */
-  .sidebar-footer {
-    margin-top: auto;
-    border-top: 1px solid #e5e7eb;
-    padding: 15px 10px;
+.menu-links a, .submenu-toggle {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    background: #f9fafb;
-  }
+    padding: 12px 12px;
+    color: #4b5563; 
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-decoration: none;
+    border-radius: 8px;
+    margin-bottom: 4px;
+    transition: background-color 0.2s, color 0.2s;
+    cursor: pointer;
+}
 
-  /* Nút hamburger */
-  .menu-toggle {
+.menu-links a i, .submenu-toggle i:first-child {
+    width: 20px;
+    text-align: center;
+    margin-right: 15px;
+    font-size: 1rem;
+}
+
+.menu-links a:hover,
+.menu-links a.active,
+.submenu-toggle:hover {
+    background-color: #eef3f9;
+    color: #2563eb;
+}
+
+.menu-links a.active {
+    font-weight: 600;
+}
+
+.submenu {
+    margin-bottom: 4px;
+}
+.submenu-toggle {
+    justify-content: space-between;
+}
+.submenu .submenu-items {
+    display: none;
+    padding: 5px 0 5px 0;
+}
+.submenu.open .submenu-items {
+    display: block;
+}
+.submenu .submenu-items a {
+    font-size: 0.9rem;
+    padding: 8px 12px 8px 50px;
+    font-weight: 400;
+}
+.submenu .submenu-items a.active {
+    background-color: #e0e9f4;
+    color: #1d4ed8;
+    font-weight: 500;
+}
+
+.arrow {
+    font-size: 0.7rem;
+    color: #9ca3af;
+    transition: transform 0.3s ease;
+}
+.submenu.open .arrow {
+    transform: rotate(180deg);
+}
+.submenu-toggle:hover .arrow {
+    color: #2563eb;
+}
+
+.sidebar-footer {
+    border-top: 1px solid #f3f4f6;
+    padding: 15px 0;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+}
+.footer-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #111;
+    flex: 1;
+    transition: background-color 0.2s;
+    padding: 5px 10px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.footer-link:hover {
+    background-color: #f7f7f7;
+}
+
+.avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e5e7eb; 
+    background: #fff;
+    flex-shrink: 0; 
+}
+.user-info {
+    display: flex;
+    flex-direction: column;
+    margin-left: 10px;
+    overflow: hidden;
+    flex: 1;
+}
+.user-info span {
+    font-size: 0.9rem;
+    color: #1f2937;
+    font-weight: 600;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+.user-info small {
+    font-size: 0.8rem;
+    color: #6b7280;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.logout-icon {
+    color: #9ca3af;
+    font-size: 1.1rem;
+    padding: 10px;
+    margin-left: 10px;
+    border-radius: 40%;
+    transition: color 0.2s, background-color 0.2s;
+    flex-shrink: 0;
+}
+.logout-icon:hover {
+    color: #ef4444;
+    background-color: #fee2e2;
+}
+
+.menu-toggle {
     display: none;
     position: fixed;
     top: 15px;
     left: 15px;
-    background: #1e3a8a;
+    background: #2563eb;
     color: white;
     border: none;
     padding: 10px 14px;
     font-size: 20px;
     cursor: pointer;
     z-index: 1001;
-    border-radius: 6px;
-  }
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4);
+    transition: transform 0.3s;
+}
 
-  /* Overlay khi mở sidebar */
-  .overlay {
+.overlay {
     display: none;
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.4);
+    background: rgba(0,0,0,0.5);
     z-index: 999;
-  }
-  .submenu .submenu-items {
-  display: none;
-  padding-left: 20px;
-  }
-  .submenu .submenu-items a {
-    font-size: 15px;
-    padding: 8px 15px;
-  }
-  .submenu.open .submenu-items {
+}
+.overlay.active {
     display: block;
-  }
-  .submenu-toggle {
-    /* cursor: pointer; */
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-right: 5px;
-  }
-  .submenu-toggle .arrow {
-  margin-left: 15px; /* đẩy mũi tên cách chữ ra xa */
-  font-size: 12px;
-  transition: transform 0.3s ease;
-  }
-  .arrow {
-  font-size: 12px;
-  transition: transform 0.3s ease;
-  }
-  .submenu.open .arrow {
-    transform: rotate(180deg);
-  }
+}
 
-  @media (max-width: 768px) {
+@media (max-width: 768px) {
     .sidebar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      transform: translateX(-100%);
-      z-index: 1000;
+        width: 280px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        transform: translateX(-100%);
+        z-index: 1000;
     }
-
     .sidebar.active {
-      transform: translateX(0);
+        transform: translateX(0);
     }
-
     .menu-toggle {
-      display: block;
+        display: block;
     }
-
-    .overlay.active {
-      display: block;
-    }
-  }
-  .avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid #fff;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    background: #fff;
-    /* display: block; */
-  }
-  .user-info {
-    display: flex;
-    align-items: center;
-    flex: 1;
-    margin-left: 10px;
-    overflow: hidden;
-  }
-
-  .user-info span {
-    font-size: 14px;
-    color: #374151;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
-  }
+}
 </style>
 
-<!-- Nút mở menu -->
 <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
 <div class="overlay" id="overlay"></div>
 
-<!-- Sidebar -->
 <div class="sidebar" id="sidebar">
-  <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:10px;">
-    <img src="../../../img/logo1.png" alt="Logo" width="200" height="100">
-    <h3 style="margin:0;">Quản Lý Kho Hàng</h3>
-  </div>
-
-  <a href="index.php?page=dashboard" class="<?= $currentPage=='dashboard'?'active':'' ?>">
-    <i class="fas fa-home"></i> Dashboard
-  </a>
-
-  <?php if ($roleId == 1): ?>
-    <!-- Admin -->
-    <div class="submenu" id="submenu-user">
-      <a href="javascript:void(0)" class="submenu-toggle">
-        <span><i class="fas fa-users"></i> Quản lý người dùng</span>
-        <i class="fas fa-chevron-down arrow"></i>
-      </a>
-      <div class="submenu-items">
-        <a href="index.php?page=users" class="<?= $currentPage=='users'?'active':'' ?>"><i class="fas fa-user"></i> Tài khoản</a>
-        <a href="index.php?page=roles" class="<?= $currentPage=='roles'?'active':'' ?>"><i class="fas fa-user-shield"></i> Vai trò</a>
-      </div>
+    <div class="sidebar-header">
+        <img src="../../../img/logo1.png" alt="Logo">
+        <h3>Quản Lý Kho Hàng</h3>
     </div>
 
-    <a href="index.php?page=warehouse" class="<?= $currentPage=='warehouse'?'active':'' ?>"><i class="fas fa-warehouse"></i> Quản lý kho</a>
-    <!-- <a href="index.php?page=warehouse_type" class="<?= $currentPage=='warehouse_type'?'active':'' ?>"><i class="fas fa-warehouse"></i> Loại kho</a> -->
-    <a href="index.php?page=supplier" class="<?= $currentPage=='supplier'?'active':'' ?>"><i class="fas fa-truck"></i> Nhà cung cấp</a>
-    <div class="submenu" id="submenu-product">
-  <a href="javascript:void(0)" class="submenu-toggle">
-    <span><i class="fas fa-boxes"></i> Quản lý sản phẩm</span>
-    <i class="fas fa-chevron-down arrow"></i>
-  </a>
-  <div class="submenu-items">
-    <a href="index.php?page=categories" class="<?= $currentPage=='categories'?'active':'' ?>">
-      <i class="fas fa-tags"></i> Danh mục sản phẩm
-    </a>
-    <a href="index.php?page=products" class="<?= $currentPage=='products'?'active':'' ?>">
-      <i class="fas fa-box"></i> Sản phẩm
-    </a>
-  </div>
-</div>
+    <div class="menu-links">
+        <a href="index.php?page=dashboard" class="<?= $currentPage=='dashboard'?'active':'' ?>">
+            <i class="fas fa-home"></i> Dashboard
+        </a>
 
-    <a href="index.php?page=report" class="<?= $currentPage=='report'?'active':'' ?>"><i class="fas fa-chart-line"></i> Báo cáo thống kê</a>
+        <?php if ($roleId == 1): ?>
+            <div class="submenu" id="submenu-user">
+                <a href="javascript:void(0)" class="submenu-toggle">
+                    <span><i class="fas fa-users"></i> Quản lý người dùng</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </a>
+                <div class="submenu-items">
+                    <a href="index.php?page=users" class="<?= $currentPage=='users'?'active':'' ?>"><i class="fas fa-user"></i> Tài khoản</a>
+                    <a href="index.php?page=roles" class="<?= $currentPage=='roles'?'active':'' ?>"><i class="fas fa-user-shield"></i> Vai trò</a>
+                </div>
+            </div>
 
-  <?php elseif ($roleId == 2): ?>
-    <!-- Quản lý kho tổng -->
-    <div class="submenu" id="submenu-reciepts">
-      <a href="javascript:void(0)" class="submenu-toggle">
-        <span><i class="fa-solid fa-file-circle-plus"></i> Phiếu nhập kho tổng</span>
-        <i class="fas fa-chevron-down arrow"></i>
-      </a>
-      <div class="submenu-items">
-        <a href="index.php?page=receipts" class="<?= $currentPage=='users'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu nhập kho</a>
-        <a href="index.php?page=receipts/approve" class="<?= $currentPage=='roles'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Duyệt phiếu nhập kho</a>
-      </div>
-    </div>
-    <div class="submenu" id="submenu-reciepts">
-      <a href="javascript:void(0)" class="submenu-toggle">
-        <span><i class="fas fa-file-export"></i> Phiếu xuất kho tổng</span>
-        <i class="fas fa-chevron-down arrow"></i>
-      </a>
-      <div class="submenu-items">
-        <a href="index.php?page=exports" class="<?= $currentPage=='roles'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu xuất kho</a>
-      </div>
-    </div>
-    <a href="index.php?page=locations" class="<?= $currentPage=='locations'?'active':'' ?>"><i class="fas fa-boxes"></i> Sơ đồ vị trí kho </a>
-    <!-- <a href="index.php?page=products" class="<?= $currentPage=='products'?'active':'' ?>"><i class="fas fa-tags"></i> Danh mục sản phẩm</a> -->
-    <a href="index.php?page=report" class="<?= $currentPage=='report'?'active':'' ?>"><i class="fas fa-chart-line"></i> Báo cáo thống kê</a>
+            <a href="index.php?page=warehouse" class="<?= $currentPage=='warehouse'?'active':'' ?>"><i class="fas fa-warehouse"></i> Quản lý kho</a>
+            <a href="index.php?page=supplier" class="<?= $currentPage=='supplier'?'active':'' ?>"><i class="fas fa-truck"></i> Nhà cung cấp</a>
+            
+            <div class="submenu" id="submenu-product">
+                <a href="javascript:void(0)" class="submenu-toggle">
+                    <span><i class="fas fa-boxes"></i> Quản lý sản phẩm</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </a>
+                <div class="submenu-items">
+                    <a href="index.php?page=categories" class="<?= $currentPage=='categories'?'active':'' ?>">
+                        <i class="fas fa-tags"></i> Danh mục sản phẩm
+                    </a>
+                    <a href="index.php?page=products" class="<?= $currentPage=='products'?'active':'' ?>">
+                        <i class="fas fa-box"></i> Sản phẩm
+                    </a>
+                </div>
+            </div>
 
-  <?php elseif ($roleId == 3): ?>
-    <!-- Nhân viên kho tổng -->
-     <div class="submenu" id="submenu-reciepts">
-      <a href="javascript:void(0)" class="submenu-toggle">
-        <span><i class="fa-solid fa-file-circle-plus"></i> Phiếu nhập kho tổng</span>
-        <i class="fas fa-chevron-down arrow"></i>
-      </a>
-      <div class="submenu-items">
-        <a href="index.php?page=receipts" class="<?= $currentPage=='users'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu nhập kho</a>
-        <a href="index.php?page=receipts/approve" class="<?= $currentPage=='roles'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu nhập kho</a>
-      </div>
-    </div>
-    <!-- <a href="index.php?page=receipts" class=""><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu nhập kho tổng</a> -->
-    <div class="submenu" id="submenu-reciepts">
-      <a href="javascript:void(0)" class="submenu-toggle">
-        <span><i class="fas fa-file-export"></i> Phiếu xuất kho tổng</span>
-        <i class="fas fa-chevron-down arrow"></i>
-      </a>
-      <div class="submenu-items">
-        <a href="index.php?page=exports" class="<?= $currentPage=='users'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu xuất kho</a>
-        <a href="index.php?page=exports/approve" class="<?= $currentPage=='roles'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu xuất kho</a>
-      </div>
-    </div>
-    <a href="index.php?page=inventory" class="<?= $currentPage=='inventory'?'active':'' ?>"><i class="fas fa-boxes"></i> Xem tồn kho tổng</a>
-    <a href="index.php?page=report" class="<?= $currentPage=='report'?'active':'' ?>"><i class="fas fa-chart-line"></i> Báo cáo tổng</a>
+            <a href="index.php?page=report" class="<?= $currentPage=='report'?'active':'' ?>"><i class="fas fa-chart-line"></i> Báo cáo thống kê</a>
 
-  <?php elseif ($roleId == 4): ?>
-    <!-- Quản lý kho chi nhánh -->
-    <div class="submenu" id="submenu-reciepts">
-      <a href="javascript:void(0)" class="submenu-toggle">
-        <span><i class="fa-solid fa-file-circle-plus"></i> Phiếu nhập kho </span>
-        <i class="fas fa-chevron-down arrow"></i>
-      </a>
-      <div class="submenu-items">
-        <a href="index.php?page=receipts" class="<?= $currentPage=='users'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu nhập kho</a>
-        <a href="index.php?page=receipts/approve" class="<?= $currentPage=='roles'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Duyệt phiếu nhập kho</a>
-      </div>
-    </div>
-    <div class="submenu" id="submenu-reciepts">
-      <a href="javascript:void(0)" class="submenu-toggle">
-        <span><i class="fas fa-file-export"></i> Phiếu xuất kho </span>
-        <i class="fas fa-chevron-down arrow"></i>
-      </a>
-      <div class="submenu-items">
-        <a href="index.php?page=exports" class="<?= $currentPage=='users'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu xuất kho</a>
-        <a href="index.php?page=exports/approve" class="<?= $currentPage=='roles'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu xuất kho</a>
-      </div>
-    </div>
-    <a href="index.php?page=locations" class="<?= $currentPage=='locations'?'active':'' ?>"><i class="fas fa-boxes"></i> Sơ đồ vị trí kho </a>
-    <!-- <a href="index.php?page=products" class="<?= $currentPage=='products'?'active':'' ?>"><i class="fas fa-tags"></i> Danh mục sản phẩm</a> -->
-    <a href="index.php?page=report" class="<?= $currentPage=='report'?'active':'' ?>"><i class="fas fa-chart-line"></i> Báo cáo thống kê</a>
-    <a href="index.php?page=goodsReceiptRequest" class="<?= $currentPage=='goodsReceiptRequest'?'active':'' ?>"><i class="fas fa-chart-line"></i> Phiếu yêu cầu nhập hàng</a>
-  <?php elseif ($roleId == 5): ?>
-    <!-- Nhân viên kho chi nhánh -->
-    <a href="index.php?page=phieunhapchinhanh" class="<?= $currentPage=='phieunhapchinhanh'?'active':'' ?>"><i class="fas fa-file-import"></i> Tạo phiếu nhập kho chi nhánh</a>
-    <a href="index.php?page=phieuxuatchinhanh" class="<?= $currentPage=='phieuxuatchinhanh'?'active':'' ?>"><i class="fas fa-file-export"></i> Tạo phiếu xuất kho chi nhánh</a>
-    <a href="index.php?page=tonkhochinhanh" class="<?= $currentPage=='tonkhochinhanh'?'active':'' ?>"><i class="fas fa-boxes"></i> Xem tồn kho chi nhánh</a>
-  <?php endif; ?>
+        <?php elseif ($roleId == 2): ?>
+            <div class="submenu" id="submenu-receipts-t">
+                <a href="javascript:void(0)" class="submenu-toggle">
+                    <span><i class="fa-solid fa-file-import"></i> Phiếu nhập kho tổng</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </a>
+                <div class="submenu-items">
+                    <a href="index.php?page=receipts" class="<?= $currentPage=='receipts'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu nhập kho</a>
+                    <a href="index.php?page=receipts/approve" class="<?= $currentPage=='receipts/approve'?'active':'' ?>"><i class="fa-solid fa-clipboard-check"></i> Duyệt phiếu nhập kho</a>
+                </div>
+            </div>
+            <div class="submenu" id="submenu-exports-t">
+                <a href="javascript:void(0)" class="submenu-toggle">
+                    <span><i class="fas fa-file-export"></i> Phiếu xuất kho tổng</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </a>
+                <div class="submenu-items">
+                    <a href="index.php?page=exports" class="<?= $currentPage=='exports'?'active':'' ?>"><i class="fa-solid fa-list-check"></i> Danh sách phiếu xuất kho</a>
+                </div>
+            </div>
+            <a href="index.php?page=locations" class="<?= $currentPage=='locations'?'active':'' ?>"><i class="fas fa-warehouse"></i> Sơ đồ vị trí kho </a>
+            <a href="index.php?page=inventory" class="<?= $currentPage=='inventory'?'active':'' ?>"><i class="fa-solid fa-box-open"></i> Xem tồn kho </a>
+            <a href="index.php?page=report" class="<?= $currentPage=='report'?'active':'' ?>"><i class="fas fa-chart-line"></i> Báo cáo thống kê</a>
 
-  <!-- Footer -->
-  <div class="sidebar-footer">
-    <a href="index.php?page=profile" style="display:flex; align-items:center; text-decoration:none; color:#111; flex:1;">
-      <img 
-        src="<?= isset($users['avatar']) && $users['avatar'] != '' 
-                  ? htmlspecialchars($users['avatar']) 
-                  : 'https://ui-avatars.com/api/?name=' . urlencode($users['name'] ?? 'User') . '&background=3b82f6&color=fff&size=128' ?>" 
-        alt="Avatar" 
-        class="avatar"
-        style="cursor:pointer; margin-right:10px;">
-      <div class="user-info">
-        <span><?= htmlspecialchars($users['email'] ?? '') ?></span>
-      </div>
-    </a>
-    <a href="../logout/index.php" style="color:#4b5563; margin-left:10px; font-size:18px;">
-      <i class="fas fa-sign-out-alt"></i>
-    </a>
-  </div>
+        <?php elseif ($roleId == 3): ?>
+            <div class="submenu" id="submenu-receipts-nvt">
+                <a href="javascript:void(0)" class="submenu-toggle">
+                    <span><i class="fa-solid fa-file-circle-plus"></i> Phiếu nhập kho tổng</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </a>
+                <div class="submenu-items">
+                    <a href="index.php?page=receipts" class="<?= $currentPage=='receipts'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu nhập kho</a>
+                    <a href="index.php?page=receipts/approve" class="<?= $currentPage=='receipts/approve'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu nhập kho</a>
+                </div>
+            </div>
+            <div class="submenu" id="submenu-exports-nvt">
+                <a href="javascript:void(0)" class="submenu-toggle">
+                    <span><i class="fas fa-file-export"></i> Phiếu xuất kho tổng</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </a>
+                <div class="submenu-items">
+                    <a href="index.php?page=exports" class="<?= $currentPage=='exports'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu xuất kho</a>
+                </div>
+            </div>
+            <a href="index.php?page=inventory" class="<?= $currentPage=='inventory'?'active':'' ?>"><i class="fas fa-boxes"></i> Xem tồn kho tổng</a>
+            <a href="index.php?page=report" class="<?= $currentPage=='report'?'active':'' ?>"><i class="fas fa-chart-line"></i> Báo cáo tổng</a>
+
+        <?php elseif ($roleId == 4): ?>
+            <div class="submenu" id="submenu-receipts-cnh">
+                <a href="javascript:void(0)" class="submenu-toggle">
+                    <span><i class="fa-solid fa-file-circle-plus"></i> Phiếu nhập kho chi nhánh</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </a>
+                <div class="submenu-items">
+                    <a href="index.php?page=receipts" class="<?= $currentPage=='receipts'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu nhập kho</a>
+                    <a href="index.php?page=receipts/approve" class="<?= $currentPage=='receipts/approve'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Duyệt phiếu nhập kho</a>
+                </div>
+            </div>
+            <div class="submenu" id="submenu-exports-cnh">
+                <a href="javascript:void(0)" class="submenu-toggle">
+                    <span><i class="fas fa-file-export"></i> Phiếu xuất kho chi nhánh</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </a>
+                <div class="submenu-items">
+                    <a href="index.php?page=exports" class="<?= $currentPage=='exports'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu xuất kho</a>
+                    <a href="index.php?page=exports/approve" class="<?= $currentPage=='exports/approve'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu xuất kho</a>
+                </div>
+            </div>
+            <div class="submenu" id="submenu-request-cnh">
+                <a href="javascript:void(0)" class="submenu-toggle">
+                    <span><i class="fa-solid fa-file-circle-plus"></i> Phiếu yêu cầu nhập hàng</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </a>
+                <div class="submenu-items">
+                    <a href="index.php?page=goodsReceiptRequest/createReceipt" class="<?= $currentPage=='goodsReceiptRequest/createReceipt'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu yêu cầu</a>
+                    <a href="index.php?page=goodsReceiptRequest" class="<?= $currentPage=='goodsReceiptRequest'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu yêu cầu</a>
+                </div>
+            </div>
+            <a href="index.php?page=locations" class="<?= $currentPage=='locations'?'active':'' ?>"><i class="fas fa-boxes"></i> Sơ đồ vị trí kho </a>
+            <a href="index.php?page=inventory" class="<?= $currentPage=='inventory'?'active':'' ?>"><i class="fas fa-boxes"></i> Xem tồn kho </a>
+            <a href="index.php?page=report" class="<?= $currentPage=='report'?'active':'' ?>"><i class="fas fa-chart-line"></i> Báo cáo thống kê</a>
+
+        <?php elseif ($roleId == 5): ?>
+            <div class="submenu" id="submenu-receipts-nvcn">
+                <a href="javascript:void(0)" class="submenu-toggle">
+                    <span><i class="fa-solid fa-file-circle-plus"></i> Phiếu nhập kho chi nhánh</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </a>
+                <div class="submenu-items">
+                    <a href="index.php?page=receipts" class="<?= $currentPage=='receipts'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu nhập kho</a>
+                    <a href="index.php?page=receipts/approve" class="<?= $currentPage=='receipts/approve'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu nhập kho</a>
+                </div>
+            </div>
+            <div class="submenu" id="submenu-exports-nvcn">
+                <a href="javascript:void(0)" class="submenu-toggle">
+                    <span><i class="fas fa-file-export"></i> Phiếu xuất kho chi nhánh</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </a>
+                <div class="submenu-items">
+                    <a href="index.php?page=exports" class="<?= $currentPage=='exports'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu xuất kho</a>
+                </div>
+            </div>
+            <div class="submenu" id="submenu-request-nvcn">
+                <a href="javascript:void(0)" class="submenu-toggle">
+                    <span><i class="fa-solid fa-file-circle-plus"></i> Phiếu yêu cầu nhập hàng</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </a>
+                <div class="submenu-items">
+                    <a href="index.php?page=goodsReceiptRequest/createReceipt" class="<?= $currentPage=='goodsReceiptRequest/createReceipt'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu yêu cầu</a>
+                    <a href="index.php?page=goodsReceiptRequest" class="<?= $currentPage=='goodsReceiptRequest'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu yêu cầu</a>
+                </div>
+            </div>
+            <a href="index.php?page=inventory" class="<?= $currentPage=='inventory'?'active':'' ?>"><i class="fas fa-boxes"></i> Xem tồn kho </a>
+            <a href="index.php?page=report" class="<?= $currentPage=='report'?'active':'' ?>"><i class="fas fa-chart-line"></i> Báo cáo tổng</a>
+
+        <?php endif; ?>
+
+    </div> <div class="sidebar-footer">
+        <a href="index.php?page=profile" class="footer-link">
+            <img 
+                src="<?= isset($users['avatar']) && $users['avatar'] != '' 
+                      ? htmlspecialchars($users['avatar']) 
+                      : 'https://ui-avatars.com/api/?name=' . urlencode($users['name'] ?? 'User') . '&background=2563eb&color=fff&size=128' ?>" 
+                alt="Avatar" 
+                class="avatar">
+            <div class="user-info">
+                <span><?= htmlspecialchars($users['name'] ?? ($users['email'] ?? 'Người dùng')) ?></span>
+                <small>Vai trò: ID <?= htmlspecialchars($roleId) ?></small> 
+            </div>
+        </a>
+        <a href="../logout/index.php" class="logout-icon">
+            <i class="fas fa-sign-out-alt"></i>
+        </a>
+    </div>
 </div>
 
 <script>
-  const menuToggle = document.getElementById("menuToggle");
-  const sidebar = document.getElementById("sidebar");
-  const overlay = document.getElementById("overlay");
+    const menuToggle = document.getElementById("menuToggle");
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
 
-  menuToggle.addEventListener("click", () => {
-    sidebar.classList.toggle("active");
-    overlay.classList.toggle("active");
-  });
-  overlay.addEventListener("click", () => {
-    sidebar.classList.remove("active");
-    overlay.classList.remove("active");
-  });
-
-  // Toggle submenu + nhớ trạng thái
-  document.querySelectorAll(".submenu-toggle").forEach(toggle => {
-    toggle.addEventListener("click", (e) => {
-      e.preventDefault();
-      const parent = toggle.closest(".submenu");
-      const id = parent.id;
-      parent.classList.toggle("open");
-      localStorage.setItem("submenu_" + id, parent.classList.contains("open") ? "open" : "closed");
+    menuToggle.addEventListener("click", () => {
+        sidebar.classList.toggle("active");
+        overlay.classList.toggle("active");
     });
-  });
-
-  // Khôi phục trạng thái submenu khi load
-  window.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll(".submenu").forEach(menu => {
-      const id = menu.id;
-      if (localStorage.getItem("submenu_" + id) === "open") {
-        menu.classList.add("open");
-      }
-      if (menu.querySelector(".submenu-items a.active")) {
-        menu.classList.add("open");
-      }
+    overlay.addEventListener("click", () => {
+        sidebar.classList.remove("active");
+        overlay.classList.remove("active");
     });
-  });
+
+    // Toggle submenu + nhớ trạng thái
+    document.querySelectorAll(".submenu-toggle").forEach(toggle => {
+        toggle.addEventListener("click", (e) => {
+            e.preventDefault();
+            const parent = toggle.closest(".submenu");
+            const id = parent.id;
+            parent.classList.toggle("open");
+            localStorage.setItem("submenu_" + id, parent.classList.contains("open") ? "open" : "closed");
+        });
+    });
+
+    // Khôi phục trạng thái submenu khi load
+    window.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll(".submenu").forEach(menu => {
+            const id = menu.id;
+            // Kiểm tra trạng thái đã lưu
+            if (localStorage.getItem("submenu_" + id) === "open") {
+                menu.classList.add("open");
+            }
+            // Nếu có liên kết con đang active, phải mở menu
+            if (menu.querySelector(".submenu-items a.active")) {
+                menu.classList.add("open");
+            }
+        });
+    });
 </script>

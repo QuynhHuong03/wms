@@ -162,7 +162,7 @@ if ($warehouse_id) {
           }
 
           echo "</td></tr>";
-          $stt++; // Tăng STT sau mỗi dòng
+          $stt++;
         }
       } else {
         echo "<tr><td colspan='9'>Không có phiếu nhập nào.</td></tr>";

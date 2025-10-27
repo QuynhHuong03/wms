@@ -12,7 +12,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 
 <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f3f4f6; padding: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f3f4f6;}
         .container { max-width: 1400px; margin: 0 auto; background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 3px 15px rgba(0,0,0,0.08); }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 2px solid #e5e7eb; padding-bottom: 16px; }
         .header h2 { font-size: 24px; color: #111827; }
@@ -150,15 +150,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
             <button class="btn btn-danger" onclick="clearData()">🗑️ Xóa dữ liệu</button>
         </div>
         
-        <div style="margin-top: 16px; padding: 12px; background: #dbeafe; border-left: 4px solid #2563eb; border-radius: 8px; font-size: 14px;">
-            <strong>ℹ️ Quy trình kiểm kê:</strong>
-            <ol style="margin: 8px 0 0 0; padding-left: 20px;">
-                <li>Nhấn <strong>"� Tải tất cả sản phẩm"</strong> hoặc <strong>"➕ Chọn sản phẩm cần kiểm kê"</strong></li>
-                <li>Nhập <strong>số lượng thực tế</strong> đếm được vào cột "SL Thực tế"</li>
-                <li>Nhấn <strong>"✅ Hoàn thành và lưu"</strong> để tạo phiếu kiểm kê</li>
-                <li><strong>Chờ quản lý duyệt phiếu</strong> - Chỉ khi được duyệt, số liệu mới được cập nhật vào hệ thống</li>
-            </ol>
-        </div>
+        <!-- Instructional block removed as requested -->
     </div>
 
     <!-- Modal chọn sản phẩm -->

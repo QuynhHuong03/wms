@@ -136,7 +136,7 @@ function formatDate($date) {
         <?= $currentStatus['label'] ?>
       </span>
     </div>
-    <a href="../index.php?page=goodsReceiptRequest" class="btn-back">← Quay lại</a>
+    <a href="index.php?page=goodsReceiptRequest" class="btn-back">← Quay lại</a>
   </div>
 
   <!-- Thông tin chung -->

@@ -20,7 +20,6 @@ $roles = $p->getAllRoles();
       font-family: "Segoe UI", Tahoma, sans-serif;
       color: #333;
       margin: 0;
-      padding: 20px;
     }
 
     .role-container {

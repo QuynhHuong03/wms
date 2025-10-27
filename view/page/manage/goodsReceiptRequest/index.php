@@ -19,14 +19,14 @@ $allowedRoles = ['manager', 'admin', 'QL_Kho_Tong', 'QL_Kho_CN'];
 $allowedRoleIds = [2, 4];
 $isManager = in_array($role, $allowedRoles) || in_array($role_name, $allowedRoles) || in_array($role_id, $allowedRoleIds);
 
-// ⭐ Xác định xem có phải Kho Tổng không
+// Xác định xem có phải Kho Tổng không
 $isWarehouseMain = ($warehouse_id === 'KHO_TONG_01' || strpos($warehouse_id, 'TONG') !== false);
 
-// ⭐ Cả nhân viên và quản lý đều có thể tạo phiếu yêu cầu
+// Cả nhân viên và quản lý đều có thể tạo phiếu yêu cầu
 // Lấy danh sách phiếu yêu cầu nhập hàng
 
 if ($isWarehouseMain && $isManager) {
-  // ⭐ KHO TỔNG: Xem phiếu yêu cầu gửi đến kho tổng (status 1, 3, 4)
+  // KHO TỔNG: Xem phiếu yêu cầu gửi đến kho tổng (status 1, 3, 4)
   // Status 1: Đã duyệt chờ kiểm tra kho
   // Status 3: Đủ hàng, chờ tạo phiếu xuất
   // Status 4: Thiếu hàng, chờ chỉ định kho khác
@@ -75,7 +75,7 @@ if ($isWarehouseMain && $isManager) {
   .filters {display:flex;gap:10px;align-items:center;}
   .filters select {padding:6px 10px;border-radius:6px;border:1px solid #ccc;font-size:14px;}
   
-  /* ⭐ Tabs cho Kho Tổng */
+  /* Tabs cho Kho Tổng */
   .tabs {display:flex;gap:10px;margin-bottom:20px;border-bottom:2px solid #e1e4e8;}
   .tab {padding:10px 20px;cursor:pointer;border:none;background:none;font-size:15px;font-weight:600;color:#666;border-bottom:3px solid transparent;transition:all 0.3s;}
   .tab.active {color:#007bff;border-bottom-color:#007bff;}
@@ -144,7 +144,7 @@ if ($isWarehouseMain && $isManager) {
             foreach ($requestsToWarehouse as $r) {
               $status = (int)($r['status'] ?? 0);
               
-              // ⭐ Kiểm tra tồn kho và tìm kho thay thế
+              // Kiểm tra tồn kho và tìm kho thay thế
               $isSufficient = true;
               $sufficientBranchWarehouses = [];
               
@@ -205,7 +205,7 @@ if ($isWarehouseMain && $isManager) {
 
               $priority = $r['priority'] ?? 'normal';
               $priorityClass = $priority === 'urgent' ? 'urgent' : 'normal';
-              $priorityText = $priority === 'urgent' ? '🔴 KHẨN CẤP' : '🟢 Bình thường';
+              $priorityText = $priority === 'urgent' ? ' Khẩn cấp' : ' Bình thường';
 
               $created_date = 'N/A';
               if (isset($r['created_at'])) {
@@ -332,7 +332,7 @@ if ($isWarehouseMain && $isManager) {
             foreach ($assignedRequests as $r) {
               $priority = $r['priority'] ?? 'normal';
               $priorityClass = $priority === 'urgent' ? 'urgent' : 'normal';
-              $priorityText = $priority === 'urgent' ? '🔴 KHẨN CẤP' : '🟢 Bình thường';
+              $priorityText = $priority === 'urgent' ? ' Khẩn cấp' : ' Bình thường';
 
               $assigned_date = 'N/A';
               if (isset($r['assigned_at'])) {
@@ -458,7 +458,7 @@ if ($isWarehouseMain && $isManager) {
 
           $priority = $r['priority'] ?? 'normal';
           $priorityClass = $priority === 'urgent' ? 'urgent' : 'normal';
-          $priorityText = $priority === 'urgent' ? '🔴 KHẨN CẤP' : '🟢 Bình thường';
+          $priorityText = $priority === 'urgent' ? ' Khẩn cấp' : ' Bình thường';
 
           $created_date = 'N/A';
           if (isset($r['created_at'])) {

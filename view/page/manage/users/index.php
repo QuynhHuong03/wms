@@ -12,150 +12,195 @@ if (isset($_POST['btnTK']) && !empty($_POST['txtTK'])) {
 ?>
 
 <style>
-  .user-list-container {
-    max-width: 1200px;
-    margin: 30px auto;
-    background: #fff;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 3px 15px rgba(0,0,0,0.08);
-  }
-
-  .user-list-container h2 {
-    text-align: center;
-    margin-bottom: 25px;
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7fa;
     color: #333;
-  }
+}
 
-  .user-list-container table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-  }
+.user-list-container {
+    max-width: 1400px;
+    margin: 30px auto;
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+}
 
-  .user-list-container th,
-  .user-list-container td {
-    padding: 10px 12px;
-    border: 1px solid #e1e4e8;
-    text-align: center;
-    font-size: 14px;
-  }
+.user-list-container h2 {
+    text-align: left;
+    margin-bottom: 0;
+    font-size: 1.8rem;
+    color: #1f2937;
+    font-weight: 700;
+}
 
-  .user-list-container th {
-    background: #f9fafb;
-  }
-
-  .user-list-container tr:hover {
-    background: #f1f7ff;
-  }
-
-  .user-list-container .btn {
-    border: none;
-    padding: 6px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    text-decoration: none;
-    display: inline-block;
-  }
-
-  .user-list-container .btn-edit {
-    background: #17a2b8;
-    color: #fff;
-  }
-
-  .user-list-container .btn-delete {
-    background: #dc3545;
-    color: #fff;
-  }
-
-  .user-list-container .btn:hover {
-    opacity: 0.9;
-  }
-
-  .user-list-container .status {
-    font-weight: 600;
-    padding: 6px 10px;
-    border-radius: 8px;
-    display: inline-block;
-  }
-
-  .user-list-container .working {
-    background: #d4edda;
-    color: #155724;
-  }
-
-  .user-list-container .left {
-    background: #f8d7da;
-    color: #721c24;
-  }
-
-  .user-list-container .role-admin {
-    background: #fde68a;
-    color: #92400e;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-weight: 600;
-  }
-
-  .user-list-container .role-manager {
-    background: #e0f2fe;
-    color: #1e3a8a;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-weight: 600;
-  }
-
-  .user-list-container .role-staff {
-    background: #f3f4f6;
-    color: #374151;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-weight: 600;
-  }
-
-  .user-list-container .top-actions {
-    margin-bottom: 20px;
+.top-actions {
+    margin-bottom: 25px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 10px;
-  }
+    gap: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e5e7eb;
+}
 
-  .user-list-container .btn-create {
-    background: #007bff;
-    color: #fff;
-    text-decoration: none;
-    padding: 8px 14px;
-    border-radius: 8px;
-  }
-
-  .user-list-container .btn-create:hover {
-    background: #0056b3;
-  }
-
-  .filters {
+.filters {
     display: flex;
     gap: 10px;
     align-items: center;
-  }
+}
 
-  .filters input {
-    padding: 6px 10px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
+.filters input,
+.filters select {
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 0.9rem;
+    transition: border-color 0.3s;
+    background-color: #f9fafb;
+}
+.filters input:focus,
+.filters select:focus {
+    border-color: #2563eb;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+.btn-create {
+    background: #2563eb;
+    color: #fff;
+    text-decoration: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: background-color 0.3s, transform 0.1s;
+}
+
+.btn-create:hover {
+    background: #1e40af;
+    transform: translateY(-1px);
+}
+
+.user-list-container table {
+    width: 100%;
+    border-collapse: separate; 
+    border-spacing: 0;
+    margin-top: 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden; 
+}
+
+.user-list-container th,
+.user-list-container td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+    font-size: 0.9rem;
+}
+.user-list-container td:last-child {
+    text-align: center; 
+}
+.user-list-container th:last-child {
+    text-align: center;
+}
+
+.user-list-container th {
+    background: #f9fafb;
+    color: #4b5563;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+
+.user-list-container tr:last-child td {
+    border-bottom: none;
+}
+
+.user-list-container tbody tr:hover {
+    background: #f7faff;
+    transition: background-color 0.2s;
+}
+
+.status,
+.role-tag {
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 20px;/* Pill shape */
+    display: inline-block;
+    font-size: 0.8rem;
+}
+
+.working {
+    background-color: #d1fae5; 
+    color: #065f46;
+}
+.left {
+    background-color: #fee2e2; 
+    color: #991b1b; 
+}
+
+/* Role */
+.role-admin {
+    background-color: #fef9c3;
+    color: #a16207;
+}
+.role-manager {
+    background-color: #dbeafe; 
+    color: #1e40af;
+}
+.role-staff {
+    background-color: #e5e7eb;
+    color: #4b5563;
+}
+
+.user-list-container td:nth-child(6) span {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+
+.btn-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.user-list-container .btn {
+    border: none;
+    padding: 8px 10px;
+    border-radius: 8px; 
+    cursor: pointer;
     font-size: 14px;
-  }
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
 
-  .filters select {
-    padding: 6px 10px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    font-size: 14px;
-  }
+.user-list-container .btn-edit {
+    background: #3b82f6;
+    color: #fff;
+}
 
-  .modal {
+.user-list-container .btn-delete {
+    background: #ef4444;
+    color: #fff;
+}
+
+.user-list-container .btn:hover {
+    opacity: 1;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+}
+.user-list-container .btn-edit:hover { background: #2563eb; }
+.user-list-container .btn-delete:hover { background: #dc2626; }
+
+.modal {
     display: none;
     position: fixed;
     z-index: 1000;
@@ -163,22 +208,89 @@ if (isset($_POST['btnTK']) && !empty($_POST['txtTK'])) {
     top: 0;
     width: 100%;
     height: 100%;
-  }
-
-  .modal-content {
-    position: relative;
-    z-index: 1001;
-  }
-
-  .modal-overlay {
-    position: fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
+    overflow: auto;
     background: rgba(0,0,0,0.4);
-    z-index: 1000;
-  }
+}
+
+.modal-content {
+    background: #fff;
+    max-width: 400px;
+    margin: 15vh auto;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+    text-align: center;
+    animation: fadeIn 0.3s;
+}
+
+.modal-content h3 {
+    color: #1f2937;
+    margin-bottom: 15px;
+}
+
+.modal-content p {
+    color: #6b7280;
+    margin-bottom: 25px;
+}
+
+#cancelBtn, #confirmDeleteBtn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s;
+}
+
+#cancelBtn {
+    background: #e5e7eb;
+    color: #374151;
+}
+#cancelBtn:hover {
+    background: #d1d5db;
+}
+
+#confirmDeleteBtn {
+    background: #ef4444;
+    color: white;
+}
+#confirmDeleteBtn:hover {
+    background: #dc2626;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@media (max-width: 768px) {
+    .user-list-container {
+        padding: 20px 10px;
+        margin: 15px;
+    }
+    .top-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .filters {
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+    .filters input, .filters select {
+        flex-grow: 1;
+        min-width: 45%;
+    }
+    .btn-create {
+        width: 100%;
+        text-align: center;
+    }
+    .user-list-container {
+        overflow-x: auto;
+    }
+    .user-list-container table {
+        min-width: 800px;
+    }
+}
 </style>
 
 <div class="user-list-container">

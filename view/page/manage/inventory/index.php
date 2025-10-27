@@ -135,6 +135,14 @@ $limit = intval($result['limit'] ?? $limit);
 
 $warehouses = $cWarehouse->getAllWarehouses();
 
+// Helper to build URL with current filters
+function buildUrl($overrides = []) {
+	$params = array_merge($_GET, $overrides);
+	// Ensure router param stays on inventory
+	$params['page'] = 'inventory';
+	return 'index.php?' . http_build_query($params);
+}
+
 // Lightweight JSON endpoint for bin distribution (works with current filters)
 if (isset($_GET['ajax']) && $_GET['ajax'] === 'bins') {
 	header('Content-Type: application/json; charset=utf-8');
@@ -152,35 +160,217 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'bins') {
 ?>
 
 <style>
-	.inv-container {
-		max-width: 1300px;
-		margin: 30px auto;
-		background: #fff;
-		padding: 24px;
-		border-radius: 12px;
-		box-shadow: 0 3px 15px rgba(0,0,0,0.08);
-	}
-	.inv-header { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
-	.inv-title { font-size: 22px; font-weight:700; color:#333; margin:0; }
-	.inv-filters { display:flex; gap:10px; align-items:center; flex-wrap: wrap; }
-	.inv-filters input, .inv-filters select { padding:7px 10px; border:1px solid #ccc; border-radius:8px; font-size:14px; }
-		.inv-btn { background:#007bff; color:#fff; padding:8px 12px; border:none; border-radius:8px; cursor:pointer; text-decoration:none; }
-	.inv-btn.secondary { background:#6b7280; }
-		.inv-btn.ghost { background:#fff; color:#2563eb; border:1px solid #93c5fd; }
-	.inv-table { width:100%; border-collapse: collapse; margin-top:16px; }
-	.inv-table th, .inv-table td { padding:10px 12px; border:1px solid #e5e7eb; font-size:14px; text-align:center; }
-	.inv-table th { background:#f9fafb; }
-	.qty-pos { color:#065f46; font-weight:600; }
-	.qty-neg { color:#b91c1c; font-weight:600; }
-	.inv-pagination { display:flex; gap:6px; justify-content:flex-end; align-items:center; margin-top:12px; flex-wrap:wrap; }
-	.inv-page-link { padding:6px 10px; border:1px solid #d1d5db; border-radius:6px; text-decoration:none; color:#111827; }
-	.inv-page-link.active { background:#2563eb; color:#fff; border-color:#2563eb; }
-  .inv-modal { display:none; position:fixed; inset:0; z-index:1000; }
-  .inv-modal .overlay { position:absolute; inset:0; background:rgba(0,0,0,0.4); }
-  .inv-modal .content { position:relative; z-index:1001; max-width:800px; margin:80px auto; background:#fff; border-radius:12px; padding:16px; }
-  .inv-modal table { width:100%; border-collapse: collapse; margin-top:10px; }
-  .inv-modal th, .inv-modal td { padding:8px 10px; border:1px solid #e5e7eb; text-align:center; }
+  body {
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    background: #f3f4f6;
+  }
+
+  .inv-container {
+    max-width: 1300px;
+    margin: 20px auto;
+    background: #ffffff;
+    padding: 28px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+    transition: 0.3s ease;
+  }
+
+  .inv-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .inv-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Bộ lọc */
+  .inv-filters form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .inv-filters input,
+  .inv-filters select {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+    transition: 0.2s;
+  }
+  .inv-filters input:focus,
+  .inv-filters select:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+  }
+
+  /* Nút */
+  .inv-btn {
+    background: #2563eb;
+    color: #fff;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: 0.2s ease;
+  }
+  .inv-btn:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+  }
+  .inv-btn.secondary {
+    background: #6b7280;
+  }
+  .inv-btn.secondary:hover {
+    background: #4b5563;
+  }
+  .inv-btn.ghost {
+    background: #f9fafb;
+    color: #2563eb;
+    border: 1px solid #c7d2fe;
+  }
+  .inv-btn.ghost:hover {
+    background: #eff6ff;
+  }
+
+  /* Bảng */
+  .inv-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .inv-table th, .inv-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: center;
+    font-size: 14px;
+  }
+
+  .inv-table th {
+    background: #f1f5f9;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .inv-table tr:hover {
+    background: #f9fafb;
+  }
+
+  .qty-pos { color: #059669; font-weight: 600; }
+  .qty-neg { color: #dc2626; font-weight: 600; }
+
+  /* Modal */
+  .inv-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+  }
+  .inv-modal .overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+  }
+  .inv-modal .content {
+    position: relative;
+    z-index: 1001;
+    max-width: 800px;
+    margin: 100px auto;
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px 24px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    animation: modalFadeIn 0.25s ease;
+  }
+  @keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .inv-modal table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+  }
+  .inv-modal th, .inv-modal td {
+    padding: 8px 10px;
+    border: 1px solid #e5e7eb;
+    text-align: center;
+    font-size: 14px;
+  }
+  .inv-modal th {
+    background: #f9fafb;
+  }
+
+  /* Phân trang */
+  .inv-pagination {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 18px;
+    flex-wrap: wrap;
+  }
+
+  .inv-pagination span {
+    font-size: 14px;
+    color: #374151;
+  }
+
+  .inv-page-link {
+    padding: 6px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #111827;
+    transition: 0.2s;
+  }
+  .inv-page-link:hover {
+    background: #f3f4f6;
+  }
+  .inv-page-link.active {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .inv-filters form {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .inv-table th, .inv-table td {
+      font-size: 13px;
+      padding: 8px;
+    }
+    .inv-container {
+      padding: 16px;
+    }
+  }
 </style>
+
 
 <div class="inv-container">
 	<div class="inv-header">
@@ -204,7 +394,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'bins') {
 				<button class="inv-btn" type="submit">Lọc</button>
 				<a class="inv-btn" href="index.php?page=inventory/createInventory_sheet" style="background:#059669;" title="Tạo phiếu kiểm kê">📋 Tạo phiếu kiểm kê</a>
 				<a class="inv-btn" href="index.php?page=inventory/inventory_sheets" style="background:#7c3aed;" title="Quản lý phiếu kiểm kê">📄 Quản lý phiếu</a>
-				<a class="inv-btn secondary" href="index.php?page=manage">⬅ Quay lại</a>
+				<a class="inv-btn secondary" href="index.php?page=manage"> Quay lại</a>
 			</form>
 		</div>
 	</div>
@@ -373,15 +563,15 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'bins') {
 					const key = pid || sku;
 					if (!key) { alert('Không xác định được sản phẩm.'); return; }
 					try {
-						const base = window.location.href.split('?')[0].replace(/index\.php.*/, '');
-						const url = new URL('inventory/process.php', base);
-						url.searchParams.set('action', 'bins');
-						url.searchParams.set('key', key);
-						const from = getFilter('from');
-						const to = getFilter('to');
-						if (from) url.searchParams.set('from', from);
-						if (to) url.searchParams.set('to', to);
-						const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+						const params = new URLSearchParams();
+						params.set('action', 'bins');
+						params.set('key', key);
+					const from = getFilter('from');
+					const to = getFilter('to');
+					if (from) params.set('from', from);
+					if (to) params.set('to', to);
+					const url = '/KLTN/view/page/manage/inventory/process.php?' + params.toString();
+					const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
 						if (!res.ok) throw new Error('HTTP ' + res.status);
 						const payload = await res.json();
 						const data = payload && payload.ok ? (payload.data || []) : [];
@@ -422,15 +612,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'bins') {
 			</script>
 
 	<div class="inv-pagination">
-		<?php
-			// Helper to build URL with current filters
-					function buildUrl($overrides = []) {
-						$params = array_merge($_GET, $overrides);
-						// Ensure router param stays on inventory
-						$params['page'] = 'inventory';
-						return 'index.php?' . http_build_query($params);
-					}
-		?>
 		<span>Tổng: <?=number_format($total)?></span>
 		<?php if ($pages > 1) { ?>
 					<a class="inv-page-link" href="<?=buildUrl(['p'=>1])?>">« Đầu</a>

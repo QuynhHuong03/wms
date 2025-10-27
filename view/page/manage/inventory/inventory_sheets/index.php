@@ -7,7 +7,6 @@ $cSheet = new CInventorySheet();
 // Kiểm tra quyền: chỉ quản lý mới được duyệt/từ chối
 // role_id: 1=Admin, 2=QL_Kho_Tong, 4=QL_Kho_CN
 $roleId = $_SESSION['login']['role_id'] ?? null;
-error_log('Role check - role_id: ' . $roleId);
 $isManager = in_array($roleId, [1, 2, 4]); // Admin, QL_Kho_Tong, QL_Kho_CN
 
 // Get current user's warehouse
@@ -409,11 +408,6 @@ function buildUrl($overrides = []) {
         </div>
     </div>
 
-    <!-- Debug info - xóa sau khi fix -->
-    <div style="padding: 8px; background: #e0e7ff; border: 1px solid #818cf8; border-radius: 6px; margin-bottom: 12px; font-size: 12px; font-family: monospace;">
-        <strong>🔍 Debug:</strong> role_id = <?= $roleId ?>, isManager = <?= $isManager ? 'TRUE' : 'FALSE' ?>
-    </div>
-
     <?php if (!$isManager) { ?>
         <div style="padding: 12px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; margin-bottom: 16px; font-size: 14px;">
             <strong>ℹ️ Lưu ý:</strong> Bạn có thể tạo và xem phiếu kiểm kê. Chỉ <strong>Quản lý</strong> mới có quyền duyệt/từ chối phiếu.
@@ -618,7 +612,7 @@ function buildUrl($overrides = []) {
 
     async function viewSheet(sheetId) {
         try {
-            const response = await fetch(`/KLTN-main/view/page/manage/inventory/createInventory_sheet/process.php?action=get_sheet&id=${sheetId}`);
+            const response = await fetch(`/KLTN/view/page/manage/inventory/createInventory_sheet/process.php?action=get_sheet&id=${sheetId}`);
             const result = await response.json();
 
             if (result.ok && result.data) {
@@ -693,7 +687,7 @@ function buildUrl($overrides = []) {
         currentSelectedBin = null;
         
         // Load sheet data to check items with differences
-        fetch(`/KLTN-main/view/page/manage/inventory/createInventory_sheet/process.php?action=get_sheet&id=${sheetId}`)
+        fetch(`/KLTN/view/page/manage/inventory/createInventory_sheet/process.php?action=get_sheet&id=${sheetId}`)
             .then(res => res.json())
             .then(result => {
                 if (result.ok && result.data) {
@@ -759,7 +753,7 @@ function buildUrl($overrides = []) {
         // Load warehouse map once
         const warehouseId = currentSheetData?.warehouse_id || '';
         try {
-            const response = await fetch(`/KLTN-main/view/page/manage/locations/ajax_get_locations.php?warehouse_id=${warehouseId}`);
+            const response = await fetch(`/KLTN/view/page/manage/locations/ajax_get_locations.php?warehouse_id=${warehouseId}`);
             warehouseLocationsHTML = await response.text();
         } catch (error) {
             console.error('Load locations error:', error);
@@ -971,7 +965,7 @@ function buildUrl($overrides = []) {
         
         try {
             const note = document.getElementById('approveNote').value;
-            const response = await fetch('/KLTN-main/view/page/manage/inventory/inventory_sheets/process.php?action=approve', {
+            const response = await fetch('/KLTN/view/page/manage/inventory/inventory_sheets/process.php?action=approve', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -985,7 +979,6 @@ function buildUrl($overrides = []) {
             });
 
             const text = await response.text();
-            console.log('Raw response:', text);
             
             let result;
             try {
@@ -1020,7 +1013,7 @@ function buildUrl($overrides = []) {
         if (!note) return;
 
         try {
-            const response = await fetch('/KLTN-main/view/page/manage/inventory/inventory_sheets/process.php?action=reject', {
+            const response = await fetch('/KLTN/view/page/manage/inventory/inventory_sheets/process.php?action=reject', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -1117,11 +1110,10 @@ function buildUrl($overrides = []) {
     // Event listener for confirm location button
     document.addEventListener('DOMContentLoaded', function() {
         const btnConfirmLocation = document.getElementById('btnConfirmLocation');
-        if (btnConfirmLocation) {
+            if (btnConfirmLocation) {
             btnConfirmLocation.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Button clicked!'); // Debug log
                 confirmLocationSelection();
             });
         }

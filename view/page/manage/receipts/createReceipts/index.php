@@ -1,14 +1,8 @@
 <?php
-// session_start();
-// require_once "connect.php"; 
-// $userId = $_SESSION['login']['user_id'] ?? "U001";
-
-// $client = new MongoDB\Client("mongodb://127.0.0.1:27017");
-// $db = $client->wms;
-// $suppliers = $db->suppliers->find();
     error_reporting();
     include_once(__DIR__ . '/../../../../controller/cSupplier.php');
     $p = new CSupplier();
+    $suppliers = $p->getAllSuppliers() ?? []; // đảm bảo có mảng supplier
 ?>
 
 <!DOCTYPE html>
@@ -19,9 +13,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     body { 
-        /* font-family: Arial, sans-serif;  */
-        /* margin: 20px;  */
         background: #f9f9f9; 
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     .form-container { 
         max-width: 1100px; 
@@ -67,6 +60,7 @@
         border: none; 
         border-radius: 6px; 
         cursor: pointer; 
+        transition: 0.2s;
     }
     .btn:hover { 
         background: #0056b3; 
@@ -90,6 +84,11 @@
     .barcode-box input { 
         flex:1; 
     }
+    .price-display, 
+    input[name*='[subtotal]'] {
+        text-align: right;
+        font-weight: 500;
+    }
   </style>
 </head>
 <body>
@@ -100,7 +99,7 @@
       <select name="supplier_id" required>
         <option value="">-- Chọn nhà cung cấp --</option>
         <?php foreach ($suppliers as $s) { ?>
-          <option value="<?= $s['_id'] ?>"><?= $s['name'] ?></option>
+          <option value="<?= $s['_id'] ?>"><?= htmlspecialchars($s['name']) ?></option>
         <?php } ?>
       </select>
 
@@ -141,6 +140,19 @@
     let rowIndex = 0;
     let productMap = {};
 
+    // --- Format number theo chuẩn Việt Nam ---
+    function formatNumber(n) {
+      if (n === null || n === undefined) return '';
+      const num = Number(n) || 0;
+      return num.toLocaleString('vi-VN');
+    }
+
+    // --- Parse lại từ chuỗi có dấu . ---
+    function parseNumber(s) {
+      if (s === null || s === undefined) return 0;
+      return Number(String(s).replace(/\./g, '').replace(/,/g, '')) || 0;
+    }
+
     // --- Nhập barcode thủ công ---
     document.getElementById("barcode").addEventListener("keypress", function(e) {
       if (e.key === "Enter") {
@@ -150,7 +162,7 @@
       }
     });
 
-    // --- Nút Scanner USB (thực ra scanner USB gõ vào input luôn) ---
+    // --- Nút Scanner USB ---
     function useScanner() {
       document.getElementById("barcode").focus();
       alert("Đặt con trỏ vào ô barcode và quét bằng máy scanner USB.");
@@ -211,8 +223,13 @@
           <td>${product.name}</td>
           <td>${product.unit}</td>
           <td><input type="number" name="products[${rowIndex}][quantity]" value="1" min="1" oninput="calcSubtotal(this)"></td>
-          <td><input type="number" name="products[${rowIndex}][price]" value="${product.import_price}" min="0" oninput="calcSubtotal(this)"></td>
-          <td><input type="text" name="products[${rowIndex}][subtotal]" value="${product.import_price}" readonly></td>
+          <td>
+            <input type="hidden" name="products[${rowIndex}][price]" value="${product.import_price}">
+            <input type="text" class="price-display" value="${formatNumber(product.import_price)}" 
+                   oninput="onPriceInput(this)" onblur="formatPriceOnBlur(this)">
+          </td>
+          <td><input type="text" name="products[${rowIndex}][subtotal]" 
+                     value="${formatNumber(product.import_price)}" readonly></td>
           <td><button type="button" class="btn btn-danger" onclick="removeRow(this,'${product._id}')">Xóa</button></td>
         `;
         productMap[product._id] = rowIndex;
@@ -228,9 +245,31 @@
 
     function calcSubtotal(input) {
       const row = input.closest("tr");
-      const qty = row.querySelector("input[name*='[quantity]']").value || 0;
-      const price = row.querySelector("input[name*='[price]']").value || 0;
-      row.querySelector("input[name*='[subtotal]']").value = qty * price;
+      const qty = parseNumber(row.querySelector("input[name*='[quantity]']").value) || 0;
+      const price = parseNumber(row.querySelector("input[type='hidden'][name*='[price]']").value) || 0;
+      row.querySelector("input[name*='[subtotal]']").value = formatNumber(qty * price);
+    }
+
+    function onPriceInput(el) {
+      const row = el.closest('tr');
+      const hidden = row.querySelector("input[type='hidden'][name*='[price]']");
+      let value = el.value.replace(/[^0-9]/g, '');
+      hidden.value = value;
+      el.value = value;
+    }
+
+    function formatPriceOnBlur(el) {
+      const row = el.closest('tr');
+      const hidden = row.querySelector("input[type='hidden'][name*='[price]']");
+      const qtyInput = row.querySelector("input[name*='[quantity]']");
+      const subtotalInput = row.querySelector("input[name*='[subtotal]']");
+      
+      const raw = parseNumber(el.value);
+      hidden.value = raw;
+      el.value = formatNumber(raw);
+      
+      const qty = parseNumber(qtyInput.value) || 0;
+      subtotalInput.value = formatNumber(raw * qty);
     }
   </script>
 </body>

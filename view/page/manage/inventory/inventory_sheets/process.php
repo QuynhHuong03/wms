@@ -13,7 +13,6 @@ try {
     // Check user role - only managers can approve/reject
     // role_id: 1=Admin, 2=QL_Kho_Tong, 4=QL_Kho_CN
     $roleId = $_SESSION['login']['role_id'] ?? null;
-    error_log('Process - role_id: ' . $roleId);
     
     $isManager = in_array($roleId, [1, 2, 4]);
     
@@ -43,12 +42,9 @@ try {
             $userId = $_SESSION['login']['user_id'] ?? $_SESSION['login']['id'] ?? '';
             $userName = $_SESSION['login']['name'] ?? $_SESSION['login']['username'] ?? 'Unknown';
             
-            error_log('Approving sheet: ' . $sheetId . ' by user: ' . $userId . ' (' . $userName . ')');
-            error_log('Locations: ' . json_encode($locations));
             
             $result = $cSheet->approveSheet($sheetId, $userId, $userName, $note, $locations);
             
-            error_log('Approve result: ' . json_encode($result));
             
             echo json_encode($result);
             break;
@@ -77,11 +73,9 @@ try {
             $userId = $_SESSION['login']['user_id'] ?? $_SESSION['login']['id'] ?? '';
             $userName = $_SESSION['login']['name'] ?? $_SESSION['login']['username'] ?? 'Unknown';
             
-            error_log('Rejecting sheet: ' . $sheetId . ' by user: ' . $userId . ' (' . $userName . ')');
             
             $result = $cSheet->rejectSheet($sheetId, $userId, $userName, $note);
             
-            error_log('Reject result: ' . json_encode($result));
             
             echo json_encode($result);
             break;

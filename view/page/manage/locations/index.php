@@ -59,7 +59,6 @@ if ($warehouseId) {
         body{
             font-family:Inter, "Segoe UI", Roboto, Arial, sans-serif;
             background:var(--bg);
-            padding:28px;
             margin:0;
             color:#0b1220;
         }
@@ -90,7 +89,6 @@ if ($warehouseId) {
         .zone h4{margin:0;font-size:16px}
         .zone .zone-meta{display:flex;justify-content:space-between;align-items:center;gap:8px}
         .rack-row{display:flex;flex-direction:column;gap:12px}
-        /* Each rack card */
         .rack{
             border:1px dashed #e9eef6;
             padding:12px;
@@ -99,7 +97,6 @@ if ($warehouseId) {
         }
         .rack h5{margin:0 0 8px;font-size:14px;color:#0f172a}
         .rack .rack-meta{font-size:12px;color:var(--muted);margin-bottom:8px}
-        /* Bins grid inside a rack */
         .bins{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:10px}
         .bin{
             border:3px solid var(--border);
@@ -115,8 +112,7 @@ if ($warehouseId) {
             gap:4px;
             position:relative;
         }
-        .bin:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,0.12)}
-        
+        .bin:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,0.12)}       
         /* Màu nhạt, trong suốt theo data-status từ warehouse_structure */
         .bin[data-status="empty"]{
             background:rgba(209, 250, 229, 0.5);
@@ -870,4 +866,3 @@ document.addEventListener('DOMContentLoaded', () => {
 	</script>
 </body>
 </html>
-

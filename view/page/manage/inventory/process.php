@@ -3,6 +3,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 header('Content-Type: application/json; charset=utf-8');
 
 include_once(__DIR__ . "/../../../../controller/cInventory.php");
+include_once(__DIR__ . "/../../../../controller/cReceipt.php");
 
 $cInventory = new CInventory();
 $action = $_GET['action'] ?? '';
