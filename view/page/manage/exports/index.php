@@ -27,15 +27,27 @@ $con = $p->moKetNoi();
 $transactionsCol = null;
 $exports = [];
 
+// DEBUG: Uncomment to see user info
+// echo "<div style='background:#fff3cd;padding:10px;margin:10px;border:1px solid #ffc107;'>";
+// echo "<strong>DEBUG Info:</strong><br>";
+// echo "User ID: " . htmlspecialchars($user_id) . "<br>";
+// echo "Warehouse ID: " . htmlspecialchars($warehouse_id ?? 'NULL') . "<br>";
+// echo "Role: " . htmlspecialchars($role) . "<br>";
+// echo "Is Manager: " . ($isManager ? 'YES' : 'NO') . "<br>";
+// echo "</div>";
+
 if ($con) {
     $transactionsCol = $con->selectCollection('transactions');
     
     // Lấy danh sách phiếu xuất
     $filter = ['transaction_type' => 'export'];
     
-    // Nếu là chi nhánh, chỉ xem phiếu xuất từ kho của mình
-    if (!$isWarehouseMain && $warehouse_id) {
-        $filter['source_warehouse_id'] = $warehouse_id;
+    // Lọc phiếu xuất theo kho của user (CHỈ với nhân viên thường, không phải manager)
+    // Manager/Admin có thể xem TẤT CẢ phiếu xuất
+    if ($warehouse_id && !$isManager) {
+        // CHỈ xem phiếu xuất TỪ kho của mình
+        // (Phiếu xuất ĐẾN kho của mình xem ở trang "Phiếu xuất chờ duyệt")
+        $filter['warehouse_id'] = $warehouse_id;
     }
     
     // Aggregation để join với users và warehouses
@@ -92,12 +104,13 @@ if ($con) {
   .alert-info {background:#d1ecf1;color:#0c5460;border:1px solid #bee5eb;}
   .alert-success {background:#d4edda;color:#155724;border:1px solid #c3e6cb;}
   .stats-row {display:flex;gap:15px;margin-bottom:20px;flex-wrap:wrap;}
-  .stat-card {flex:1;min-width:200px;padding:15px;border-radius:8px;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;}
+  .stat-card {flex:1;min-width:200px;padding:15px;border-radius:8px;color:#fff;}
   .stat-card h3 {margin:0 0 8px 0;font-size:16px;opacity:0.9;}
   .stat-card .number {font-size:32px;font-weight:700;}
-  .stat-card.green {background:linear-gradient(135deg, #11998e 0%, #38ef7d 100%);}
-  .stat-card.orange {background:linear-gradient(135deg, #f093fb 0%, #f5576c 100%);}
-  .stat-card.blue {background:linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);}
+  /* Match gradients with receipts/requests pages: cyan, green, yellow */
+  .stat-card.blue {background:linear-gradient(90deg,#2f9eff,#3db7ff);} /* cyan */
+  .stat-card.green {background:linear-gradient(90deg,#18c97b,#28d399);} /* green */
+  .stat-card.orange {background:linear-gradient(90deg,#ffb400,#ffd24d);} /* yellow/orange */
   .warehouse-badge {background:#e8f4fd;color:#0366d6;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:600;display:inline-block;}
   .product-count {background:#f0f0f0;padding:4px 8px;border-radius:6px;font-size:13px;font-weight:600;color:#555;}
 </style>
@@ -135,6 +148,13 @@ if ($con) {
     }
     $totalProducts += count($export['details'] ?? []);
   }
+
+  // --- Pagination ---
+  $itemsPerPage = 10;
+  $currentPage = isset($_GET['pg']) ? max(1, (int)$_GET['pg']) : 1;
+  $totalPages = ceil($totalExports / $itemsPerPage);
+  $offset = ($currentPage - 1) * $itemsPerPage;
+  $exportsToDisplay = array_slice($exports, $offset, $itemsPerPage);
   ?>
 
   <div class="stats-row">
@@ -155,6 +175,14 @@ if ($con) {
   <div class="top-actions">
     <div class="filters">
       <input type="text" id="filter-search" placeholder=" Tìm mã phiếu, kho..." style="width:250px;">
+      
+      <select id="filter-status" style="padding:8px 12px;border-radius:6px;border:1px solid #ccc;font-size:14px;">
+        <option value="">Lọc theo trạng thái</option>
+        <option value="pending">Chờ xác nhận</option>
+        <option value="completed">Đã xuất kho</option>
+        <option value="delivered">Đã giao hàng</option>
+      </select>
+      
       <input type="date" id="filter-date-from" placeholder="Từ ngày">
       <input type="date" id="filter-date-to" placeholder="Đến ngày">
       <button class="btn btn-print" onclick="filterTable()" style="background:#6c757d;">
@@ -176,16 +204,16 @@ if ($con) {
           <th>Kho xuất</th>
           <th>Kho nhận</th>
           <th>Ngày xuất</th>
-          <th>Người xuất</th>
+          <!-- <th>Người xuất</th> -->
           <th>Số SP</th>
-          <th>Ghi chú</th>
+          <th>Trạng thái</th>
           <th>Hành động</th>
         </tr>
       </thead>
       <tbody>
         <?php 
-        $stt = 1;
-        foreach ($exports as $export) {
+        $stt = $offset + 1;
+        foreach ($exportsToDisplay as $export) {
           $exportId = $export['transaction_id'] ?? 'N/A';
           $requestId = $export['request_id'] ?? 'N/A';
           
@@ -222,11 +250,36 @@ if ($con) {
           
           $creatorName = $export['creator_name'] ?? ($export['created_by'] ?? 'N/A');
           $totalProducts = count($export['details'] ?? []);
-          $note = $export['note'] ?? '';
-          $noteShort = mb_strlen($note) > 30 ? mb_substr($note, 0, 30) . '...' : $note;
+          
+          // Kiểm tra status và inventory_deducted
+          $status = (int)($export['status'] ?? 0);
+          $inventoryDeducted = $export['inventory_deducted'] ?? false;
+          
+          // Trạng thái
+          $statusBadge = '';
+          $statusClass = '';
+          $confirmButton = '';
+          if ($status == 0 && !$inventoryDeducted) {
+            $statusBadge = '<span class="status pending"><i class="fa-solid fa-clock"></i> Chờ xác nhận</span>';
+            $statusClass = 'pending';
+            // Nút xác nhận xuất kho (chỉ manager mới thấy)
+            if ($isManager) {
+              $confirmButton = "
+                <button class='btn btn-print' onclick='confirmExport(\"$exportId\")' title='Xác nhận xuất kho (Trừ inventory)' style='background:#28a745;'>
+                  <i class='fa-solid fa-check-circle'></i> Xác nhận
+                </button>
+              ";
+            }
+          } elseif ($status == 1 || $inventoryDeducted) {
+            $statusBadge = '<span class="status completed"><i class="fa-solid fa-check-circle"></i> Đã xuất kho</span>';
+            $statusClass = 'completed';
+          } elseif ($status == 2) {
+            $statusBadge = '<span class="status completed" style="background:#d4edda;"><i class="fa-solid fa-truck"></i> Đã giao hàng</span>';
+            $statusClass = 'delivered';
+          }
 
           echo "
-            <tr data-date='$created_date_sort' data-search='$exportId $requestId $sourceWarehouseId $destinationWarehouseId $sourceWarehouseName $destinationWarehouseName'>
+            <tr data-date='$created_date_sort' data-search='$exportId $requestId $sourceWarehouseId $destinationWarehouseId $sourceWarehouseName $destinationWarehouseName' data-status='$statusClass'>
               <td>$stt</td>
               <td><strong style='color:#0366d6;'>$exportId</strong></td>
               <td>
@@ -236,22 +289,23 @@ if ($con) {
               </td>
               <td>
                 <span class='warehouse-badge'>
-                  <i class='fa-solid fa-warehouse'></i> $sourceWarehouseName
+                  <i class=''></i> $sourceWarehouseName
                 </span>
               </td>
               <td>
                 <span class='warehouse-badge' style='background:#e8fde8;color:#28a745;'>
-                  <i class='fa-solid fa-location-dot'></i> $destinationWarehouseName
+                  <i class=''></i> $destinationWarehouseName
                 </span>
               </td>
               <td>$created_date</td>
-              <td>$creatorName</td>
+              
               <td><span class='product-count'>$totalProducts SP</span></td>
-              <td title='".htmlspecialchars($note)."' style='max-width:200px;text-align:left;'>".htmlspecialchars($noteShort)."</td>
+              <td>$statusBadge</td>
               <td>
                 <a href='index.php?page=exports/detail&id=$exportId' class='btn btn-view' title='Xem chi tiết'>
                   <i class='fa-solid fa-eye'></i>
                 </a>
+                $confirmButton
                 <button class='btn btn-print' onclick='printExport(\"$exportId\")' title='In phiếu'>
                   <i class='fa-solid fa-print'></i>
                 </button>
@@ -268,29 +322,79 @@ if ($con) {
       <i class="fa-solid fa-info-circle"></i> Chưa có phiếu xuất kho nào.
     </div>
   <?php endif; ?>
+
+  <!-- Pagination -->
+  <?php if ($totalPages > 1): ?>
+  <div style="margin-top:20px;display:flex;justify-content:center;align-items:center;gap:8px;">
+    <?php if ($currentPage > 1): ?>
+      <a href="?page=exports&pg=<?= $currentPage - 1 ?>" style="padding:8px 12px;background:#007bff;color:#fff;text-decoration:none;border-radius:6px;font-size:14px;">
+        <i class="fa-solid fa-chevron-left"></i> 
+      </a>
+    <?php endif; ?>
+
+    <?php
+    $range = 2;
+    $startPage = max(1, $currentPage - $range);
+    $endPage = min($totalPages, $currentPage + $range);
+
+    if ($startPage > 1) {
+      echo '<a href="?page=exports&pg=1" style="padding:8px 12px;background:#f0f0f0;color:#333;text-decoration:none;border-radius:6px;font-size:14px;">1</a>';
+      if ($startPage > 2) {
+        echo '<span style="padding:8px;">...</span>';
+      }
+    }
+
+    for ($i = $startPage; $i <= $endPage; $i++) {
+      $active = $i === $currentPage ? 'background:#007bff;color:#fff;' : 'background:#f0f0f0;color:#333;';
+      echo "<a href='?page=exports&pg=$i' style='padding:8px 12px;$active text-decoration:none;border-radius:6px;font-size:14px;'>$i</a>";
+    }
+
+    if ($endPage < $totalPages) {
+      if ($endPage < $totalPages - 1) {
+        echo '<span style="padding:8px;">...</span>';
+      }
+      echo "<a href='?page=exports&pg=$totalPages' style='padding:8px 12px;background:#f0f0f0;color:#333;text-decoration:none;border-radius:6px;font-size:14px;'>$totalPages</a>";
+    }
+    ?>
+
+    <?php if ($currentPage < $totalPages): ?>
+      <a href="?page=exports&pg=<?= $currentPage + 1 ?>" style="padding:8px 12px;background:#007bff;color:#fff;text-decoration:none;border-radius:6px;font-size:14px;">
+        <i class="fa-solid fa-chevron-right"></i>
+      </a>
+    <?php endif; ?>
+  </div>
+
+  <div style="text-align:center;margin-top:10px;color:#666;font-size:14px;">
+    Trang <?= $currentPage ?> / <?= $totalPages ?> (Tổng <?= $totalExports ?> phiếu)
+  </div>
+  <?php endif; ?>
 </div>
 
 <script>
   function filterTable() {
     const searchValue = document.getElementById('filter-search').value.toLowerCase();
+    const statusValue = document.getElementById('filter-status').value;
     const dateFrom = document.getElementById('filter-date-from').value;
     const dateTo = document.getElementById('filter-date-to').value;
     const rows = document.querySelectorAll('#export-table tbody tr');
 
     rows.forEach(row => {
       const searchText = row.getAttribute('data-search').toLowerCase();
+      const rowStatus = row.getAttribute('data-status');
       const rowDate = row.getAttribute('data-date');
 
       const matchSearch = !searchValue || searchText.includes(searchValue);
+      const matchStatus = !statusValue || rowStatus === statusValue;
       const matchDateFrom = !dateFrom || rowDate >= dateFrom;
       const matchDateTo = !dateTo || rowDate <= dateTo;
 
-      row.style.display = (matchSearch && matchDateFrom && matchDateTo) ? '' : 'none';
+      row.style.display = (matchSearch && matchStatus && matchDateFrom && matchDateTo) ? '' : 'none';
     });
   }
 
   function resetFilter() {
     document.getElementById('filter-search').value = '';
+    document.getElementById('filter-status').value = '';
     document.getElementById('filter-date-from').value = '';
     document.getElementById('filter-date-to').value = '';
     
@@ -304,9 +408,47 @@ if ($con) {
     // Có thể tạo trang in riêng hoặc mở cửa sổ mới
     window.open('index.php?page=exports/print&id=' + exportId, '_blank');
   }
+  
+  function confirmExport(exportId) {
+    // Simple confirmation title only (no icon or bullets)
+    if (!confirm('XÁC NHẬN XUẤT KHO')) {
+      return;
+    }
+    
+    // Hiển thị loading
+    const btn = event.target.closest('button');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+    btn.disabled = true;
+    
+    fetch('exports/process.php', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: `action=confirm_export&export_id=${encodeURIComponent(exportId)}`
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        alert('✅ ' + data.message);
+        location.reload();
+      } else {
+        alert('❌ ' + data.message);
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+      }
+    })
+    .catch(err => {
+      alert('❌ Lỗi: ' + err.message);
+      btn.innerHTML = originalHTML;
+      btn.disabled = false;
+    });
+  }
 
-  // Tự động lọc khi gõ
+  // Tự động lọc khi gõ hoặc thay đổi select
   document.getElementById('filter-search')?.addEventListener('input', filterTable);
+  document.getElementById('filter-status')?.addEventListener('change', filterTable);
+  document.getElementById('filter-date-from')?.addEventListener('change', filterTable);
+  document.getElementById('filter-date-to')?.addEventListener('change', filterTable);
 </script>
 
 <?php

@@ -69,6 +69,9 @@ body, html {
                 else {
                     echo "<h3>Trang không tồn tại!</h3>";
                     echo "<p>Đường dẫn: " . htmlspecialchars($path) . "</p>";
+                    echo "<p>Full path: " . htmlspecialchars(__DIR__ . '/' . $path . ".php") . "</p>";
+                    echo "<p>File exists: " . (file_exists(__DIR__ . '/' . $path . ".php") ? 'YES' : 'NO') . "</p>";
+                    echo "<p>Current dir: " . htmlspecialchars(getcwd()) . "</p>";
                 }
             } else {
                 // Trang mặc định khi mới vào

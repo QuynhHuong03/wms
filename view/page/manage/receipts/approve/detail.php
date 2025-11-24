@@ -28,10 +28,23 @@ function fmtDate($time) {
 $created_date  = fmtDate($receipt['created_at'] ?? '');
 $approved_date = fmtDate($receipt['approved_at'] ?? '');
 
-// 🔹 Trạng thái
-$statusText  = ['Chờ duyệt', 'Đã duyệt', 'Từ chối', 'Đã hoàn tất'];
-$statusClass = ['pending', 'approved', 'rejected', 'located'];
+// 🔹 Trạng thái (an toàn khi status nằm ngoài phạm vi)
 $status = (int)($receipt['status'] ?? 0);
+$statusTextMap = [
+  0 => 'Chờ duyệt',
+  1 => 'Đã duyệt',
+  2 => 'Từ chối',
+  3 => 'Đã hoàn tất'
+];
+$statusClassMap = [
+  0 => 'pending',
+  1 => 'approved',
+  2 => 'rejected',
+  3 => 'located'
+];
+
+$statusText = isset($statusTextMap[$status]) ? $statusTextMap[$status] : 'Không xác định';
+$statusClass = isset($statusClassMap[$status]) ? $statusClassMap[$status] : 'pending';
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -97,7 +110,7 @@ $status = (int)($receipt['status'] ?? 0);
       <p><b>Loại phiếu:</b> Không xác định</p>
     <?php endif; ?>
 
-    <p><b>Trạng thái:</b> <span class="status <?= $statusClass[$status] ?>"><?= $statusText[$status] ?></span></p>
+    <p><b>Trạng thái:</b> <span class="status <?= htmlspecialchars($statusClass) ?>"><?= htmlspecialchars($statusText) ?></span></p>
 
     <?php if ($status > 0 && isset($receipt['approved_by'])): ?>
       <p><b>Người duyệt:</b> <?= htmlspecialchars($receipt['approved_by']) ?></p>
@@ -116,8 +129,9 @@ $status = (int)($receipt['status'] ?? 0);
     <table>
       <thead>
         <tr>
-          <th>Mã SP</th>
+          <th>Mã SKU</th>
           <th>Tên sản phẩm</th>
+          <th>Kích thước (cm)</th>
           <th>Đơn vị</th>
           <th>Số lượng</th>
           <th>Giá nhập</th>
@@ -130,16 +144,45 @@ $status = (int)($receipt['status'] ?? 0);
           foreach ($receipt['details'] as $item) {
             $subtotal = ($item['quantity'] ?? 0) * ($item['unit_price'] ?? 0);
             
-            // ✅ Lấy thông tin sản phẩm để hiển thị đơn vị và quy đổi
+            // Lấy thông tin sản phẩm để hiển thị đơn vị, quy đổi và kích thước
             $productInfo = $cProduct->getProductById($item['product_id']);
             $baseUnit = $productInfo['baseUnit'] ?? 'cái';
             $conversionUnits = $productInfo['conversionUnits'] ?? [];
+            
+            // Lấy kích thước sản phẩm - kiểm tra nhiều nguồn dữ liệu
+            $dimensions = [];
+            
+            // Nguồn 1: Từ thông tin sản phẩm trong database
+            if (isset($productInfo['dimensions']) && is_array($productInfo['dimensions'])) {
+              $dimensions = $productInfo['dimensions'];
+            }
+            // Nguồn 2: Có thể lưu trực tiếp trong productInfo (không nested)
+            elseif (isset($productInfo['width']) || isset($productInfo['depth']) || isset($productInfo['height'])) {
+              $dimensions = [
+                'width' => $productInfo['width'] ?? 0,
+                'depth' => $productInfo['depth'] ?? 0,
+                'height' => $productInfo['height'] ?? 0
+              ];
+            }
+            
+            $width = isset($dimensions['width']) ? floatval($dimensions['width']) : 0;
+            $depth = isset($dimensions['depth']) ? floatval($dimensions['depth']) : 0;
+            $height = isset($dimensions['height']) ? floatval($dimensions['height']) : 0;
+            
+            // Hiển thị kích thước
+            if ($width > 0 || $depth > 0 || $height > 0) {
+              $dimensionText = sprintf("%.1f×%.1f×%.1f", $width, $depth, $height);
+              $volume = $width * $depth * $height;
+              $dimensionDisplay = $dimensionText . "<br><small style='color:#6c757d;'>V: " . number_format($volume, 0, ',', '.') . " cm³</small>";
+            } else {
+              $dimensionDisplay = "<span style='color:#dc3545;'>Chưa có</span>";
+            }
             
             // Đơn vị được chọn khi tạo phiếu
             $selectedUnit = $item['unit'] ?? $baseUnit;
             $quantity = $item['quantity'] ?? 0;
             
-            // ✅ Tìm hệ số quy đổi nếu đơn vị không phải là đơn vị cơ bản
+            // Tìm hệ số quy đổi nếu đơn vị không phải là đơn vị cơ bản
             $conversionInfo = '';
             $totalBaseQty = $quantity; // Mặc định là số lượng gốc
             
@@ -155,10 +198,21 @@ $status = (int)($receipt['status'] ?? 0);
             }
             
             $displayQty = $quantity . ' ' . htmlspecialchars($selectedUnit) . $conversionInfo;
-            
+
+            // Hiển thị SKU (ưu tiên trường sku trong chi tiết, sau đó lấy từ productInfo, cuối cùng fallback product_id)
+            $displaySku = '';
+            if (!empty($item['sku'])) {
+              $displaySku = $item['sku'];
+            } elseif (!empty($productInfo) && !empty($productInfo['sku'])) {
+              $displaySku = $productInfo['sku'];
+            } else {
+              $displaySku = $item['product_id'] ?? '';
+            }
+
             echo "<tr>
-              <td>".htmlspecialchars($item['product_id'])."</td>
+              <td>".htmlspecialchars($displaySku)."</td>
               <td>".htmlspecialchars($item['product_name'])."</td>
+              <td>".$dimensionDisplay."</td>
               <td>".htmlspecialchars($selectedUnit)."</td>
               <td>".$displayQty."</td>
               <td>".number_format($item['unit_price'] ?? 0, 0, ',', '.')." đ</td>
@@ -166,11 +220,67 @@ $status = (int)($receipt['status'] ?? 0);
             </tr>";
           }
         } else {
-          echo "<tr><td colspan='6'>Không có sản phẩm nào trong phiếu.</td></tr>";
+          echo "<tr><td colspan='7'>Không có sản phẩm nào trong phiếu.</td></tr>";
         }
         ?>
       </tbody>
     </table>
+    
+    <?php
+    // Tính tổng thể tích của tất cả sản phẩm trong phiếu
+    $totalVolume = 0;
+    $productWithoutDimension = 0;
+    if (!empty($receipt['details'])) {
+      foreach ($receipt['details'] as $item) {
+        $productInfo = $cProduct->getProductById($item['product_id']);
+        $dimensions = $productInfo['dimensions'] ?? [];
+        $width = isset($dimensions['width']) ? floatval($dimensions['width']) : 0;
+        $depth = isset($dimensions['depth']) ? floatval($dimensions['depth']) : 0;
+        $height = isset($dimensions['height']) ? floatval($dimensions['height']) : 0;
+        
+        if ($width > 0 && $depth > 0 && $height > 0) {
+          $productVolume = $width * $depth * $height;
+          $quantity = $item['quantity'] ?? 0;
+          
+          // Quy đổi về đơn vị cơ bản nếu cần
+          $selectedUnit = $item['unit'] ?? ($productInfo['baseUnit'] ?? 'cái');
+          $baseUnit = $productInfo['baseUnit'] ?? 'cái';
+          $totalQty = $quantity;
+          
+          if ($selectedUnit !== $baseUnit && !empty($productInfo['conversionUnits'])) {
+            foreach ($productInfo['conversionUnits'] as $conv) {
+              if ($conv['unit'] === $selectedUnit) {
+                $totalQty = $quantity * ($conv['factor'] ?? 1);
+                break;
+              }
+            }
+          }
+          
+          $totalVolume += $productVolume * $totalQty;
+        } else {
+          $productWithoutDimension++;
+        }
+      }
+    }
+    ?>
+    
+    <div style="margin-top:16px;padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <div style="font-size:13px;color:#0c4a6e;margin-bottom:4px">📦 Tổng số sản phẩm:</div>
+          <div style="font-size:20px;font-weight:700;color:#0369a1"><?= count($receipt['details'] ?? []) ?> loại</div>
+        </div>
+        <div>
+          <div style="font-size:13px;color:#0c4a6e;margin-bottom:4px">📐 Tổng thể tích:</div>
+          <div style="font-size:20px;font-weight:700;color:#0369a1"><?= number_format($totalVolume, 0, ',', '.') ?> cm³</div>
+          <?php if ($productWithoutDimension > 0): ?>
+            <div style="font-size:11px;color:#dc3545;margin-top:4px">
+              ⚠️ <?= $productWithoutDimension ?> sản phẩm chưa có kích thước
+            </div>
+          <?php endif; ?>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="total">
@@ -213,8 +323,36 @@ $status = (int)($receipt['status'] ?? 0);
 
 <script>
 function confirmAction(action, id) {
-  const actionText = action === 'approve' ? 'duyệt' : 'từ chối';
-  const color = action === 'approve' ? '#28a745' : '#dc3545';
+  // If rejecting, prompt for a reason via textarea
+  if (action === 'reject') {
+    Swal.fire({
+      title: 'Nhập lý do từ chối',
+      input: 'textarea',
+      inputPlaceholder: 'Nhập lý do từ chối...',
+      inputAttributes: { 'aria-label': 'Lý do từ chối' },
+      showCancelButton: true,
+      confirmButtonText: 'Xác nhận',
+      cancelButtonText: 'Hủy',
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      preConfirm: (reason) => {
+        if (!reason || !reason.trim()) {
+          Swal.showValidationMessage('Vui lòng nhập lý do từ chối');
+        }
+        return reason;
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const reason = result.value || '';
+        window.location.href = `receipts/approve/process.php?action=${action}&id=${encodeURIComponent(id)}&reason=${encodeURIComponent(reason)}`;
+      }
+    });
+    return;
+  }
+
+  // Default confirmation (approve)
+  const actionText = action === 'approve' ? 'duyệt' : 'thực hiện';
+  const color = action === 'approve' ? '#28a745' : '#6c757d';
   Swal.fire({
     title: `Xác nhận ${actionText} phiếu này?`,
     icon: 'question',

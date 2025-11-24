@@ -26,11 +26,14 @@ $isWarehouseMain = ($warehouse_id === 'KHO_TONG_01' || strpos($warehouse_id, 'TO
 // Lấy danh sách phiếu yêu cầu nhập hàng
 
 if ($isWarehouseMain && $isManager) {
-  // KHO TỔNG: Xem phiếu yêu cầu gửi đến kho tổng (status 1, 3, 4)
+  // KHO TỔNG: Xem phiếu yêu cầu gửi đến kho tổng
   // Status 1: Đã duyệt chờ kiểm tra kho
   // Status 3: Đủ hàng, chờ tạo phiếu xuất
   // Status 4: Thiếu hàng, chờ chỉ định kho khác
-  $requestsToWarehouse = $cRequest->getRequestsBySourceWarehouse($warehouse_id, [1, 3, 4]);
+  // Status 5: Đã tạo phiếu xuất (chờ xác nhận)
+  // Status 6: Đã xuất kho (đã xác nhận)
+  // Status 7: Hoàn tất (chi nhánh đã nhận)
+  $requestsToWarehouse = $cRequest->getRequestsBySourceWarehouse($warehouse_id, [1, 3, 4, 5, 6, 7]);
   $assignedRequests = $cRequest->getRequestsAssignedToWarehouse($warehouse_id);
   
   // Xem phiếu của chính kho tổng tạo ra
@@ -70,7 +73,8 @@ if ($isWarehouseMain && $isManager) {
   .request-list-container .confirmed {background:#d1f2eb;color:#0d7453;}
   .request-list-container .insufficient {background:#ffebcd;color:#d97706;}
   .request-list-container .assigned {background:#dbeafe;color:#1e40af;}
-  .request-list-container .completed {background:#e0e0e0;color:#424242;}
+  /* Completed/finished status: blue pill similar to screenshot (no icon) */
+  .request-list-container .completed {background:linear-gradient(180deg,#e8f3ff,#d9ecff);color:#0b63d6;border-radius:12px;padding:6px 12px;font-weight:700;}
   .request-list-container .top-actions {margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
   .filters {display:flex;gap:10px;align-items:center;}
   .filters select {padding:6px 10px;border-radius:6px;border:1px solid #ccc;font-size:14px;}
@@ -91,14 +95,59 @@ if ($isWarehouseMain && $isManager) {
     <!-- ========== VIEW CHO KHO TỔNG ========== -->
     <h2><i class="fa-solid fa-warehouse"></i> Quản lý yêu cầu nhập hàng - Kho Tổng</h2>
 
+    <?php
+      // Aggregate stats for main view
+      $allReqs = [];
+      $parts = [$requestsToWarehouse ?? [], $assignedRequests ?? [], $myRequests ?? []];
+      foreach ($parts as $p) {
+        if ($p instanceof Traversable || (is_object($p) && !is_array($p))) {
+          try { $arr = iterator_to_array($p); } catch (Throwable $e) { $arr = (array)$p; }
+        } elseif (!is_array($p)) {
+          $arr = (array)$p;
+        } else { $arr = $p; }
+        $allReqs = array_merge($allReqs, $arr);
+      }
+
+      $totalRequests = count($allReqs);
+      $todayReq = 0;
+      $totalProductsReq = 0;
+      $todayDate = date('Y-m-d');
+      foreach ($allReqs as $rr) {
+        $created = $rr['created_at'] ?? null;
+        $createdDate = '1970-01-01';
+        if ($created instanceof MongoDB\BSON\UTCDateTime) {
+          $createdDate = $created->toDateTime()->format('Y-m-d');
+        } elseif (!empty($created)) {
+          $createdDate = date('Y-m-d', strtotime($created));
+        }
+        if ($createdDate === $todayDate) $todayReq++;
+        $totalProductsReq += array_sum(array_map(fn($d)=>($d['quantity']??0), is_array($rr['details'] ?? []) ? $rr['details'] : (is_object($rr['details'])? iterator_to_array($rr['details']):[])));
+      }
+    ?>
+
+    <div style="display:flex;gap:16px;margin-bottom:18px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:180px;padding:18px;border-radius:10px;background:linear-gradient(90deg,#2f9eff,#3db7ff);color:#fff;">
+        <div style="font-size:14px;">Tổng yêu cầu</div>
+        <div style="font-size:28px;font-weight:700;"><?= $totalRequests ?></div>
+      </div>
+      <div style="flex:1;min-width:180px;padding:18px;border-radius:10px;background:linear-gradient(90deg,#18c97b,#28d399);color:#fff;">
+        <div style="font-size:14px;">Yêu cầu hôm nay</div>
+        <div style="font-size:28px;font-weight:700;"><?= $todayReq ?></div>
+      </div>
+      <div style="flex:1;min-width:180px;padding:18px;border-radius:10px;background:linear-gradient(90deg,#ffb400,#ffd24d);color:#fff;">
+        <div style="font-size:14px;">Tổng số lượng</div>
+        <div style="font-size:28px;font-weight:700;"><?= $totalProductsReq ?></div>
+      </div>
+    </div>
+
     <div class="tabs">
-      <button class="tab active" onclick="switchTab('incoming')">
+      <button class="tab active" onclick="switchTab('incoming', this)">
         <i class="fa-solid fa-inbox"></i> Yêu cầu đến (<?= count($requestsToWarehouse) ?>)
       </button>
-      <button class="tab" onclick="switchTab('assigned')">
+      <button class="tab" onclick="switchTab('assigned', this)">
         <i class="fa-solid fa-arrow-right-arrow-left"></i> Đã chỉ định (<?= count($assignedRequests) ?>)
       </button>
-      <button class="tab" onclick="switchTab('my-requests')">
+      <button class="tab" onclick="switchTab('my-requests', this)">
         <i class="fa-solid fa-file-lines"></i> Phiếu của tôi (<?= count($myRequests) ?>)
       </button>
     </div>
@@ -174,6 +223,17 @@ if ($isWarehouseMain && $isManager) {
                 // Nếu Kho Tổng không đủ, tìm các kho chi nhánh khác có đủ
                 if (!$isSufficient) {
                   $sufficientBranchWarehouses = $cInventory->findSufficientWarehouses($details, $destinationWarehouseId);
+
+                  // Loại bỏ kho yêu cầu (destination warehouse) khỏi danh sách kho cung ứng
+                  $sufficientBranchWarehouses = array_values(array_filter($sufficientBranchWarehouses, function($w) use ($destinationWarehouseId) {
+                    $candidateId = null;
+                    if (is_array($w)) {
+                      $candidateId = $w['warehouse_id'] ?? $w['id'] ?? $w['code'] ?? null;
+                    } else {
+                      $candidateId = (string)$w;
+                    }
+                    return $candidateId !== $destinationWarehouseId;
+                  }));
                 }
               }
               
@@ -187,20 +247,20 @@ if ($isWarehouseMain && $isManager) {
               } elseif ($status === 3) {
                 if ($isSufficient) {
                   $statusClass = 'confirmed';
-                  $statusText = '✅ Đủ hàng';
+                  $statusText = 'Đủ hàng';
                 } else {
                   $statusClass = 'insufficient';
-                  $statusText = '⚠️ Không đủ hàng';
+                  $statusText = 'Không đủ hàng';
                 }
               } elseif ($status === 4) {
                 $statusClass = 'insufficient';
-                $statusText = '⚠️ Thiếu hàng';
+                $statusText = 'Thiếu hàng';
               } elseif ($status === 5) {
                 $statusClass = 'assigned';
-                $statusText = '📦 Đã chỉ định kho';
+                $statusText = 'Đã chỉ định kho';
               } elseif ($status === 6) {
                 $statusClass = 'completed';
-                $statusText = '✅ Hoàn tất';
+                $statusText = 'Hoàn tất';
               }
 
               $priority = $r['priority'] ?? 'normal';
@@ -255,7 +315,7 @@ if ($isWarehouseMain && $isManager) {
               if ($status === 3) {
                 if ($isSufficient) {
                   echo "
-                    <a href='index.php?page=exportReceipt/create&request_id={$r['transaction_id']}' class='btn btn-convert' title='Tạo phiếu xuất kho'>
+                    <a href='index.php?page=exports/create&request_id={$r['transaction_id']}' class='btn btn-convert' title='Tạo phiếu xuất kho'>
                       <i class='fa-solid fa-arrow-right'></i> Tạo phiếu xuất
                     </a>
                   ";
@@ -425,6 +485,59 @@ if ($isWarehouseMain && $isManager) {
   }
   ?>
 
+  <?php
+    // Branch view stats (for non-main users)
+    if (!($isWarehouseMain && $isManager)) {
+      $reqsArr = $requests ?? [];
+      if ($reqsArr instanceof Traversable || (is_object($reqsArr) && !is_array($reqsArr))) {
+        try { $reqsArr = iterator_to_array($reqsArr); } catch (Throwable $e) { $reqsArr = (array)$reqsArr; }
+      } elseif (!is_array($reqsArr)) {
+        $reqsArr = (array)$reqsArr;
+      }
+
+      $totalReqs = count($reqsArr);
+      $todayReqs = 0;
+      $totalQty = 0;
+      $todayDate = date('Y-m-d');
+      foreach ($reqsArr as $rr) {
+        $created = $rr['created_at'] ?? null;
+        $createdDate = '1970-01-01';
+        if ($created instanceof MongoDB\BSON\UTCDateTime) {
+          $createdDate = $created->toDateTime()->format('Y-m-d');
+        } elseif (!empty($created)) {
+          $createdDate = date('Y-m-d', strtotime($created));
+        }
+        if ($createdDate === $todayDate) $todayReqs++;
+        // sum quantities in details
+        $details = is_array($rr['details'] ?? []) ? $rr['details'] : (is_object($rr['details']) ? iterator_to_array($rr['details']) : []);
+        foreach ($details as $d) {
+          $totalQty += (int)($d['quantity'] ?? 0);
+        }
+      }
+
+      ?>
+
+      <div style="display:flex;gap:16px;margin-bottom:18px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:180px;padding:18px;border-radius:10px;background:linear-gradient(90deg,#2f9eff,#3db7ff);color:#fff;">
+          <div style="font-size:14px;">Tổng yêu cầu</div>
+          <div style="font-size:28px;font-weight:700;"><?= htmlspecialchars($totalReqs) ?></div>
+        </div>
+
+        <div style="flex:1;min-width:180px;padding:18px;border-radius:10px;background:linear-gradient(90deg,#18c97b,#28d399);color:#fff;">
+          <div style="font-size:14px;">Yêu cầu hôm nay</div>
+          <div style="font-size:28px;font-weight:700;"><?= htmlspecialchars($todayReqs) ?></div>
+        </div>
+
+        <div style="flex:1;min-width:180px;padding:18px;border-radius:10px;background:linear-gradient(90deg,#ffb400,#ffd24d);color:#fff;">
+          <div style="font-size:14px;">Tổng số lượng</div>
+          <div style="font-size:28px;font-weight:700;"><?= htmlspecialchars($totalQty) ?></div>
+        </div>
+
+      </div>
+
+      <?php
+    }
+  ?>
   <table id="request-table">
     <thead>
       <tr>
@@ -451,8 +564,9 @@ if ($isWarehouseMain && $isManager) {
             case 2: $class='rejected'; $text='Từ chối'; break;
             case 3: $class='confirmed'; $text='Đủ hàng'; break;
             case 4: $class='insufficient'; $text='Không đủ hàng'; break;
-            case 5: $class='assigned'; $text='Đã chỉ định kho'; break;
-            case 6: $class='completed'; $text='Hoàn tất'; break;
+            case 5: $class='assigned'; $text='Đã tạo phiếu xuất'; break; // Đã tạo phiếu, chờ xác nhận
+            case 6: $class='completed'; $text='Đã xuất kho'; break; // Đã xác nhận xuất (đã trừ kho)
+            case 7: $class='completed'; $text='Hoàn tất'; break; // Đã nhận hàng tại chi nhánh
             default: $class='pending'; $text='Không xác định';
           }
 
@@ -538,7 +652,7 @@ if ($isWarehouseMain && $isManager) {
   priorityFilter.addEventListener('change', applyFilters);
 
   // ⭐ Function để chuyển tab cho Kho Tổng
-  function switchTab(tabName) {
+  function switchTab(tabName, el) {
     // Hide all tabs
     document.querySelectorAll('.tab-content').forEach(tab => {
       tab.classList.remove('active');
@@ -549,7 +663,8 @@ if ($isWarehouseMain && $isManager) {
 
     // Show selected tab
     document.getElementById('tab-' + tabName).classList.add('active');
-    event.target.closest('.tab').classList.add('active');
+    // Use the passed element to set active class (safer than relying on global event)
+    if (el && el.classList) el.classList.add('active');
   }
 </script>
 

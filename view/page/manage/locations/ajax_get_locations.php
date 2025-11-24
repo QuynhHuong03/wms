@@ -31,6 +31,8 @@ if (!$warehouseId) {
     exit;
 }
 
+error_log("📍 ajax_get_locations.php - Loading bins for warehouse: $warehouseId");
+
 $loc = $m->getLocationByWarehouseId($warehouseId);
 
 if (!$loc || empty($loc['zones'])) {
@@ -97,12 +99,22 @@ try {
 .bin .code{font-weight:700;font-size:11px;line-height:1.2}
 /* Quantity line */
 .bin .qty{font-size:10px;line-height:1.2;opacity:.85;margin-top:2px}
-/* Status colors - dựa vào dữ liệu inventory */
-.bin[data-status="empty"]{background:#d1fae5;border-color:#10b981;color:#065f46}
+/* Dimensions line */
+.bin .dims{font-size:9px;line-height:1.2;opacity:.75;margin-top:2px;color:#6b7280}
+/* Utilization line */
+.bin .util{font-size:10px;line-height:1.2;margin-top:3px;font-weight:600}
+.bin .util.low{color:#10b981;background:#d1fae5;padding:2px 4px;border-radius:4px}
+.bin .util.medium{color:#d97706;background:#fef3c7;padding:2px 4px;border-radius:4px}
+.bin .util.high{color:#dc2626;background:#fecaca;padding:2px 4px;border-radius:4px}
+/* Status colors based on capacity percentage */
+/* 0% = green (empty) */
+.bin[data-status="empty"]{background:#ecfdf5;border-color:#10b981;color:#065f46}
 .bin[data-status="empty"] .qty{color:#047857;opacity:1;font-weight:600}
-.bin[data-status="partial"]{background:#fef3c7;border-color:#f59e0b;color:#78350f}
+/* 1-80% = yellow (partial) */
+.bin[data-status="partial"]{background:#fffbeb;border-color:#f59e0b;color:#78350f}
 .bin[data-status="partial"] .qty{color:#92400e;opacity:1;font-weight:600}
-.bin[data-status="full"]{background:#fecaca;border-color:#dc2626;color:#7f1d1d}
+/* >80% = red (full/nearly full) */
+.bin[data-status="full"]{background:#fef2f2;border-color:#dc2626;color:#7f1d1d}
 .bin[data-status="full"] .qty{color:#991b1b;opacity:1;font-weight:700}
 </style>
 <div class="location-wrap">
@@ -148,11 +160,71 @@ try {
                 
                 $productLabel = is_string($product) ? trim($product) : '';
                 
+                // Get bin dimensions
+                $dimensions = $b['dimensions'] ?? [];
+                $binWidth = isset($dimensions['width']) ? (float)$dimensions['width'] : 0;
+                $binDepth = isset($dimensions['depth']) ? (float)$dimensions['depth'] : 0;
+                $binHeight = isset($dimensions['height']) ? (float)$dimensions['height'] : 0;
+                $dimText = '';
+                if ($binWidth > 0 || $binDepth > 0 || $binHeight > 0) {
+                    $dimText = sprintf("%.1f×%.1f×%.1f", $binWidth, $binDepth, $binHeight);
+                }
+                
+                // Get product dimensions if product exists in bin
+                $productDimText = '';
+                if ($productId) {
+                    try {
+                        require_once($ROOT . '/controller/cProduct.php');
+                        $cProduct = new CProduct();
+                        $productData = $cProduct->getProductById($productId);
+                        if ($productData) {
+                            $pWidth = (float)($productData['width'] ?? $productData['length'] ?? 0);
+                            $pDepth = (float)($productData['depth'] ?? $productData['width'] ?? 0);
+                            $pHeight = (float)($productData['height'] ?? 0);
+                            if ($pWidth > 0 || $pDepth > 0 || $pHeight > 0) {
+                                $productDimText = sprintf("%.1f×%.1f×%.1f", $pWidth, $pDepth, $pHeight);
+                            }
+                        }
+                    } catch (Exception $e) {
+                        error_log('Error fetching product dimensions: ' . $e->getMessage());
+                    }
+                }
+                
+                // Get current utilization/capacity from database
+                $currentCapacity = (float)($b['current_capacity'] ?? 0);
+                
+                // ✅ Debug log để kiểm tra giá trị TRƯỚC khi xử lý
+                error_log("📊 Bin $binId - DB current_capacity: {$currentCapacity}%, Inventory qty: $qty");
+                
+                // ⭐ FIX: Reset current_capacity = 0 khi bin không có hàng (qty = 0)
+                // Không quan tâm database có giá trị gì, inventory mới là nguồn chân lý
+                if ($qty <= 0) {
+                    $currentCapacity = 0;
+                    error_log("🔴 Bin $binId is empty - capacity reset to 0");
+                }
+                
+                // Color logic: 0% = green, 1-80% = yellow, >80% = red
+                $utilClass = 'low'; // green
+                if ($currentCapacity > 80) {
+                    $utilClass = 'high'; // red
+                    $status = 'full'; // Override status based on capacity
+                } elseif ($currentCapacity >= 1) {
+                    $utilClass = 'medium'; // yellow
+                    $status = 'partial'; // Override status based on capacity
+                } else {
+                    $utilClass = 'low'; // green
+                    $status = 'empty'; // Override status based on capacity
+                }
+                
+                error_log("📊 Bin $binId - Final capacity: {$currentCapacity}%, Status: $status, Class: $utilClass");
+                
                 $titleParts = [];
                 $titleParts[] = 'Trạng thái: ' . htmlspecialchars($status);
                 $titleParts[] = 'Sản phẩm: ' . ($productLabel !== '' ? htmlspecialchars($productLabel) : '(trống)');
                 $titleParts[] = 'Số lượng: ' . (int)$qty;
                 if ((int)$cap > 0) { $titleParts[] = 'Sức chứa: ' . (int)$cap; }
+                if ($dimText) { $titleParts[] = 'Kích thước (cm): ' . $dimText; }
+                $titleParts[] = 'Chiếm dụng: ' . number_format($currentCapacity, 1) . '%';
                 $titleText = implode(' | ', $titleParts);
               ?>
        <div class="bin" 
@@ -164,9 +236,16 @@ try {
                      data-capacity="<?= (int)$cap ?>"
                      data-status="<?= htmlspecialchars($status) ?>"
                      data-product="<?= htmlspecialchars($productId) ?>"
+                     data-dimensions="<?= htmlspecialchars($dimText) ?>"
+                     data-product-dimensions="<?= htmlspecialchars($productDimText) ?>"
+                     data-utilization="<?= number_format($currentCapacity, 1, '.', '') ?>"
                      title="<?= $titleText ?>">
                   <div class="code"><?= htmlspecialchars($binCode) ?></div>
                   <div class="qty"><?= number_format((int)$qty, 0, ',', '.') ?></div>
+                  <?php if ($dimText): ?>
+                  <div class="dims"><?= htmlspecialchars($dimText) ?></div>
+                  <?php endif; ?>
+                  <div class="util <?= $utilClass ?>"><?= number_format($currentCapacity, 1) ?>%</div>
                 </div>
               <?php endforeach; ?>
             </div>

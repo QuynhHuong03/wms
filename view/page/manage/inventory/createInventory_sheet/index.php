@@ -58,6 +58,13 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
         .modal.show { display: flex; }
         .modal-content { background: #fff; padding: 24px; border-radius: 12px; max-width: 900px; width: 90%; max-height: 80vh; overflow-y: auto; }
+        /* Small variant for confirmation modal */
+        #clearModal .modal-content {
+            max-width: 520px;
+            width: calc(100% - 48px);
+            padding: 18px 20px;
+            border-radius: 10px;
+        }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px; }
         .product-selector-table { width: 100%; margin-top: 16px; }
         .product-selector-table th, .product-selector-table td { padding: 8px; border: 1px solid #e5e7eb; font-size: 13px; }
@@ -68,7 +75,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 
 <div class="container">
         <div class="header">
-            <h2>📋 Tạo phiếu kiểm kê hàng tồn kho</h2>
+            <h2><i class="fa-solid fa-clipboard-list"></i> Tạo phiếu kiểm kê hàng tồn kho</h2>
             <a href="index.php?page=inventory" class="btn btn-secondary">← Quay lại</a>
         </div>
 
@@ -77,8 +84,8 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
         <div class="filter-box">
             <h3>Chọn sản phẩm kiểm kê</h3>
             <div style="margin-bottom: 12px;">
-                <button class="btn btn-success" onclick="openProductSelector()">➕ Chọn sản phẩm cần kiểm kê</button>
-                <button class="btn btn-primary" onclick="loadAllStock()">📦 Tải tất cả sản phẩm</button>
+                <button class="btn btn-success" onclick="openProductSelector()">+ Chọn sản phẩm cần kiểm kê</button>
+                <button class="btn btn-primary" onclick="loadAllStock()"> Tải tất cả sản phẩm</button>
             </div>
             <div class="filter-row">
                 <div class="form-group" style="flex: 1; min-width: 200px;">
@@ -146,8 +153,8 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
         </div>
 
         <div class="actions">
-            <button class="btn btn-primary" onclick="saveSheet('completed')" id="btnSaveComplete" disabled title="Vui lòng tải dữ liệu trước">✅ Hoàn thành và lưu</button>
-            <button class="btn btn-danger" onclick="clearData()">🗑️ Xóa dữ liệu</button>
+            <button class="btn btn-primary" onclick="saveSheet('completed')" id="btnSaveComplete" disabled title="Vui lòng tải dữ liệu trước"> Hoàn thành và lưu</button>
+            <button class="btn btn-danger" onclick="openClearModal()"> Xóa dữ liệu</button>
         </div>
         
         <!-- Instructional block removed as requested -->
@@ -161,7 +168,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
                 <button class="btn btn-secondary btn-sm" onclick="closeProductSelector()">✕</button>
             </div>
             <div class="search-box">
-                <input type="text" id="productSearch" class="form-control" placeholder="🔍 Tìm kiếm sản phẩm (tên, SKU)..." onkeyup="filterProducts()">
+                <input type="text" id="productSearch" class="form-control" placeholder="Tìm kiếm sản phẩm (tên, SKU)..." onkeyup="filterProducts()">
             </div>
             <div style="max-height: 400px; overflow-y: auto;">
                 <table class="product-selector-table">
@@ -181,7 +188,24 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
             </div>
             <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px;">
                 <button class="btn btn-secondary" onclick="closeProductSelector()">Hủy</button>
-                <button class="btn btn-success" onclick="addSelectedProducts()">✔️ Thêm sản phẩm đã chọn</button>
+                <button class="btn btn-success" onclick="addSelectedProducts()">Thêm sản phẩm đã chọn</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal xác nhận xóa dữ liệu -->
+    <div class="modal" id="clearModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Xác nhận xóa dữ liệu</h3>
+                <button class="btn btn-secondary btn-sm" onclick="closeClearModal()">✕</button>
+            </div>
+            <div style="margin-top:12px;">
+                <p>Bạn có chắc chắn muốn xóa toàn bộ dữ liệu?</p>
+                <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+                    <button class="btn btn-secondary" onclick="closeClearModal()">Hủy</button>
+                    <button class="btn btn-danger" onclick="(function(){ clearDataConfirmed(); closeClearModal(); })()">Xác nhận xóa</button>
+                </div>
             </div>
         </div>
     </div>
@@ -552,16 +576,29 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
         }
 
         function clearData() {
-            if (confirm('Bạn có chắc muốn xóa toàn bộ dữ liệu?')) {
-                stockData = [];
-                currentSheetId = null;
-                renderTable();
-                document.getElementById('statsBox').style.display = 'none';
-                document.getElementById('sheetInfo').style.display = 'none';
-                document.getElementById('sheetNote').value = '';
-                document.getElementById('btnSaveComplete').disabled = true;
-                showAlert('Đã xóa dữ liệu', 'info');
-            }
+            // Deprecated: use clearDataConfirmed() via modal confirmation
+            openClearModal();
+        }
+
+        function clearDataConfirmed() {
+            stockData = [];
+            currentSheetId = null;
+            renderTable();
+            document.getElementById('statsBox').style.display = 'none';
+            document.getElementById('sheetInfo').style.display = 'none';
+            document.getElementById('sheetNote').value = '';
+            document.getElementById('btnSaveComplete').disabled = true;
+            showAlert('Đã xóa dữ liệu', 'info');
+        }
+
+        function openClearModal() {
+            const modal = document.getElementById('clearModal');
+            if (modal) modal.classList.add('show');
+        }
+
+        function closeClearModal() {
+            const modal = document.getElementById('clearModal');
+            if (modal) modal.classList.remove('show');
         }
 
         function formatNumber(num) {

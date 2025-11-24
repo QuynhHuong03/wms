@@ -8,6 +8,16 @@ class CCategories {
         $this->mCategories = new MCategories();
     }
 
+    // Lấy mã category tiếp theo (DMxxx)
+    public function getNextCategoryId() {
+        try {
+            return $this->mCategories->getNextCategoryId();
+        } catch (Exception $e) {
+            error_log('getNextCategoryId error: ' . $e->getMessage());
+            return null;
+        }
+    }
+
     // Lấy tất cả categories
     public function getAllCategories() {
         try {

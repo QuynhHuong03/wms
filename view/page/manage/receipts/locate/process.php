@@ -67,7 +67,7 @@ try {
             $inputUnit = trim($data['input_unit'] ?? '');
             $qty = $qtyInput; // keep old var name for backward compatibility in some branches
             $originalQty = $qtyInput;
-            $bin_status = trim($data['bin_status'] ?? '');
+            $bin_status = ''; // Will be auto-calculated based on capacity
             if (!$zone_id || !$rack_id || !$bin_id || !$product_id) {
                 echo json_encode(['success'=>false,'message'=>'Thiếu thông tin Zone/Rack/Bin hoặc sản phẩm']);
                 break;
@@ -161,7 +161,7 @@ try {
             $m = new MLocation();
             // Fetch bin to respect capacity and support accumulation
             $binDoc = $m->getBinFromWarehouse($warehouseId, $zone_id, $rack_id, ['bin_id'=>$bin_id]);
-            $capacity = 0; $current = 0;
+            $capacity = 0; $current = 0; $b = null;
             if ($binDoc && !empty($binDoc['bin'])) {
                 $b = $binDoc['bin'];
                 $capacity = (int)($b['capacity'] ?? 0);
@@ -198,6 +198,137 @@ try {
                 $upd['quantity'] = $current + $qtyBase;
             }
             $ok = $m->updateBinInWarehouse($warehouseId, $zone_id, $rack_id, $bin_id, $upd);
+            
+            // Update bin capacity based on product volume
+            if ($ok && $qtyBase > 0 && $productInfo) {
+                // Get dimensions based on input unit
+                // If inputUnit is "thùng" (box), use conversion unit dimensions
+                // If inputUnit is "cái" (piece), use base product dimensions
+                $pDims = [];
+                $unitType = $baseUnit; // Default to base unit
+                $dimensionsFound = false;
+                
+                error_log("=== DIMENSION LOOKUP DEBUG ===");
+                error_log("Input unit: $inputUnit");
+                error_log("Base unit: $baseUnit");
+                error_log("Available conversion units: " . print_r(array_column($convUnits, 'unit'), true));
+                
+                // Check if inputUnit is a conversion unit (thùng, hộp, etc)
+                if ($inputUnit && strcasecmp($inputUnit, $baseUnit) !== 0) {
+                    // User is allocating in a conversion unit (e.g., thùng)
+                    error_log("Looking for conversion unit dimensions for: $inputUnit");
+                    foreach ($convUnits as $cu) {
+                        $cuUnit = trim($cu['unit'] ?? '');
+                        error_log("Checking conversion unit: $cuUnit");
+                        if ($cuUnit && strcasecmp($cuUnit, $inputUnit) === 0) {
+                            // Found the conversion unit, check if it has dimensions
+                            if (isset($cu['dimensions']) && is_array($cu['dimensions'])) {
+                                $pDims = $cu['dimensions'];
+                                $unitType = $cuUnit;
+                                $dimensionsFound = true;
+                                error_log("✓ Found dimensions in conversionUnits for '$cuUnit': " . print_r($pDims, true));
+                            } else {
+                                error_log("✗ Conversion unit '$cuUnit' found but no dimensions field");
+                            }
+                            break;
+                        }
+                    }
+                }
+                
+                // Fallback to base product dimensions if no conversion unit dimensions found
+                if (!$dimensionsFound) {
+                    error_log("Using base product dimensions (inputUnit='$inputUnit' not found or no dimensions)");
+                    
+                    // ✅ Try multiple dimension sources in order of priority
+                    if (isset($productInfo['package_dimensions']) && is_array($productInfo['package_dimensions'])) {
+                        $pDims = $productInfo['package_dimensions'];
+                        error_log("✓ Using package_dimensions: " . print_r($pDims, true));
+                    } elseif (isset($productInfo['dimensions']) && is_array($productInfo['dimensions'])) {
+                        $pDims = $productInfo['dimensions'];
+                        error_log("✓ Using dimensions: " . print_r($pDims, true));
+                    } else {
+                        // ✅ Try direct width/height/depth fields
+                        $directWidth = (float)($productInfo['width'] ?? $productInfo['length'] ?? 0);
+                        $directDepth = (float)($productInfo['depth'] ?? $productInfo['width'] ?? 0);
+                        $directHeight = (float)($productInfo['height'] ?? 0);
+                        
+                        if ($directWidth > 0 || $directDepth > 0 || $directHeight > 0) {
+                            $pDims = [
+                                'width' => $directWidth,
+                                'depth' => $directDepth,
+                                'height' => $directHeight
+                            ];
+                            error_log("✓ Using direct dimension fields: " . print_r($pDims, true));
+                        } else {
+                            error_log("✗ No dimensions found in product - checked package_dimensions, dimensions, and direct fields");
+                        }
+                    }
+                    $unitType = $baseUnit;
+                }
+                
+                $pWidth = (float)($pDims['width'] ?? 0);
+                $pDepth = (float)($pDims['depth'] ?? 0);
+                $pHeight = (float)($pDims['height'] ?? 0);
+                $pVolume = $pWidth * $pDepth * $pHeight;
+                
+                error_log("Final dimensions - Width: $pWidth, Depth: $pDepth, Height: $pHeight, Volume: $pVolume, Unit: $unitType");
+                error_log("=== END DEBUG ===");
+                
+                // Validate: Check if product/unit dimensions fit in bin
+                if ($pWidth > 0 && $pDepth > 0 && $pHeight > 0 && $b && isset($b['dimensions'])) {
+                    $bDims = $b['dimensions'];
+                    $bWidth = (float)($bDims['width'] ?? 0);
+                    $bDepth = (float)($bDims['depth'] ?? 0);
+                    $bHeight = (float)($bDims['height'] ?? 0);
+                    
+                    if ($bWidth > 0 && $bDepth > 0 && $bHeight > 0) {
+                        // Sort dimensions to check if product fits in any orientation
+                        $pSorted = [$pWidth, $pDepth, $pHeight];
+                        $bSorted = [$bWidth, $bDepth, $bHeight];
+                        sort($pSorted);
+                        sort($bSorted);
+                        
+                        if ($pSorted[0] > $bSorted[0] || $pSorted[1] > $bSorted[1] || $pSorted[2] > $bSorted[2]) {
+                            error_log("Dimension validation failed: Product {$unitType} ({$pWidth}×{$pDepth}×{$pHeight}) does not fit in bin ({$bWidth}×{$bDepth}×{$bHeight})");
+                            echo json_encode([
+                                'success' => false, 
+                                'message' => "Kích thước {$unitType} ({$pWidth}×{$pDepth}×{$pHeight} cm) quá lớn so với bin ({$bWidth}×{$bDepth}×{$bHeight} cm). Vui lòng chọn bin khác hoặc đơn vị nhỏ hơn."
+                            ]);
+                            exit; // Stop execution immediately
+                        }
+                    }
+                }
+                
+                // Determine if adding or removing based on receipt type
+                // 'purchase' = nhập kho (import) = tăng capacity
+                // 'transfer' = xuất kho (export) = giảm capacity
+                // 'return' = trả hàng = tăng capacity (hàng quay lại kho)
+                $receiptType = $arrRc['type'] ?? 'purchase';
+                $isAdding = ($receiptType === 'purchase' || $receiptType === 'return');
+                
+                error_log("Allocate - Receipt type: $receiptType, Input unit: $inputUnit, Unit type: $unitType, Dimensions: W=$pWidth, D=$pDepth, H=$pHeight, Volume=$pVolume, Qty input: $qtyInput, Qty base: $qtyBase, Factor: $factor, isAdding=" . ($isAdding ? 'true' : 'false'));
+                
+                error_log("🔍 CAPACITY UPDATE - warehouse_id: $warehouseId, zone: $zone_id, rack: $rack_id, bin: $bin_id");
+                
+                if ($pVolume > 0) {
+                    // Use qtyInput (số lượng thực tế user nhập) instead of qtyBase
+                    // Vì 1 thùng chiếm volume của 1 thùng, không phải volume của N cái
+                    $capacityUpdated = $m->updateBinCapacity($warehouseId, $zone_id, $rack_id, $bin_id, $pVolume, $qtyInput, $isAdding);
+                    error_log("✅ Bin capacity update result for $receiptType receipt: " . ($capacityUpdated ? 'success' : 'failed'));
+                } else {
+                    error_log("⚠️ WARNING: Product volume is 0 - dimensions not set for product: $product_id (unit: $unitType)");
+                    error_log("⚠️ Product info: " . json_encode($productInfo));
+                    error_log("⚠️ Dimensions checked: package_dimensions=" . json_encode($productInfo['package_dimensions'] ?? null) . ", dimensions=" . json_encode($productInfo['dimensions'] ?? null));
+                    error_log("⚠️ Conversion units: " . json_encode($convUnits));
+                    
+                    // ✅ FALLBACK: Sử dụng default dimensions nếu không có
+                    // Giả sử mỗi sản phẩm chiếm 10x10x10 cm
+                    $defaultVolume = 1000; // 10x10x10 = 1000 cm³
+                    error_log("⚠️ Using default volume: $defaultVolume cm³ for product $product_id");
+                    $capacityUpdated = $m->updateBinCapacity($warehouseId, $zone_id, $rack_id, $bin_id, $defaultVolume, $qtyInput, $isAdding);
+                    error_log("✅ Bin capacity update with default volume: " . ($capacityUpdated ? 'success' : 'failed'));
+                }
+            }
 
             // Append allocation record to receipt khi qty > 0
             if ($receipt && $qtyBase > 0) {
@@ -238,7 +369,11 @@ try {
                 $c->updateReceiptStatus($id, $receipt['status'] ?? 1); // keep status unchanged
                 // Directly call model to set allocations without changing status timestamps
                 $mr = new MReceipt();
-                $mr->updateReceipt($id, ['allocations' => $allocs]);
+                error_log("💾 SAVING ALLOCATIONS to receipt $id:");
+                error_log("   Total allocations to save: " . count($allocs));
+                error_log("   Latest allocation: " . json_encode(end($allocs), JSON_UNESCAPED_UNICODE));
+                $updateResult = $mr->updateReceipt($id, ['allocations' => $allocs]);
+                error_log("   Update result: " . ($updateResult ? 'SUCCESS' : 'FAILED'));
 
                 // Recompute remaining for all products in base units; if all zero -> mark completed (status=3)
                 $allZero = true;
@@ -426,6 +561,87 @@ try {
                 $newQtyBin = max(0, $ocur - $oq);
                 $st = ($newQtyBin <= 0) ? 'empty' : (($ocap>0 && $newQtyBin >= $ocap) ? 'full' : 'partial');
                 $m->updateBinInWarehouse($warehouseId, $oz, $or, $ob, ['quantity'=>$newQtyBin, 'status'=>$st]);
+                
+                // Update bin capacity when deleting allocation
+                // Need to get the correct dimensions based on the unit that was used during allocation
+                $product_id_del = $rec['product_id'] ?? '';
+                $input_unit_del = $rec['input_unit'] ?? '';
+                $input_qty_del = (int)($rec['input_qty'] ?? 0);
+                
+                // Fallback: if input_qty not saved (old allocation), use qty in base units
+                if ($input_qty_del <= 0) {
+                    $input_qty_del = $oq; // Use base quantity
+                    error_log("WARNING: input_qty not found in allocation, using base qty: $oq");
+                }
+                
+                if ($product_id_del && $input_qty_del > 0) {
+                    try {
+                        $cpDel = new CProduct();
+                        $pDel = $cpDel->getProductById($product_id_del);
+                        if (is_array($pDel)) {
+                            $convUnitsDel = $pDel['conversionUnits'] ?? [];
+                            $baseUnitDel = trim($pDel['unit'] ?? ($pDel['baseUnit'] ?? 'cái'));
+                            
+                            // Get dimensions based on the unit that was used
+                            $pDimsDel = [];
+                            $unitTypeDel = $baseUnitDel;
+                            $dimensionsFoundDel = false;
+                            
+                            error_log("=== DELETE ALLOCATION DEBUG ===");
+                            error_log("Deleting allocation - Input unit: $input_unit_del, Input qty: $input_qty_del, Qty in base: $oq");
+                            
+                            // If input_unit is a conversion unit, get its dimensions
+                            // Also handle case where input_unit is empty (old allocations)
+                            if ($input_unit_del && $input_unit_del !== '' && strcasecmp($input_unit_del, $baseUnitDel) !== 0) {
+                                foreach ($convUnitsDel as $cu) {
+                                    $cuUnit = trim($cu['unit'] ?? '');
+                                    if ($cuUnit && strcasecmp($cuUnit, $input_unit_del) === 0) {
+                                        if (isset($cu['dimensions']) && is_array($cu['dimensions'])) {
+                                            $pDimsDel = $cu['dimensions'];
+                                            $unitTypeDel = $cuUnit;
+                                            $dimensionsFoundDel = true;
+                                            error_log("✓ Found dimensions for '$cuUnit': " . print_r($pDimsDel, true));
+                                        } else {
+                                            error_log("✗ Unit '$cuUnit' found but no dimensions - will use base");
+                                        }
+                                        break;
+                                    }
+                                }
+                            } else if (empty($input_unit_del)) {
+                                error_log("⚠ input_unit is empty (old allocation), using base dimensions");
+                            }
+                            
+                            // Fallback to base dimensions
+                            if (!$dimensionsFoundDel) {
+                                $pDimsDel = $pDel['package_dimensions'] ?? $pDel['dimensions'] ?? [];
+                                $unitTypeDel = $baseUnitDel;
+                                error_log("Using base dimensions");
+                            }
+                            
+                            $pWidthDel = (float)($pDimsDel['width'] ?? 0);
+                            $pDepthDel = (float)($pDimsDel['depth'] ?? 0);
+                            $pHeightDel = (float)($pDimsDel['height'] ?? 0);
+                            $pVolumeDel = $pWidthDel * $pDepthDel * $pHeightDel;
+                            
+                            error_log("Dimensions: W=$pWidthDel, D=$pDepthDel, H=$pHeightDel, Vol=$pVolumeDel");
+                            
+                            if ($pVolumeDel > 0) {
+                                // When deleting: always DECREASE capacity (remove items = free space)
+                                // Use input_qty (số lượng theo đơn vị đã chọn), not oq (base qty)
+                                $receiptTypeDel = $arrRc['type'] ?? 'purchase';
+                                $isAddingDel = false; // Always false for delete = decrease capacity
+                                error_log("Calling updateBinCapacity with volume=$pVolumeDel, qty=$input_qty_del, isAdding=false");
+                                $capacityResult = $m->updateBinCapacity($warehouseId, $oz, $or, $ob, $pVolumeDel, $input_qty_del, $isAddingDel);
+                                error_log("Capacity update result: " . ($capacityResult ? 'success' : 'failed'));
+                            } else {
+                                error_log("✗ Volume is 0 - cannot update capacity");
+                            }
+                            error_log("=== END DELETE DEBUG ===");
+                        }
+                    } catch (\Throwable $e) {
+                        error_log('Error updating capacity on delete: ' . $e->getMessage());
+                    }
+                }
             }
             // Remove allocation entry
             array_splice($allocs, $idx, 1);
@@ -492,10 +708,22 @@ try {
                 break;
             }
 
+            // ✅ Load models cho batch_locations và inventory_movements
+            include_once(__DIR__ . "/../../../../../model/mBatchLocation.php");
+            include_once(__DIR__ . "/../../../../../model/mInventoryMovement.php");
+            include_once(__DIR__ . "/../../../../../controller/cBatch.php");
+            
+            $mBatchLocation = new MBatchLocation();
+            $mInventoryMovement = new MInventoryMovement();
+            $cBatch = new CBatch();
+
             // Ghi tất cả allocations vào database inventory khi hoàn tất
             $inv = new MInventory();
             $insertedCount = 0;
+            $batchLocationCount = 0;
+            $movementCount = 0;
             $errors = [];
+            
             foreach ($allocs as $a) {
                 $warehouseId = $a['warehouse_id'] ?? '';
                 $productId = $a['product_id'] ?? '';
@@ -560,15 +788,383 @@ try {
                         if ($result) {
                             $insertedCount++;
                         } else {
-                            $errors[] = "Failed to insert for product $productId";
+                            $errors[] = "Failed to insert inventory for product $productId";
                         }
+
+                        // ✅ Tìm batch_code của sản phẩm này từ transaction_id
+                        $batches = $cBatch->getBatchesByTransaction($id);
+                        error_log("🔍 Found " . count($batches) . " batches for transaction $id");
+                        error_log("🔍 Looking for product: $productId");
+                        
+                        $batchCode = null;
+                        foreach ($batches as $batch) {
+                            error_log("🔍 Batch: " . ($batch['batch_code'] ?? 'no-code') . " - Product: " . ($batch['product_id'] ?? 'no-product'));
+                            if (($batch['product_id'] ?? '') === $productId) {
+                                $batchCode = $batch['batch_code'] ?? null;
+                                error_log("✅ Found matching batch: $batchCode");
+                                break;
+                            }
+                        }
+
+                        if ($batchCode) {
+                            error_log("📦 Processing batch_location for batch $batchCode at $zoneId-$rackId-$binId with qty $qtyAlloc");
+                            
+                            // ⭐ BƯỚC 1: Xóa location PENDING cũ (nếu có)
+                            try {
+                                $p3 = new clsKetNoi();
+                                $con3 = $p3->moKetNoi();
+                                if ($con3) {
+                                    $batchLocCol = $con3->selectCollection('batch_locations');
+                                    $deletedResult = $batchLocCol->deleteMany([
+                                        'batch_code' => $batchCode,
+                                        'location.zone_id' => 'PENDING'
+                                    ]);
+                                    if ($deletedResult->getDeletedCount() > 0) {
+                                        error_log("🗑️ Deleted {$deletedResult->getDeletedCount()} PENDING batch_location(s) for batch $batchCode");
+                                    }
+                                    $p3->dongKetNoi($con3);
+                                }
+                            } catch (\Throwable $e) {
+                                error_log("⚠️ Failed to delete PENDING batch_location: " . $e->getMessage());
+                            }
+                            
+                            // ⭐ BƯỚC 2: Lưu vào batch_locations với vị trí thực tế
+                            $locationObject = [
+                                'warehouse_id' => $warehouseId,
+                                'zone_id' => $zoneId,
+                                'rack_id' => $rackId,
+                                'bin_id' => $binId
+                            ];
+                            
+                            $batchLocationResult = $mBatchLocation->upsertBatchLocation(
+                                $batchCode,
+                                $locationObject,
+                                $qtyAlloc
+                            );
+                            
+                            if ($batchLocationResult) {
+                                $batchLocationCount++;
+                                error_log("✅ Batch location inserted successfully");
+                                
+                                // ✅ CẬP NHẬT VỊ TRÍ VÀO BATCH DOCUMENT
+                                try {
+                                    $p = new clsKetNoi();
+                                    $con = $p->moKetNoi();
+                                    if ($con) {
+                                        $batchesCol = $con->selectCollection('batches');
+                                        
+                                        // ⭐ BƯỚC 1: Xóa tất cả locations PENDING cũ của batch này
+                                        $batchesCol->updateOne(
+                                            ['batch_code' => $batchCode],
+                                            [
+                                                '$pull' => [
+                                                    'locations' => [
+                                                        'zone_id' => 'PENDING'
+                                                    ]
+                                                ]
+                                            ]
+                                        );
+                                        
+                                        // ⭐ BƯỚC 2: Thêm vị trí mới thực tế (nếu chưa tồn tại)
+                                        $batchesCol->updateOne(
+                                            ['batch_code' => $batchCode],
+                                            [
+                                                '$addToSet' => [
+                                                    'locations' => [
+                                                        'warehouse_id' => $warehouseId,
+                                                        'zone_id' => $zoneId,
+                                                        'rack_id' => $rackId,
+                                                        'bin_id' => $binId,
+                                                        'quantity' => $qtyAlloc
+                                                    ]
+                                                ]
+                                            ]
+                                        );
+                                        
+                                        $p->dongKetNoi($con);
+                                        error_log("✅ Removed PENDING location and added real location in batches collection");
+                                    }
+                                } catch (\Throwable $e) {
+                                    error_log("⚠️ Failed to update batch location in batches: " . $e->getMessage());
+                                }
+                                    // ⭐ Cập nhật trạng thái lô: sau khi xếp hàng thành công, đánh dấu lô là 'Đang lưu'
+                                    try {
+                                        if (isset($cBatch) && method_exists($cBatch, 'updateBatchStatus')) {
+                                            $updated = $cBatch->updateBatchStatus($batchCode, 'Đang lưu');
+                                            if ($updated) {
+                                                error_log("✅ Batch $batchCode status updated to 'Đang lưu'");
+                                            } else {
+                                                error_log("⚠️ Failed to update status for batch $batchCode (maybe no change)");
+                                            }
+                                        }
+                                    } catch (\Throwable $e) {
+                                        error_log("⚠️ Error updating batch status for $batchCode: " . $e->getMessage());
+                                    }
+                            } else {
+                                $errors[] = "Failed to insert batch_location for batch $batchCode";
+                                error_log("❌ Failed to insert batch_location for batch $batchCode");
+                            }
+
+                            // ✅ Lưu vào inventory_movements: lịch sử nhập hàng
+                            // Lấy thông tin nguồn từ batch (batch ở kho đích có chứa source_location và source_warehouse_id)
+                            $fromLocation = null;
+                            $sourceWarehouse = null;
+                            $receiptType = $arrRc['type'] ?? 'purchase'; // Lấy type từ receipt
+                            
+                            try {
+                                // Khởi tạo kết nối MongoDB (CODE UPDATED v3)
+                                include_once(__DIR__ . "/../../../../../model/connect.php");
+                                $p2 = new clsKetNoi();
+                                $con2 = $p2->moKetNoi();
+                                
+                                error_log("🔄 Connecting to MongoDB to fetch batch info...");
+                                error_log("📋 Receipt type: $receiptType");
+                                
+                                if ($con2) {
+                                    // Query batch tại kho ĐÍCH (warehouse_id hiện tại)
+                                    $batchDoc = $con2->selectCollection('batches')->findOne([
+                                        'batch_code' => $batchCode,
+                                        'warehouse_id' => $warehouseId
+                                    ]);
+                                
+                                    if ($batchDoc) {
+                                        error_log("📦 Batch found: " . $batchCode);
+                                        
+                                        // Kiểm tra loại phiếu (source field từ batch)
+                                        $batchSource = $batchDoc['source'] ?? '';
+                                        if ($batchSource === 'transfer') {
+                                            $receiptType = 'transfer';
+                                        }
+                                        
+                                        // Nếu là transfer (có source_location và source_warehouse_id)
+                                        if (isset($batchDoc['source_location']) && $batchDoc['source_location'] !== null) {
+                                            $fromLocation = $batchDoc['source_location'];
+                                            $sourceWarehouse = $batchDoc['source_warehouse_id'] ?? null;
+                                            error_log("✅ Transfer - from_location from batch: " . json_encode($fromLocation));
+                                            error_log("✅ Source warehouse: " . $sourceWarehouse);
+                                        } else if ($receiptType === 'transfer') {
+                                            // ⭐ FALLBACK: Nếu batch không có source_location nhưng receipt type là transfer
+                                            // Lấy source_location từ export_id (thông qua receipt)
+                                            error_log("⚠️ Batch missing source_location, trying to get from export...");
+                                            
+                                            $exportId = $arrRc['export_id'] ?? null;
+                                            if ($exportId) {
+                                                $exportDoc = null;
+                                                try {
+                                                    if ($exportId instanceof MongoDB\BSON\ObjectId) {
+                                                        $exportDoc = $con2->selectCollection('transactions')->findOne(['_id' => $exportId]);
+                                                    } elseif (!empty($exportId)) {
+                                                        $exportDoc = $con2->selectCollection('transactions')->findOne(['_id' => new MongoDB\BSON\ObjectId((string)$exportId)]);
+                                                    }
+                                                } catch (Throwable $e) {
+                                                    error_log('locate/process.php: exportId conversion failed: ' . $e->getMessage());
+                                                    $exportDoc = null;
+                                                }
+                                                
+                                                if ($exportDoc) {
+                                                    // Tìm batch info trong export details
+                                                    $exportDetails = $exportDoc['details'] ?? $exportDoc['products'] ?? [];
+                                                    foreach ($exportDetails as $expDetail) {
+                                                        if (($expDetail['product_id'] ?? '') === $productId && isset($expDetail['batches'])) {
+                                                            foreach ($expDetail['batches'] as $expBatch) {
+                                                                if (($expBatch['batch_code'] ?? '') === $batchCode && isset($expBatch['source_location'])) {
+                                                                    $fromLocation = $expBatch['source_location'];
+                                                                    $sourceWarehouse = $exportDoc['warehouse_id'] ?? $arrRc['source_warehouse_id'] ?? null;
+                                                                    error_log("✅ Found from_location from export: " . json_encode($fromLocation));
+                                                                    break 2;
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            
+                                            if (!$fromLocation) {
+                                                error_log("⚠️ Transfer receipt but cannot find source_location - setting to null");
+                                            }
+                                        } else {
+                                            // Nhập từ nhà cung cấp - from_location = null
+                                            error_log("ℹ️ Purchase receipt - from_location is null (from supplier)");
+                                            $fromLocation = null; // Explicitly set to null
+                                        }
+                                    } else {
+                                        error_log("⚠️ Batch not found: " . $batchCode);
+                                    }
+                                    
+                                    $p2->dongKetNoi($con2);
+                                } else {
+                                    error_log("⚠️ Cannot connect to MongoDB");
+                                }
+                            } catch (\Exception $e) {
+                                error_log("❌ Error fetching batch: " . $e->getMessage());
+                                // Continue to insert movement even if batch fetch failed
+                            }
+                            
+                            // ✅ Tạo note mô tả rõ ràng dựa vào receipt type
+                            $noteText = '';
+                            if ($receiptType === 'transfer') {
+                                // Transfer: hiển thị thông tin kho nguồn và vị trí (nếu có)
+                                if ($fromLocation) {
+                                    $fromZone = $fromLocation['zone_id'] ?? '';
+                                    $fromRack = $fromLocation['rack_id'] ?? '';
+                                    $fromBin = $fromLocation['bin_id'] ?? '';
+                                    $noteText = "Nhập điều chuyển từ kho {$sourceWarehouse} vị trí {$fromZone}-{$fromRack}-{$fromBin}";
+                                } else {
+                                    // Transfer nhưng không có vị trí (có thể do batch cũ hoặc thiếu dữ liệu)
+                                    $noteText = "Nhập điều chuyển từ kho {$sourceWarehouse} (phiếu {$id})";
+                                }
+                            } else {
+                                // Purchase: nhập từ nhà cung cấp
+                                $noteText = "Nhập hàng từ nhà cung cấp (phiếu {$id})";
+                            }
+                            
+                            error_log("📝 Creating movement with from_location: " . json_encode($fromLocation));
+                            
+                            $movementData = [
+                                'batch_code' => $batchCode,
+                                'product_id' => $productId,
+                                'movement_type' => 'nhập',
+                                'from_location' => $fromLocation, // null = nhập từ NCC, có giá trị = transfer
+                                'to_location' => $locationObject,
+                                'quantity' => $qtyAlloc,
+                                'date' => $finalReceivedAt,
+                                'warehouse_id' => $warehouseId,
+                                'transaction_id' => $id,
+                                'note' => $noteText
+                            ];
+                            
+                            $movementResult = $mInventoryMovement->insertMovement($movementData);
+                            if ($movementResult) {
+                                $movementCount++;
+                                error_log("✅ Movement inserted successfully for batch $batchCode");
+                            } else {
+                                $errors[] = "Failed to insert movement for batch $batchCode";
+                                error_log("❌ Failed to insert movement for batch $batchCode");
+                            }
+                        } else {
+                            $errors[] = "Batch not found for product $productId";
+                            error_log("❌ No batch found for product $productId in transaction $id");
+                        }
+                        
                     } catch (\Throwable $e) {
                         $errors[] = $e->getMessage();
-                        error_log('Error inserting inventory entry: ' . $e->getMessage());
+                        error_log('Error in complete_receipt: ' . $e->getMessage());
                     }
                 } else {
                     $errors[] = "Missing data: warehouse=$warehouseId, product=$productId, qty=$qtyAlloc";
                 }
+            }
+            
+            // ⭐ CẬP NHẬT BIN CAPACITY sau khi xếp hàng xong
+            try {
+                include_once(__DIR__ . "/../../../../../model/connect.php");
+                $pCap = new clsKetNoi();
+                $conCap = $pCap->moKetNoi();
+                
+                if ($conCap) {
+                    $locCol = $conCap->selectCollection('locations'); // ✅ Đổi từ warehouses => locations
+                    
+                    // Lấy danh sách bins đã được xếp hàng (từ allocations)
+                    $binsToUpdate = [];
+                    foreach ($allocs as $a) {
+                        $binKey = ($a['warehouse_id'] ?? '') . '|' . ($a['zone_id'] ?? '') . '|' . ($a['rack_id'] ?? '') . '|' . ($a['bin_id'] ?? '');
+                        if (!isset($binsToUpdate[$binKey])) {
+                            $binsToUpdate[$binKey] = [
+                                'warehouse_id' => $a['warehouse_id'] ?? '',
+                                'zone_id' => $a['zone_id'] ?? '',
+                                'rack_id' => $a['rack_id'] ?? '',
+                                'bin_id' => $a['bin_id'] ?? ''
+                            ];
+                        }
+                    }
+                    
+                    foreach ($binsToUpdate as $binInfo) {
+                        $whId = $binInfo['warehouse_id'];
+                        $zId = $binInfo['zone_id'];
+                        $rId = $binInfo['rack_id'];
+                        $bId = $binInfo['bin_id'];
+                        
+                        if (!$whId || !$zId || !$rId || !$bId) continue;
+                        
+                        // Tính tổng số lượng trong bin từ inventory
+                        $invCol = $conCap->selectCollection('inventory');
+                        $totalQty = 0;
+                        
+                        $invItems = $invCol->find([
+                            'warehouse_id' => $whId,
+                            'zone_id' => $zId,
+                            'rack_id' => $rId,
+                            'bin_id' => $bId
+                        ]);
+                        
+                        foreach ($invItems as $item) {
+                            $totalQty += (int)($item['qty'] ?? 0);
+                        }
+                        
+                        // Lấy capacity của bin từ locations collection
+                        $location = $locCol->findOne(['warehouse.id' => $whId]); // ✅ Đổi từ warehouse_id => warehouse.id
+                        $binCapacity = 100; // Default capacity
+                        
+                        if ($location && isset($location['zones'])) {
+                            foreach ($location['zones'] as $zone) {
+                                if (($zone['zone_id'] ?? '') === $zId && isset($zone['racks'])) {
+                                    foreach ($zone['racks'] as $rack) {
+                                        if (($rack['rack_id'] ?? '') === $rId && isset($rack['bins'])) {
+                                            foreach ($rack['bins'] as $bin) {
+                                                if (($bin['bin_id'] ?? '') === $bId) {
+                                                    $binCapacity = (int)($bin['capacity'] ?? 100);
+                                                    break 3;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Tính % capacity
+                        $currentCapacity = 0;
+                        if ($binCapacity > 0 && $totalQty > 0) {
+                            $currentCapacity = ($totalQty / $binCapacity) * 100;
+                        }
+                        
+                        error_log("📊 CAPACITY UPDATE - Bin: $whId/$zId/$rId/$bId, Qty: $totalQty, Cap: $binCapacity, Calc: " . round($currentCapacity, 1) . "%");
+                        
+                        // Cập nhật current_capacity vào bin trong locations collection
+                        $updateResult = $locCol->updateOne(
+                            [
+                                'warehouse.id' => $whId, // ✅ Đổi từ warehouse_id => warehouse.id
+                                'zones.zone_id' => $zId,
+                                'zones.racks.rack_id' => $rId,
+                                'zones.racks.bins.bin_id' => $bId
+                            ],
+                            [
+                                '$set' => [
+                                    'zones.$[z].racks.$[r].bins.$[b].current_capacity' => round($currentCapacity, 1),
+                                    'zones.$[z].racks.$[r].bins.$[b].capacity' => $binCapacity // Đảm bảo có capacity
+                                ]
+                            ],
+                            [
+                                'arrayFilters' => [
+                                    ['z.zone_id' => $zId],
+                                    ['r.rack_id' => $rId],
+                                    ['b.bin_id' => $bId]
+                                ]
+                            ]
+                        );
+                        
+                        if ($updateResult->getModifiedCount() > 0) {
+                            error_log("✅ Updated bin capacity: $bId = " . round($currentCapacity, 1) . "% (qty: $totalQty, cap: $binCapacity)");
+                        } else {
+                            error_log("⚠️ Bin capacity NOT updated (maybe no change): $bId");
+                        }
+                    }
+                    
+                    $pCap->dongKetNoi($conCap);
+                }
+            } catch (\Throwable $e) {
+                error_log("⚠️ Failed to update bin capacity: " . $e->getMessage());
+                // Continue anyway - không critical
             }
 
             // Update status = 3 and set completed_at
@@ -576,10 +1172,62 @@ try {
             $mr = new MReceipt();
             $mr->updateReceipt($id, ['completed_at' => new MongoDB\BSON\UTCDateTime()]);
             
-            $response = ['success'=>(bool)$ok, 'inventory_inserted'=>$insertedCount];
+            // ⭐ Nếu là phiếu nhập transfer, cập nhật status phiếu xuất thành 2 (Đã giao hàng)
+            try {
+                $receipt = $c->getReceiptById($id);
+                if ($receipt && isset($receipt['export_id']) && !empty($receipt['export_id'])) {
+                    $exportId = $receipt['export_id'];
+                    error_log("📦 Updating export status for receipt $id (export: $exportId)");
+                    
+                    $p2 = new clsKetNoi();
+                    $con2 = $p2->moKetNoi();
+                    if ($con2) {
+                        // Normalize export id to ObjectId when possible
+                        $exportIdObj = null;
+                        try {
+                            if ($exportId instanceof MongoDB\BSON\ObjectId) {
+                                $exportIdObj = $exportId;
+                            } elseif (!empty($exportId)) {
+                                $exportIdObj = new MongoDB\BSON\ObjectId((string)$exportId);
+                            }
+                        } catch (Throwable $e) {
+                            error_log('locate/process.php: exportId -> ObjectId conversion failed: ' . $e->getMessage());
+                            $exportIdObj = null;
+                        }
+
+                        if ($exportIdObj) {
+                            $con2->selectCollection('transactions')->updateOne(
+                                ['_id' => $exportIdObj],
+                                ['$set' => [
+                                    'status' => 2, // Đã giao hàng
+                                    'received_at' => new MongoDB\BSON\UTCDateTime(),
+                                    'received_by' => $_SESSION['login']['user_id'] ?? 'system'
+                                ]]
+                            );
+                        } else {
+                            error_log('locate/process.php: skipping export update because export_id could not be converted');
+                        }
+                        error_log("✅ Updated export $exportId status to 2 (Received)");
+                        $p2->dongKetNoi($con2);
+                    }
+                }
+            } catch (\Exception $e) {
+                error_log("⚠️ Cannot update export status: " . $e->getMessage());
+                // Continue anyway - this is not critical
+            }
+            
+            $response = [
+                'success' => (bool)$ok,
+                'inventory_inserted' => $insertedCount,
+                'batch_locations_inserted' => $batchLocationCount,
+                'movements_inserted' => $movementCount
+            ];
+            
             if (!empty($errors)) {
                 $response['errors'] = $errors;
             }
+            
+            error_log("✅ Completed receipt $id: inventory=$insertedCount, batch_locations=$batchLocationCount, movements=$movementCount");
             echo json_encode($response);
             break;
         }

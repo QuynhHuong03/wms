@@ -5,7 +5,7 @@ use MongoDB\Client;
 
 class clsKetNoi {
     private $uri = 'mongodb://127.0.0.1:27017';      // URI MongoDB trên laptop
-    private $dbName = 'wms';                         // mặc định DB (đổi nếu cần)
+    private $dbName = 'wms';                         // Database name (case-sensitive in MongoDB)
     private $client = null;
 
     // Bạn có thể truyền URI / dbName khi tạo object nếu muốn
@@ -33,5 +33,24 @@ class clsKetNoi {
         // đặt local $con = null (không ảnh hưởng biến ở caller vì không pass theo tham chiếu)
         $con = null;
         return true;
+    }
+}
+
+// Thêm class Database để tương thích với code mới
+class Database {
+    private $uri = 'mongodb://127.0.0.1:27017';
+    private $dbName = 'wms';
+    private $client = null;
+
+    public function __construct(string $uri = null, string $dbName = null) {
+        if ($uri !== null) $this->uri = $uri;
+        if ($dbName !== null) $this->dbName = $dbName;
+    }
+
+    public function getConnection() {
+        if ($this->client === null) {
+            $this->client = new Client($this->uri);
+        }
+        return $this->client->selectDatabase($this->dbName);
     }
 }

@@ -16,8 +16,8 @@ class CInventory {
 
 		$filters = [
 			'q' => $params['q'] ?? '',
-			// Enforce current user's warehouse regardless of incoming param
-			'warehouse_id' => $this->currentWarehouseId(),
+			// Accept warehouse_id from params if provided, otherwise use current warehouse
+			'warehouse_id' => !empty($params['warehouse_id']) ? $params['warehouse_id'] : $this->currentWarehouseId(),
 			'from' => $params['from'] ?? '',
 			'to' => $params['to'] ?? '',
 			'product_id' => $params['product_id'] ?? '',
@@ -43,7 +43,8 @@ class CInventory {
 		$limit = isset($params['limit']) ? max(1, min(200, intval($params['limit']))) : 20;
 		$filters = [
 			'q' => $params['q'] ?? '',
-			'warehouse_id' => $this->currentWarehouseId(),
+			// Accept warehouse_id from params if provided, otherwise use current warehouse
+			'warehouse_id' => !empty($params['warehouse_id']) ? $params['warehouse_id'] : $this->currentWarehouseId(),
 			'from' => $params['from'] ?? '',
 			'to' => $params['to'] ?? '',
 			'product_id' => $params['product_id'] ?? '',

@@ -33,7 +33,7 @@ body {
     background-color: #ffffff;
     color: #1f2937;
     min-height: 100vh;
-    padding: 15px 15px 0 15px;
+    padding: 10px 15px 0 15px;
     border-right: 1px solid #e5e7eb;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
     display: flex;
@@ -301,7 +301,7 @@ body {
                 </a>
                 <div class="submenu-items">
                     <a href="index.php?page=categories" class="<?= $currentPage=='categories'?'active':'' ?>">
-                        <i class="fas fa-tags"></i> Danh mục sản phẩm
+                        <i class="fas fa-tags"></i> Loại sản phẩm
                     </a>
                     <a href="index.php?page=products" class="<?= $currentPage=='products'?'active':'' ?>">
                         <i class="fas fa-box"></i> Sản phẩm
@@ -312,9 +312,26 @@ body {
             <a href="index.php?page=report" class="<?= $currentPage=='report'?'active':'' ?>"><i class="fas fa-chart-line"></i> Báo cáo thống kê</a>
 
         <?php elseif ($roleId == 2): ?>
+            <a href="index.php?page=supplier" class="<?= $currentPage=='supplier'?'active':'' ?>"><i class="fas fa-truck"></i> Nhà cung cấp</a>
+            
+            <div class="submenu" id="submenu-product">
+                <a href="javascript:void(0)" class="submenu-toggle">
+                    <span><i class="fas fa-boxes"></i> Quản lý sản phẩm</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </a>
+                <div class="submenu-items">
+                    <a href="index.php?page=categories" class="<?= $currentPage=='categories'?'active':'' ?>">
+                        <i class="fas fa-tags"></i> Loại sản phẩm
+                    </a>
+                    <a href="index.php?page=products" class="<?= $currentPage=='products'?'active':'' ?>">
+                        <i class="fas fa-box"></i> Sản phẩm
+                    </a>
+                </div>
+            </div>
+
             <div class="submenu" id="submenu-receipts-t">
                 <a href="javascript:void(0)" class="submenu-toggle">
-                    <span><i class="fa-solid fa-file-import"></i> Phiếu nhập kho tổng</span>
+                    <span><i class="fa-solid fa-file-import"></i> Quản lý nhập kho</span>
                     <i class="fas fa-chevron-down arrow"></i>
                 </a>
                 <div class="submenu-items">
@@ -322,15 +339,30 @@ body {
                     <a href="index.php?page=receipts/approve" class="<?= $currentPage=='receipts/approve'?'active':'' ?>"><i class="fa-solid fa-clipboard-check"></i> Duyệt phiếu nhập kho</a>
                 </div>
             </div>
+            <a href="index.php?page=goodsReceiptRequest" class="<?= $currentPage=='locations'?'active':'' ?>"><i class="fa-solid fa-clipboard-check"></i> Quản lý phiếu yêu cầu </a>
+            
             <div class="submenu" id="submenu-exports-t">
                 <a href="javascript:void(0)" class="submenu-toggle">
-                    <span><i class="fas fa-file-export"></i> Phiếu xuất kho tổng</span>
+                    <span><i class="fas fa-file-export"></i> Quản lý xuất kho</span>
                     <i class="fas fa-chevron-down arrow"></i>
                 </a>
                 <div class="submenu-items">
                     <a href="index.php?page=exports" class="<?= $currentPage=='exports'?'active':'' ?>"><i class="fa-solid fa-list-check"></i> Danh sách phiếu xuất kho</a>
                 </div>
             </div>
+            
+            <div class="submenu" id="submenu-inventory-sheets-t">
+                <a href="javascript:void(0)" class="submenu-toggle">
+                    <span><i class="fas fa-clipboard-list"></i> Quản lý kiểm kê</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </a>
+                <div class="submenu-items">
+                    <a href="index.php?page=inventory/createInventory_sheet" class="<?= $currentPage=='inventory/createInventory_sheet'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu kiểm kê</a>
+                    <a href="index.php?page=inventory/inventory_sheets" class="<?= $currentPage=='inventory/inventory_sheets'?'active':'' ?>"><i class="fa-solid fa-clipboard-check"></i> Quản lý phiếu</a>
+                </div>
+            </div>
+            <a href="index.php?page=batches" class="<?= $currentPage=='locations'?'active':'' ?>"><i class="fa-solid fa-box-open"></i> Quản lý lô hàng </a>
+            
             <a href="index.php?page=locations" class="<?= $currentPage=='locations'?'active':'' ?>"><i class="fas fa-warehouse"></i> Sơ đồ vị trí kho </a>
             <a href="index.php?page=inventory" class="<?= $currentPage=='inventory'?'active':'' ?>"><i class="fa-solid fa-box-open"></i> Xem tồn kho </a>
             <a href="index.php?page=report" class="<?= $currentPage=='report'?'active':'' ?>"><i class="fas fa-chart-line"></i> Báo cáo thống kê</a>
@@ -338,7 +370,7 @@ body {
         <?php elseif ($roleId == 3): ?>
             <div class="submenu" id="submenu-receipts-nvt">
                 <a href="javascript:void(0)" class="submenu-toggle">
-                    <span><i class="fa-solid fa-file-circle-plus"></i> Phiếu nhập kho tổng</span>
+                    <span><i class="fa-solid fa-file-circle-plus"></i> Quản lý nhập kho</span>
                     <i class="fas fa-chevron-down arrow"></i>
                 </a>
                 <div class="submenu-items">
@@ -348,7 +380,7 @@ body {
             </div>
             <div class="submenu" id="submenu-exports-nvt">
                 <a href="javascript:void(0)" class="submenu-toggle">
-                    <span><i class="fas fa-file-export"></i> Phiếu xuất kho tổng</span>
+                    <span><i class="fas fa-file-export"></i> Quản lý xuất kho</span>
                     <i class="fas fa-chevron-down arrow"></i>
                 </a>
                 <div class="submenu-items">
@@ -375,8 +407,7 @@ body {
                     <i class="fas fa-chevron-down arrow"></i>
                 </a>
                 <div class="submenu-items">
-                    <a href="index.php?page=exports" class="<?= $currentPage=='exports'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu xuất kho</a>
-                    <a href="index.php?page=exports/approve" class="<?= $currentPage=='exports/approve'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu xuất kho</a>
+                    <a href="index.php?page=exports" class="<?= $currentPage=='exports'?'active':'' ?>"><i class="fa-solid fa-clipboard-check"></i>Danh sách phiếu xuất</a>
                 </div>
             </div>
             <div class="submenu" id="submenu-request-cnh">
@@ -438,7 +469,13 @@ body {
                 class="avatar">
             <div class="user-info">
                 <span><?= htmlspecialchars($users['name'] ?? ($users['email'] ?? 'Người dùng')) ?></span>
-                <small>Vai trò: ID <?= htmlspecialchars($roleId) ?></small> 
+                <small>Vai trò: ID <?= htmlspecialchars($roleId) ?></small>
+                <?php
+                    // Try common keys for warehouse information stored in the session user object
+                    $warehouseId = $users['warehouse_id'] ?? $users['warehouse'] ?? null;
+                    $warehouseName = $users['warehouse_name'] ?? $users['warehouse_title'] ?? null;
+                ?>
+                <small>Kho: <?= $warehouseName ? htmlspecialchars($warehouseName) : ($warehouseId ? 'ID ' . htmlspecialchars($warehouseId) : 'Chưa chọn') ?></small>
             </div>
         </a>
         <a href="../logout/index.php" class="logout-icon">

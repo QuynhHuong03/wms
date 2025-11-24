@@ -183,6 +183,9 @@ public function getProductByBarcode($barcode) {
                     'purchase_price' => $product['purchase_price'] ?? 0,
                     'baseUnit' => $product['baseUnit'] ?? 'cái',
                     'conversionUnits' => $product['conversionUnits'] ?? [],
+                    'package_dimensions' => $product['package_dimensions'] ?? [],
+                    'package_weight' => $product['package_weight'] ?? 0,
+                    'volume_per_unit' => $product['volume_per_unit'] ?? 0,
                     'supplier' => $product['supplier']['name'] ?? '',
                     'category' => $product['category']['name'] ?? '',
                     'current_stock' => $product['current_stock'] ?? 0,
@@ -230,6 +233,20 @@ public function getProductByBarcode($barcode) {
                         }
                     }
 
+                    // ✅ Lấy kích thước từ package_dimensions hoặc dimensions
+                    $dimensions = [];
+                    if (isset($product['package_dimensions']) && is_array($product['package_dimensions'])) {
+                        $dimensions = $product['package_dimensions'];
+                    } elseif (isset($product['dimensions']) && is_array($product['dimensions'])) {
+                        $dimensions = $product['dimensions'];
+                    }
+                    
+                    $finalDimensions = [
+                        'width' => $dimensions['width'] ?? 0,
+                        'depth' => $dimensions['depth'] ?? 0,
+                        'height' => $dimensions['height'] ?? 0
+                    ];
+                    
                     return [
                         '_id' => $id,
                         'sku' => $product['sku'] ?? '',
@@ -242,6 +259,12 @@ public function getProductByBarcode($barcode) {
                         'supplier' => $product['supplier']['name'] ?? '',
                         'category' => $product['category']['name'] ?? '',
                         'current_stock' => $product['current_stock'] ?? 0,
+                        'dimensions' => $finalDimensions,
+                        'package_dimensions' => $finalDimensions, // Add this for compatibility
+                        'weight' => $product['package_weight'] ?? ($product['weight'] ?? 0),
+                        'volume_per_unit' => $product['volume_per_unit'] ?? 0,
+                        'stackable' => $product['stackable'] ?? false,
+                        'max_stack_height' => $product['max_stack_height'] ?? 1,
                     ];
                 }
                 return null;

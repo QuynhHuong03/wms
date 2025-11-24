@@ -15,6 +15,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnUpdate"])) {
     $base_unit     = trim($_POST["base_unit"] ?? '');
     $conversion_units = $_POST["conversion_unit"] ?? [];
     $conversion_factors = $_POST["conversion_factor"] ?? [];
+    $conversion_widths = $_POST["conversion_width"] ?? [];
+    $conversion_depths = $_POST["conversion_depth"] ?? [];
+    $conversion_heights = $_POST["conversion_height"] ?? [];
+    $conversion_weights = $_POST["conversion_weight"] ?? [];
+    $conversion_volumes = $_POST["conversion_volume"] ?? [];
+
+    // Thông tin kích thước và trọng lượng đơn vị chính
+    $package_width  = (float)($_POST["package_width"] ?? 0);
+    $package_depth  = (float)($_POST["package_depth"] ?? 0);
+    $package_height = (float)($_POST["package_height"] ?? 0);
+    $package_weight = (float)($_POST["package_weight"] ?? 0);
+    $volume_per_unit = (float)($_POST["volume_per_unit"] ?? 0);
+    
+    $stackable = (int)($_POST["stackable"] ?? 1);
+    $max_stack_height = (int)($_POST["max_stack_height"] ?? 0);
 
     // --- Upload hình ảnh ---
     $image = $_POST['old_image'] ?? '';
@@ -56,8 +71,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnUpdate"])) {
     foreach ($conversion_units as $i => $unit) {
         $unit = trim($unit);
         $factor = isset($conversion_factors[$i]) ? (float)$conversion_factors[$i] : 0;
+        $width = isset($conversion_widths[$i]) ? (float)$conversion_widths[$i] : 0;
+        $depth = isset($conversion_depths[$i]) ? (float)$conversion_depths[$i] : 0;
+        $height = isset($conversion_heights[$i]) ? (float)$conversion_heights[$i] : 0;
+        $weight = isset($conversion_weights[$i]) ? (float)$conversion_weights[$i] : 0;
+        $volume = isset($conversion_volumes[$i]) ? (float)$conversion_volumes[$i] : 0;
+        
         if ($unit !== '' && $factor > 0) {
-            $conversionList[] = ['unit' => $unit, 'factor' => $factor];
+            $conversionList[] = [
+                'unit' => $unit,
+                'factor' => $factor,
+                'dimensions' => [
+                    'width' => $width,
+                    'depth' => $depth,
+                    'height' => $height
+                ],
+                'weight' => $weight,
+                'volume' => $volume
+            ];
         }
     }
 
@@ -67,9 +98,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnUpdate"])) {
         'barcode' => $barcode,
         'category' => ['id' => $category_id, 'name' => $category_name],
         'supplier' => ['id' => $supplier_id, 'name' => $supplier_name],
-        'model' => $model, // Model là text
+        'model' => $model,
         'baseUnit' => $base_unit,
         'conversionUnits' => $conversionList,
+        'package_dimensions' => [
+            'width' => $package_width,
+            'depth' => $package_depth,
+            'height' => $package_height
+        ],
+        'package_weight' => $package_weight,
+        'volume_per_unit' => $volume_per_unit,
+        'stackable' => (bool)$stackable,
+        'max_stack_height' => $max_stack_height,
         'min_stock' => $min_stock,
         'status' => $status,
         'description' => $description,

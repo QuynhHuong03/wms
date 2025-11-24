@@ -75,6 +75,10 @@ class MReceipt {
     public function getAllReceipts($filter = []) {
         if (!$this->col) return new ArrayObject([]);
         try {
+            // Exclude export and goods_request transactions by default
+            if (!isset($filter['transaction_type'])) {
+                $filter['transaction_type'] = ['$nin' => ['export', 'goods_request']];
+            }
             return $this->col->find($filter, ['sort' => ['created_at' => -1]]);
         } catch (\Exception $e) {
             error_log('getAllReceipts error: ' . $e->getMessage());
@@ -86,6 +90,10 @@ class MReceipt {
     public function getAllReceiptsWithUserInfo($filter = []) {
         if (!$this->col) return new ArrayObject([]);
         try {
+            // Exclude export and goods_request by default
+            if (!isset($filter['transaction_type'])) {
+                $filter['transaction_type'] = ['$nin' => ['export', 'goods_request']];
+            }
             // Sử dụng aggregation pipeline để join với collection users
             $pipeline = [
                 ['$match' => $filter],
@@ -122,8 +130,12 @@ class MReceipt {
         if (!$this->col) return new ArrayObject([]);
         try {
             // Sử dụng aggregation pipeline
+            $match = [
+                'created_by' => $user_id,
+                'transaction_type' => ['$nin' => ['export', 'goods_request']]
+            ];
             $pipeline = [
-                ['$match' => ['created_by' => $user_id]],
+                ['$match' => $match],
                 [
                     '$lookup' => [
                         'from' => 'users',
@@ -157,8 +169,13 @@ class MReceipt {
         if (!$this->col) return new ArrayObject([]);
         try {
             // Sử dụng aggregation pipeline
+            // Exclude export and goods_request documents (transactions used for other purposes)
+            $match = [
+                'warehouse_id' => $warehouse_id,
+                'transaction_type' => ['$nin' => ['export', 'goods_request']]
+            ];
             $pipeline = [
-                ['$match' => ['warehouse_id' => $warehouse_id]],
+                ['$match' => $match],
                 [
                     '$lookup' => [
                         'from' => 'users',
@@ -191,7 +208,16 @@ class MReceipt {
     public function getReceiptById($receipt_id) {
         if (!$this->col) return null;
         try {
-            return $this->col->findOne(['transaction_id' => $receipt_id]);
+            $result = $this->col->findOne(['transaction_id' => $receipt_id]);
+            if ($result) {
+                error_log("🔍 getReceiptById($receipt_id):");
+                error_log("   Has allocations field: " . (isset($result['allocations']) ? 'YES' : 'NO'));
+                if (isset($result['allocations'])) {
+                    error_log("   Allocations count: " . count($result['allocations']));
+                    error_log("   Allocations type: " . gettype($result['allocations']));
+                }
+            }
+            return $result;
         } catch (\Exception $e) {
             error_log('getReceiptById error: ' . $e->getMessage());
             return null;

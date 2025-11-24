@@ -535,5 +535,210 @@ class MInventory {
             return [];
         }
     }
+    
+    /**
+     * Calculate bin occupancy percentage based on volume
+     * @param string $warehouseId
+     * @param string $zoneId
+     * @param string $rackId
+     * @param string $binId
+     * @return float Occupancy percentage (0-100)
+     */
+    public function calculateBinOccupancy($warehouseId, $zoneId, $rackId, $binId) {
+        try {
+            // 1. Get bin dimensions from warehouse_structure
+            require_once(__DIR__ . '/mLocation.php');
+            $mLocation = new MLocation();
+            $binData = $mLocation->getBinFromWarehouse($warehouseId, $zoneId, $rackId, ['bin_id' => $binId]);
+            
+            if (!$binData || !isset($binData['bin'])) {
+                return 0;
+            }
+            
+            $bin = $binData['bin'];
+            $binDims = $bin['dimensions'] ?? [];
+            $binWidth = (float)($binDims['width'] ?? 0);
+            $binDepth = (float)($binDims['depth'] ?? 0);
+            $binHeight = (float)($binDims['height'] ?? 0);
+            
+            // If bin has no dimensions, cannot calculate
+            if ($binWidth <= 0 || $binDepth <= 0 || $binHeight <= 0) {
+                return 0;
+            }
+            
+            // Calculate bin volume (cm³)
+            $binVolume = $binWidth * $binDepth * $binHeight;
+            
+            // 2. Get all products in this bin from inventory
+            $inventoryItems = $this->col->find([
+                'warehouse_id' => $warehouseId,
+                'zone_id' => $zoneId,
+                'rack_id' => $rackId,
+                'bin_id' => $binId
+            ])->toArray();
+            
+            if (empty($inventoryItems)) {
+                return 0; // Empty bin
+            }
+            
+            // 3. Calculate total volume of products
+            require_once(__DIR__ . '/mProduct.php');
+            $mProduct = new MProduct();
+            $totalProductVolume = 0;
+            
+            foreach ($inventoryItems as $item) {
+                $productId = $item['product_id'] ?? '';
+                $qty = (int)($item['qty'] ?? 0);
+                
+                if (!$productId || $qty <= 0) continue;
+                
+                // Get product dimensions
+                $product = $mProduct->getProductById($productId);
+                if (!$product) continue;
+                
+                // Get volume per unit from product
+                $volumePerUnit = 0;
+                
+                // Check if product has package_dimensions
+                if (isset($product['package_dimensions'])) {
+                    $pDims = $product['package_dimensions'];
+                    $pWidth = (float)($pDims['width'] ?? 0);
+                    $pDepth = (float)($pDims['depth'] ?? 0);
+                    $pHeight = (float)($pDims['height'] ?? 0);
+                    
+                    if ($pWidth > 0 && $pDepth > 0 && $pHeight > 0) {
+                        $volumePerUnit = $pWidth * $pDepth * $pHeight;
+                    }
+                }
+                
+                // Fallback to volume_per_unit field
+                if ($volumePerUnit <= 0 && isset($product['volume_per_unit'])) {
+                    $volumePerUnit = (float)$product['volume_per_unit'];
+                }
+                
+                // Add to total volume
+                $totalProductVolume += ($volumePerUnit * $qty);
+            }
+            
+            // 4. Calculate occupancy percentage
+            if ($totalProductVolume <= 0) {
+                return 0;
+            }
+            
+            $occupancy = ($totalProductVolume / $binVolume) * 100;
+            
+            // Cap at 100% (though it could exceed in reality if overpacked)
+            return min(100, round($occupancy, 2));
+            
+        } catch (\Throwable $e) {
+            error_log('calculateBinOccupancy error: ' . $e->getMessage());
+            return 0;
+        }
+    }
+    
+    /**
+     * Update bin occupancy after inventory changes
+     * Also automatically updates bin status based on occupancy percentage
+     * @param string $warehouseId
+     * @param string $zoneId
+     * @param string $rackId
+     * @param string $binId
+     * @return bool
+     */
+    public function updateBinOccupancy($warehouseId, $zoneId, $rackId, $binId) {
+        try {
+            // Calculate current occupancy
+            $occupancy = $this->calculateBinOccupancy($warehouseId, $zoneId, $rackId, $binId);
+            
+            // Determine status based on occupancy percentage
+            $status = 'empty';
+            if ($occupancy >= 80) {
+                $status = 'full';
+            } elseif ($occupancy > 0) {
+                $status = 'partial';
+            }
+            
+            // Update bin's current_capacity and status in warehouse_structure
+            require_once(__DIR__ . '/mLocation.php');
+            $mLocation = new MLocation();
+            
+            $updateData = [
+                'current_capacity' => (int)round($occupancy),
+                'status' => $status
+            ];
+            
+            return $mLocation->updateBinInWarehouse($warehouseId, $zoneId, $rackId, $binId, $updateData);
+            
+        } catch (\Throwable $e) {
+            error_log('updateBinOccupancy error: ' . $e->getMessage());
+            return false;
+        }
+    }
+    
+    
+    // Sum total quantity for all bins in a specific rack
+    public function sumQuantityByRack($warehouseId, $zoneId, $rackId) {
+        if (!$this->col) return 0;
+        try {
+            $pipeline = [
+                [
+                    '$match' => [
+                        'warehouse_id' => $warehouseId,
+                        'zone_id' => $zoneId,
+                        'rack_id' => $rackId
+                    ]
+                ],
+                [
+                    '$group' => [
+                        '_id' => null,
+                        'total_qty' => ['$sum' => '$qty']
+                    ]
+                ]
+            ];
+            
+            $result = $this->col->aggregate($pipeline)->toArray();
+            
+            if (!empty($result)) {
+                return (int)($result[0]['total_qty'] ?? 0);
+            }
+            
+            return 0;
+        } catch (\Throwable $e) {
+            error_log('sumQuantityByRack error: ' . $e->getMessage());
+            return 0;
+        }
+    }
+    
+    // Sum total quantity for all bins in a specific zone (across all racks)
+    public function sumQuantityByZone($warehouseId, $zoneId) {
+        if (!$this->col) return 0;
+        try {
+            $pipeline = [
+                [
+                    '$match' => [
+                        'warehouse_id' => $warehouseId,
+                        'zone_id' => $zoneId
+                    ]
+                ],
+                [
+                    '$group' => [
+                        '_id' => null,
+                        'total_qty' => ['$sum' => '$qty']
+                    ]
+                ]
+            ];
+            
+            $result = $this->col->aggregate($pipeline)->toArray();
+            
+            if (!empty($result)) {
+                return (int)($result[0]['total_qty'] ?? 0);
+            }
+            
+            return 0;
+        } catch (\Throwable $e) {
+            error_log('sumQuantityByZone error: ' . $e->getMessage());
+            return 0;
+        }
+    }
 }
 ?>

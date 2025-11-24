@@ -206,6 +206,151 @@ body {
         align-items: stretch;
     }
 }
+
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background: rgba(0,0,0,0.5);
+    animation: fadeIn 0.3s;
+}
+
+.modal-content {
+    background: #fff;
+    max-width: 450px;
+    margin: 15vh auto;
+    padding: 35px;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    text-align: center;
+}
+
+.modal-content h3 {
+    color: #1f2937;
+    margin: 0 0 15px 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.modal-content p {
+    color: #6b7280;
+    margin-bottom: 30px;
+    font-size: 1.05rem;
+    line-height: 1.6;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.modal-actions button {
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    font-size: 1rem;
+    transition: all 0.2s;
+    min-width: 100px;
+}
+
+#cancelModalBtn {
+    background: #e5e7eb;
+    color: #374151;
+}
+#cancelModalBtn:hover {
+    background: #d1d5db;
+}
+
+#confirmAddBtn {
+    background: #10b981;
+    color: white;
+}
+#confirmAddBtn:hover {
+    background: #059669;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.4);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Safety overrides: ensure action buttons are visible even if other global
+   styles elsewhere hide or collapse them. These rules use high specificity
+   and !important to override competing styles while preserving existing
+   visual design from this file. */
+form .form-actions,
+.container .form-actions,
+body .form-actions {
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 12px !important;
+  margin-top: 35px !important;
+  padding-top: 0 !important;
+  z-index: 999 !important;
+  visibility: visible !important;
+  position: relative !important;
+  width: 100% !important;
+  height: auto !important;
+}
+
+form .form-actions button,
+form .form-actions a,
+.container .form-actions button,
+.container .form-actions a,
+body .form-actions button,
+body .form-actions a {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 88px !important;
+  min-height: 40px !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+  pointer-events: auto !important;
+  overflow: visible !important;
+}
+
+/* Re-assert the intended colors so buttons remain visible */
+form .form-actions .btn-success,
+.container .form-actions .btn-success { 
+  background-color: #10b981 !important; 
+  color: #fff !important; 
+  border: none !important;
+}
+
+form .form-actions .btn-secondary,
+.container .form-actions .btn-secondary { 
+  background-color: #9ca3af !important; 
+  color: #fff !important; 
+  border: none !important;
+}
+
+form .form-actions a,
+.container .form-actions a { 
+  background-color: #e5e7eb !important; 
+  color: #4b5563 !important; 
+  border: none !important;
+}
+
+/* Override disabled state visual */
+form .form-actions .btn-success.is-disabled,
+.container .form-actions .btn-success.is-disabled {
+  background-color: #d1d5db !important;
+  cursor: not-allowed !important;
+  opacity: 0.8 !important;
+  box-shadow: none !important;
+}
   </style>
 
   <div class="page-header">
@@ -214,7 +359,7 @@ body {
   </div>
 
   <div class="container">
-    <form action="users/createUsers/process.php" method="post" enctype="multipart/form-data" onsubmit="return validateForm()">
+  <form action="/KLTN/view/page/manage/users/createUsers/process.php" method="post" enctype="multipart/form-data" onsubmit="return validateForm()">
       
       <!-- Họ và tên -->
       <div class="form-group">
@@ -301,7 +446,7 @@ body {
       <?php
       include("../../../controller/cWarehouse.php");
       $obj = new CWarehouse();
-      $warehouses = $obj->getWarehousesByType(2); // ví dụ: 2 = kho chi nhánh
+      $warehouses = $obj->getAllWarehouses(); // Lấy tất cả kho
       if (is_array($warehouses) && count($warehouses) > 0) {
         foreach ($warehouses as $row) {
           echo '<option value="' . $row['warehouse_id'] . '">' . $row['warehouse_name'] . '</option>';
@@ -316,14 +461,26 @@ body {
 
 
       <!-- Nút thao tác -->
-      <div class="form-actions">
-        <a href="index.php?page=users">Quay lại</a>
-        <button type="reset" class="btn-secondary">Hủy</button>
-        <button type="submit" class="btn-success" name="btnAdd">Thêm</button>
+      <div class="form-actions" style="display: flex !important; visibility: visible !important;">
+        <a href="index.php?page=users" class="btn-secondary" style="display: inline-flex !important;">Quay lại</a>
+        <button type="reset" class="btn-secondary" style="display: inline-flex !important;">Hủy</button>
+        <button type="submit" class="btn-success" name="btnAdd" style="display: inline-flex !important;">Thêm</button>
       </div>
 
     </form>
   </div>
+
+<!-- Modal xác nhận thêm -->
+<div id="confirmModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <h3>Xác nhận thêm người dùng</h3>
+    <p>Bạn có chắc chắn muốn thêm người dùng này không?</p>
+    <div class="modal-actions">
+      <button type="button" id="cancelModalBtn">Hủy</button>
+      <button type="button" id="confirmAddBtn">Xác nhận</button>
+    </div>
+  </div>
+</div>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -451,8 +608,50 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
+  // Modal xác nhận
+  const confirmModal = document.getElementById('confirmModal');
+  const confirmAddBtn = document.getElementById('confirmAddBtn');
+  const cancelModalBtn = document.getElementById('cancelModalBtn');
+  let isConfirmed = false;
+
   form.addEventListener("submit", function (e) {
-    if (!validateForm()) e.preventDefault();
+    // Nếu form không hợp lệ thì chặn submit
+    if (!validateForm()) {
+      e.preventDefault();
+      return false;
+    }
+
+    // Nếu chưa xác nhận, chặn submit và hiện modal
+    if (!isConfirmed) {
+      e.preventDefault();
+      confirmModal.style.display = 'block';
+      return false;
+    }
+
+    // Nếu đã xác nhận, không chặn — cho phép hành vi submit mặc định
+  });
+
+  // Xác nhận thêm
+  confirmAddBtn.addEventListener('click', function() {
+    // Đánh dấu đã xác nhận rồi thực hiện click thật trên nút submit
+    isConfirmed = true;
+    confirmModal.style.display = 'none';
+    // Thực hiện click trên nút submit để gửi yêu cầu giống hành động người dùng
+    saveBtn.click();
+  });
+
+  // Hủy modal
+  cancelModalBtn.addEventListener('click', function() {
+    confirmModal.style.display = 'none';
+    isConfirmed = false;
+  });
+
+  // Đóng modal khi click bên ngoài
+  window.addEventListener('click', function(event) {
+    if (event.target === confirmModal) {
+      confirmModal.style.display = 'none';
+      isConfirmed = false;
+    }
   });
 });
 

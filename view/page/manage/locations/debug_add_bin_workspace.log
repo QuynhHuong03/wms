@@ -45388,3 +45388,206 @@
     }
 }
 ---
+<<<<<<< HEAD
+=======
+{
+    "sessionWarehouse": "KHO_TONG_01",
+    "initialAdd": {
+        "success": true
+    },
+    "createdRack": true,
+    "retryAdd": null,
+    "zoneId": "Z1",
+    "rackId": "R3",
+    "binId": "",
+    "code": "",
+    "numericId": null,
+    "autoRack": false,
+    "directPush": null,
+    "rmwOk": null,
+    "finalRes": {
+        "success": true
+    }
+}
+---
+{
+    "sessionWarehouse": "KHO_TONG_01",
+    "initialAdd": {
+        "success": true
+    },
+    "createdRack": true,
+    "retryAdd": null,
+    "zoneId": "Z3",
+    "rackId": "R4",
+    "binId": "",
+    "code": "",
+    "numericId": null,
+    "autoRack": false,
+    "directPush": null,
+    "rmwOk": null,
+    "finalRes": {
+        "success": true
+    }
+}
+---
+{
+    "sessionWarehouse": "KHO_TONG_01",
+    "initialAdd": {
+        "success": false
+    },
+    "createdRack": true,
+    "retryAdd": null,
+    "zoneId": "Z3",
+    "rackId": "R1",
+    "binId": "B2",
+    "code": "Z3-R1-B2",
+    "numericId": 10,
+    "autoRack": false,
+    "directPush": false,
+    "rmwOk": true,
+    "finalRes": {
+        "success": true
+    }
+}
+---
+{
+    "sessionWarehouse": "KHO_TONG_01",
+    "initialAdd": {
+        "success": true
+    },
+    "createdRack": true,
+    "retryAdd": null,
+    "zoneId": "Z3",
+    "rackId": "R1",
+    "binId": "",
+    "code": "",
+    "numericId": null,
+    "autoRack": false,
+    "directPush": null,
+    "rmwOk": null,
+    "finalRes": {
+        "success": true
+    }
+}
+---
+{
+    "sessionWarehouse": "KHO_TONG_01",
+    "initialAdd": {
+        "success": true
+    },
+    "createdRack": true,
+    "retryAdd": null,
+    "zoneId": "Z3",
+    "rackId": "R1",
+    "binId": "",
+    "code": "",
+    "numericId": null,
+    "autoRack": false,
+    "directPush": null,
+    "rmwOk": null,
+    "finalRes": {
+        "success": true
+    }
+}
+---
+{
+    "sessionWarehouse": "KHO_TONG_01",
+    "initialAdd": {
+        "success": true
+    },
+    "createdRack": true,
+    "retryAdd": null,
+    "zoneId": "Z3",
+    "rackId": "R1",
+    "binId": "",
+    "code": "",
+    "numericId": null,
+    "autoRack": false,
+    "directPush": null,
+    "rmwOk": null,
+    "finalRes": {
+        "success": true
+    }
+}
+---
+{
+    "sessionWarehouse": "KHO_TONG_01",
+    "initialAdd": {
+        "success": true
+    },
+    "createdRack": true,
+    "retryAdd": null,
+    "zoneId": "Z3",
+    "rackId": "R1",
+    "binId": "",
+    "code": "",
+    "numericId": null,
+    "autoRack": false,
+    "directPush": null,
+    "rmwOk": null,
+    "finalRes": {
+        "success": true
+    }
+}
+---
+{
+    "sessionWarehouse": "KHO_TONG_01",
+    "initialAdd": {
+        "success": false
+    },
+    "createdRack": true,
+    "retryAdd": null,
+    "zoneId": "Z3",
+    "rackId": "R1",
+    "binId": "B2",
+    "code": "Z3-R1-B2",
+    "numericId": 17,
+    "autoRack": false,
+    "directPush": false,
+    "rmwOk": true,
+    "finalRes": {
+        "success": true
+    }
+}
+---
+{
+    "sessionWarehouse": "KHO_TONG_01",
+    "initialAdd": {
+        "success": true
+    },
+    "createdRack": true,
+    "retryAdd": null,
+    "zoneId": "Z3",
+    "rackId": "R1",
+    "binId": "",
+    "code": "",
+    "numericId": null,
+    "autoRack": false,
+    "directPush": null,
+    "rmwOk": null,
+    "finalRes": {
+        "success": true
+    }
+}
+---
+{
+    "sessionWarehouse": "KHO_TONG_01",
+    "initialAdd": {
+        "success": true
+    },
+    "createdRack": true,
+    "retryAdd": null,
+    "zoneId": "Z3",
+    "rackId": "R1",
+    "binId": "",
+    "code": "",
+    "numericId": null,
+    "autoRack": false,
+    "directPush": null,
+    "rmwOk": null,
+    "finalRes": {
+        "success": true
+    }
+}
+---
+>>>>>>> dev

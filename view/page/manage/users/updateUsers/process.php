@@ -64,13 +64,18 @@ try {
     $p->dongKetNoi($con);
 
     if ($result->getModifiedCount() > 0) {
-            echo "Cập nhật thành công!";
-
+        // Redirect back to manage users with update message
+        header("Location: /KLTN/view/page/manage/index.php?page=users&msg=updated");
+        exit();
     } else {
-        echo "<p style='color:orange;'>Không có thay đổi hoặc user không tồn tại.</p>";
+        // No changes made, still redirect with updated for UX consistency
+        header("Location: /KLTN/view/page/manage/index.php?page=users&msg=updated");
+        exit();
     }
 
 } catch (\Exception $e) {
-    die("Lỗi update MongoDB: " . $e->getMessage());
+    // On error, redirect back with error message so users list can show toast
+    header("Location: /KLTN/view/page/manage/index.php?page=users&msg=error");
+    exit();
 }
 ?>

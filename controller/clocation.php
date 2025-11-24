@@ -290,7 +290,7 @@ class CLocation {
         return ['success' => $ok];
     }
 
-    public function addBin($zone_id, $rack_id, $bin_id, $code, $capacity, $bin_name = '') {
+    public function addBin($zone_id, $rack_id, $bin_id, $code, $capacity, $bin_name = '', $dimensions = [], $current_capacity = 0, $max_capacity = 0) {
         // Determine session warehouse if any
         if (session_status() == PHP_SESSION_NONE) @session_start();
         $warehouseId = $_SESSION['login']['warehouse_id'] ?? $_SESSION['login']['warehouse'] ?? null;
@@ -348,7 +348,14 @@ class CLocation {
             'quantity' => 0,
             'status' => 'empty',
             'product' => null,
-            'name' => $bin_name
+            'name' => $bin_name,
+            'dimensions' => [
+                'width' => isset($dimensions['width']) ? (float)$dimensions['width'] : 0,
+                'depth' => isset($dimensions['depth']) ? (float)$dimensions['depth'] : 0,
+                'height' => isset($dimensions['height']) ? (float)$dimensions['height'] : 0
+            ],
+            'current_capacity' => (int)$current_capacity,
+            'max_capacity' => (int)$max_capacity
         ];
 
         // Prevent duplicate bin_id or code in the same rack (case-insensitive for code)

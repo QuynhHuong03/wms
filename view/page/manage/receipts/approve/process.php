@@ -55,11 +55,15 @@ $status = $action === 'approve' ? 1 : 2;
 $success = $cReceipt->updateReceiptStatus($id, $status, $approver);
 
 if ($success) {
-    $_SESSION['flash_receipt'] = $action === 'approve' ? " Phiếu đã được duyệt thành công." : " Phiếu đã bị từ chối.";
+    if ($action === 'approve') {
+        $_SESSION['flash_receipt'] = "Phiếu đã được duyệt thành công và lô hàng đã được tạo tự động.";
+    } else {
+        $_SESSION['flash_receipt'] = "Phiếu đã bị từ chối.";
+    }
 } else {
     $_SESSION['flash_receipt_error'] = "Không thể cập nhật trạng thái phiếu. Vui lòng thử lại.";
 }
 
-header("Location: ../index.php?page=receipts/approve");
+header("Location: ../../index.php?page=receipts/approve");
 exit;
 ?>

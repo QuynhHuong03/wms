@@ -66,7 +66,30 @@ if (!$data) {
             echo json_encode($res);
             break;
         case 'delete_zone':
-            $res = $c->deleteZone($data['zone_id'] ?? '');
+            $zone_id = $data['zone_id'] ?? '';
+            
+            // Validation: Check if zone has any products before deleting
+            if ($sessionWarehouseId && $zone_id) {
+                try {
+                    include_once(__DIR__ . '/../../../../model/mInventory.php');
+                    $mInv = new MInventory();
+                    
+                    // Sum quantity for all bins in this zone (across all racks)
+                    $totalQty = $mInv->sumQuantityByZone($sessionWarehouseId, $zone_id);
+                    
+                    if ($totalQty > 0) {
+                        echo json_encode([
+                            'success' => false,
+                            'message' => "Không thể xóa zone có sản phẩm! (Tổng số lượng: {$totalQty}). Vui lòng xuất hết sản phẩm khỏi tất cả bin trong zone trước."
+                        ]);
+                        break;
+                    }
+                } catch (\Throwable $e) {
+                    error_log('delete_zone: Failed to check inventory - ' . $e->getMessage());
+                }
+            }
+            
+            $res = $c->deleteZone($zone_id);
             if (is_array($res)) {
                 // controller provided structured response
                 if (!empty($res['success'])) {
@@ -213,7 +236,31 @@ if (!$data) {
             echo json_encode($res);
             break;
         case 'delete_rack':
-            $res = $c->deleteRack($data['zone_id'] ?? '', $data['rack_id'] ?? '');
+            $zone_id = $data['zone_id'] ?? '';
+            $rack_id = $data['rack_id'] ?? '';
+            
+            // Validation: Check if rack has any products before deleting
+            if ($sessionWarehouseId && $zone_id && $rack_id) {
+                try {
+                    include_once(__DIR__ . '/../../../../model/mInventory.php');
+                    $mInv = new MInventory();
+                    
+                    // Sum quantity for all bins in this rack
+                    $totalQty = $mInv->sumQuantityByRack($sessionWarehouseId, $zone_id, $rack_id);
+                    
+                    if ($totalQty > 0) {
+                        echo json_encode([
+                            'success' => false,
+                            'message' => "Không thể xóa rack có sản phẩm! (Tổng số lượng: {$totalQty}). Vui lòng xuất hết sản phẩm khỏi tất cả bin trong rack trước."
+                        ]);
+                        break;
+                    }
+                } catch (\Throwable $e) {
+                    error_log('delete_rack: Failed to check inventory - ' . $e->getMessage());
+                }
+            }
+            
+            $res = $c->deleteRack($zone_id, $rack_id);
             if (is_array($res)) {
                 if (!empty($res['success'])) $res['message'] = $res['message'] ?? 'Xóa thành công';
                 else $res['message'] = $res['message'] ?? 'Xóa thất bại';
@@ -245,6 +292,12 @@ if (!$data) {
             $code   = $data['code'] ?? '';
             $capacity = $data['capacity'] ?? 0; // kept for compatibility
             $rackName = $data['rack_name'] ?? ($data['name'] ?? '');
+            
+            // Extract dimensions and capacity data
+            $dimensions = $data['dimensions'] ?? [];
+            if (!is_array($dimensions)) $dimensions = [];
+            $current_capacity = isset($data['current_capacity']) ? (int)$data['current_capacity'] : 0;
+            $max_capacity = isset($data['max_capacity']) ? (int)$data['max_capacity'] : 0;
 
             // Auto-pick next rack id if requested or missing
             $autoRack = !empty($data['auto_rack']) || (is_string($rackId) && strtolower($rackId) === 'auto') || !$rackId;
@@ -342,7 +395,20 @@ if (!$data) {
 
             // 2) Try add bin via controller (warehouse-level preferred inside)
             // Note: model/controller will auto-assign an integer 'id' for the bin if missing
-            $initialAdd = $c->addBin($zoneId, $rackId, $binId, $code, $capacity, $binName);
+            // Debug log the parameters being passed
+            @file_put_contents($debugLog, "--- add_bin calling controller with: " . json_encode([
+                'zoneId' => $zoneId,
+                'rackId' => $rackId,
+                'binId' => $binId,
+                'code' => $code,
+                'capacity' => $capacity,
+                'binName' => $binName,
+                'dimensions' => $dimensions,
+                'current_capacity' => $current_capacity,
+                'max_capacity' => $max_capacity
+            ], JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND);
+            
+            $initialAdd = $c->addBin($zoneId, $rackId, $binId, $code, $capacity, $binName, $dimensions, $current_capacity, $max_capacity);
             $res = $initialAdd;
 
             // 3) If still failed, push directly into warehouse-level document using arrayFilters
@@ -516,8 +582,35 @@ if (!$data) {
             break;
         case 'delete_bin':
             // Accept either bin_id (string code like B1) or numeric id (auto-increment)
+            $zone_id = $data['zone_id'] ?? '';
+            $rack_id = $data['rack_id'] ?? '';
+            $bin_id = $data['bin_id'] ?? '';
             $binNumericId = isset($data['id']) ? $data['id'] : (isset($data['bin_numeric_id']) ? $data['bin_numeric_id'] : null);
-            $res = $c->deleteBin($data['zone_id'] ?? '', $data['rack_id'] ?? '', $data['bin_id'] ?? '', $binNumericId);
+            
+            // Validation: Check if bin has products (quantity > 0) before deleting
+            if ($sessionWarehouseId && $zone_id && $rack_id && $bin_id) {
+                try {
+                    include_once(__DIR__ . '/../../../../model/mInventory.php');
+                    $mInv = new MInventory();
+                    
+                    // Get total quantity from inventory for this bin
+                    $totalQty = $mInv->sumQuantityByBin($sessionWarehouseId, $zone_id, $rack_id, $bin_id);
+                    
+                    if ($totalQty > 0) {
+                        echo json_encode([
+                            'success' => false, 
+                            'message' => "Không thể xóa bin có sản phẩm! (Số lượng: {$totalQty}). Vui lòng xuất hết sản phẩm trước."
+                        ]);
+                        break;
+                    }
+                } catch (\Throwable $e) {
+                    // If inventory check fails, proceed with caution but log error
+                    error_log('delete_bin: Failed to check inventory - ' . $e->getMessage());
+                }
+            }
+            
+            // Proceed with deletion if no products or check failed
+            $res = $c->deleteBin($zone_id, $rack_id, $bin_id, $binNumericId);
             if (is_array($res)) {
                 if (!empty($res['success'])) $res['message'] = $res['message'] ?? 'Xóa thành công';
                 else $res['message'] = $res['message'] ?? 'Xóa thất bại';
@@ -559,20 +652,55 @@ if (!$data) {
             try {
                 $bin = null;
                 if ($sessionWarehouseId) {
-                    $binData = $c->m->getBinFromWarehouse($sessionWarehouseId, $zone_id, $rack_id, ['bin_id' => $bin_id]);
-                    $bin = $binData['bin'] ?? null;
+                    // getBinFromWarehouse already returns the bin directly, not wrapped in 'bin' key
+                    $bin = $c->m->getBinFromWarehouse($sessionWarehouseId, $zone_id, $rack_id, ['bin_id' => $bin_id]);
                 } else {
-                    $binData = $c->m->getBinFromZone($zone_id, $rack_id, ['bin_id' => $bin_id]);
-                    $bin = $binData;
+                    // getBinFromZone also returns the bin directly
+                    $bin = $c->m->getBinFromZone($zone_id, $rack_id, ['bin_id' => $bin_id]);
                 }
                 
                 if ($bin) {
-                    echo json_encode([
+                    // Normalize dimensions: could be array or object
+                    $dimensions = $bin['dimensions'] ?? [];
+                    if (is_object($dimensions)) {
+                        $dimensions = (array)$dimensions;
+                    }
+                    
+                    // Debug log
+                    error_log('get_bin_data - Full bin data: ' . json_encode($bin, JSON_UNESCAPED_UNICODE));
+                    error_log('get_bin_data - Dimensions (raw): ' . json_encode($dimensions, JSON_UNESCAPED_UNICODE));
+                    
+                    // Extract dimension values safely
+                    $width = 0;
+                    $depth = 0;
+                    $height = 0;
+                    
+                    if (isset($dimensions['width'])) {
+                        $width = is_numeric($dimensions['width']) ? (float)$dimensions['width'] : 0;
+                    }
+                    if (isset($dimensions['depth'])) {
+                        $depth = is_numeric($dimensions['depth']) ? (float)$dimensions['depth'] : 0;
+                    }
+                    if (isset($dimensions['height'])) {
+                        $height = is_numeric($dimensions['height']) ? (float)$dimensions['height'] : 0;
+                    }
+                    
+                    $response = [
                         'success' => true,
                         'name' => $bin['name'] ?? '',
                         'status' => $bin['status'] ?? 'empty',
-                        'quantity' => $bin['quantity'] ?? 0
-                    ]);
+                        'quantity' => $bin['quantity'] ?? 0,
+                        'dimensions' => [
+                            'width' => $width,
+                            'depth' => $depth,
+                            'height' => $height
+                        ],
+                        'current_capacity' => isset($bin['current_capacity']) ? (int)$bin['current_capacity'] : 0,
+                        'max_capacity' => isset($bin['max_capacity']) ? (int)$bin['max_capacity'] : 0
+                    ];
+                    
+                    error_log('get_bin_data - Response: ' . json_encode($response, JSON_UNESCAPED_UNICODE));
+                    echo json_encode($response);
                 } else {
                     echo json_encode(['success' => false, 'message' => 'Không tìm thấy bin']);
                 }
@@ -581,23 +709,39 @@ if (!$data) {
             }
             break;
         case 'update_bin_full':
-            // Update both name and status of a bin
-            // payload: { action:'update_bin_full', zone_id, rack_id, bin_id, name, status }
+            // Update name, dimensions, and capacity of a bin
+            // Status will be automatically calculated based on occupancy percentage
+            // payload: { action:'update_bin_full', zone_id, rack_id, bin_id, name, dimensions:{width,depth,height}, current_capacity, max_capacity }
             $zone_id = $data['zone_id'] ?? '';
             $rack_id = $data['rack_id'] ?? '';
             $bin_id = $data['bin_id'] ?? '';
             $name = $data['name'] ?? '';
-            $status = $data['status'] ?? 'empty';
             
-            $validStatuses = ['empty', 'partial', 'full'];
-            if (!in_array($status, $validStatuses)) {
-                echo json_encode(['success' => false, 'message' => 'Trạng thái không hợp lệ']);
-                break;
+            // Extract dimensions and capacity
+            $dimensions = $data['dimensions'] ?? [];
+            if (!is_array($dimensions)) $dimensions = [];
+            $current_capacity = isset($data['current_capacity']) ? (int)$data['current_capacity'] : 0;
+            $max_capacity = isset($data['max_capacity']) ? (int)$data['max_capacity'] : 0;
+            
+            // Calculate status based on current_capacity percentage
+            // 0% = empty, 1-79% = partial, ≥80% = full
+            $status = 'empty';
+            if ($current_capacity >= 80) {
+                $status = 'full';
+            } elseif ($current_capacity > 0) {
+                $status = 'partial';
             }
             
             $updateData = [
                 'name' => $name,
-                'status' => $status
+                'status' => $status,
+                'dimensions' => [
+                    'width' => isset($dimensions['width']) ? (float)$dimensions['width'] : 0,
+                    'depth' => isset($dimensions['depth']) ? (float)$dimensions['depth'] : 0,
+                    'height' => isset($dimensions['height']) ? (float)$dimensions['height'] : 0
+                ],
+                'current_capacity' => $current_capacity,
+                'max_capacity' => $max_capacity
             ];
             
             $res = $c->updateBin($zone_id, $rack_id, $bin_id, $updateData);
@@ -724,6 +868,60 @@ if (!$data) {
                     echo json_encode(['success' => false, 'message' => 'Không thể cập nhật số lượng']);
                 }
             } catch (\Throwable $e) {
+                echo json_encode(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()]);
+            }
+            break;
+        case 'recalculate_all_bin_occupancy':
+            // Recalculate occupancy for all bins in current warehouse
+            if (!$sessionWarehouseId) {
+                echo json_encode(['success' => false, 'message' => 'Không xác định được warehouse']);
+                break;
+            }
+            
+            try {
+                require_once(__DIR__ . '/../../../../model/mInventory.php');
+                $mInventory = new MInventory();
+                
+                // Get all bins from warehouse location
+                $loc = $c->m->getLocationByWarehouseId($sessionWarehouseId);
+                if (!$loc || empty($loc['zones'])) {
+                    echo json_encode(['success' => false, 'message' => 'Không có bin nào để tính toán']);
+                    break;
+                }
+                
+                $totalBins = 0;
+                $updatedBins = 0;
+                
+                foreach ($loc['zones'] as $zone) {
+                    $zoneId = $zone['_id'] ?? $zone['zone_id'] ?? '';
+                    $racks = $zone['racks'] ?? [];
+                    
+                    foreach ($racks as $rack) {
+                        $rackId = $rack['rack_id'] ?? '';
+                        $bins = $rack['bins'] ?? [];
+                        
+                        foreach ($bins as $bin) {
+                            $binId = $bin['bin_id'] ?? '';
+                            $totalBins++;
+                            
+                            // Calculate and update occupancy
+                            if ($zoneId && $rackId && $binId) {
+                                $updated = $mInventory->updateBinOccupancy($sessionWarehouseId, $zoneId, $rackId, $binId);
+                                if ($updated) $updatedBins++;
+                            }
+                        }
+                    }
+                }
+                
+                echo json_encode([
+                    'success' => true,
+                    'message' => "Đã tính lại {$updatedBins}/{$totalBins} bin",
+                    'total' => $totalBins,
+                    'updated' => $updatedBins
+                ]);
+                
+            } catch (\Throwable $e) {
+                error_log('recalculate_all_bin_occupancy error: ' . $e->getMessage());
                 echo json_encode(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()]);
             }
             break;

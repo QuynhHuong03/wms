@@ -95,24 +95,35 @@ class MUsers {
     // Lấy tất cả users kèm role_name
 public function getAllUsersWithRole() {
     try {
-        $pipeline = [
-            [
-                '$lookup' => [
-                    'from' => 'roles',
-                    'localField' => 'role_id',
-                    'foreignField' => 'role_id',
-                    'as' => 'role_info'
-                ]
-            ],
-            [
-                '$unwind' => [
-                    'path' => '$role_info',
-                    'preserveNullAndEmptyArrays' => true
-                ]
-            ]
-        ];
-
-        return $this->usersCollection->aggregate($pipeline)->toArray();
+        // Lấy tất cả users
+        $users = $this->usersCollection->find()->toArray();
+        
+        // Lấy tất cả roles và index theo role_id
+        $roles = $this->rolesCollection->find()->toArray();
+        $rolesMap = [];
+        foreach ($roles as $role) {
+            $roleId = isset($role['role_id']) ? $role['role_id'] : null;
+            if ($roleId !== null) {
+                // Lưu cả dạng string và integer để tránh mismatch
+                $rolesMap[$roleId] = $role;
+                if (is_numeric($roleId)) {
+                    $rolesMap[(int)$roleId] = $role;
+                    $rolesMap[(string)$roleId] = $role;
+                }
+            }
+        }
+        
+        // Gắn role_info cho từng user
+        foreach ($users as &$user) {
+            $userRoleId = isset($user['role_id']) ? $user['role_id'] : null;
+            if ($userRoleId !== null && isset($rolesMap[$userRoleId])) {
+                $user['role_info'] = $rolesMap[$userRoleId];
+            } else {
+                $user['role_info'] = null;
+            }
+        }
+        
+        return $users;
     } catch (\Throwable $e) {
         error_log("getAllUsersWithRole error: " . $e->getMessage());
         return [];
@@ -147,9 +158,10 @@ public function getAllUsersWithRole() {
                 'gender' => $gender,
                 'phone' => $phone,
                 'password' => $hashedPassword,
-                'role_id' => $role_id,
-                'status' => $status,
-                'warehouse_id' => $warehouse_id,
+                // Normalize role_id and warehouse_id types so MongoDB lookup matches
+                'role_id' => (is_numeric($role_id) ? (int)$role_id : $role_id),
+                'status' => (is_numeric($status) ? (int)$status : $status),
+                'warehouse_id' => (is_numeric($warehouse_id) ? (int)$warehouse_id : $warehouse_id),
                 'first_login' => $first_login,
                 'created_at' => new \MongoDB\BSON\UTCDateTime(),
                 'updated_at' => new \MongoDB\BSON\UTCDateTime()

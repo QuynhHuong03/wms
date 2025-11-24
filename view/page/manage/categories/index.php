@@ -6,166 +6,138 @@ include_once(__DIR__ . '/../../../../controller/cCategories.php');
 $p = new CCategories();
 $tblCategory = $p->getAllCategories();
 ?>
-
+<?php
+// Server-side toast fallback: render a toast immediately if msg is present
+$msg = $_GET['msg'] ?? '';
+if (in_array($msg, ['success','updated','deleted','error'])) {
+  $class = $msg === 'error' ? 'toast-notification error' : 'toast-notification';
+  if ($msg === 'success') $text = '<i class="fa-solid fa-circle-check"></i> Thêm loại sản phẩm thành công!';
+  elseif ($msg === 'updated') $text = '<i class="fa-solid fa-circle-check"></i> Cập nhật loại sản phẩm thành công!';
+  elseif ($msg === 'deleted') $text = '<i class="fa-solid fa-trash-can"></i> Xóa loại sản phẩm thành công!';
+  else $text = '<i class="fa-solid fa-circle-exclamation"></i> Có lỗi xảy ra.';
+  echo "<div id=\"serverToast\" class=\"{$class}\">{$text}</div>";
+  echo "<script>setTimeout(()=>{const t=document.getElementById('serverToast'); if(t){t.classList.add('hide'); setTimeout(()=>t.remove(),300);} const newUrl=window.location.pathname+'?page=categories'; window.history.replaceState({},'',newUrl);},3000);</script>";
+}
+?>
 <style>
-  .category-list-container {
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7fa;
+    color: #333;
+}
+
+.category-list-container {
     max-width: 1200px;
     margin: 30px auto;
-    background: #fff;
-    padding: 25px;
+    background: #ffffff;
+    padding: 16px;
     border-radius: 12px;
-    box-shadow: 0 3px 15px rgba(0,0,0,0.08);
-  }
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+}
 
-  .category-list-container h2 {
-    text-align: center;
-    margin-bottom: 25px;
-    color: #333;
-  }
+.category-list-container h2 {
+    text-align: left;
+    margin-bottom: 0;
+    font-size: 1.6rem;
+    color: #1f2937;
+    font-weight: 700;
+}
 
-  .category-list-container table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-  }
-
-  .category-list-container th,
-  .category-list-container td {
-    padding: 10px 12px;
-    border: 1px solid #e1e4e8;
-    text-align: center;
-    font-size: 14px;
-  }
-
-  .category-list-container th {
-    background: #f9fafb;
-  }
-
-  .category-list-container tr:hover {
-    background: #f1f7ff;
-  }
-
-  .category-list-container .btn {
-    border: none;
-    padding: 6px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    text-decoration: none;
-    display: inline-block;
-  }
-
-  .category-list-container .btn-edit {
-    background: #17a2b8;
-    color: #fff;
-  }
-
-  .category-list-container .btn-delete {
-    background: #dc3545;
-    color: #fff;
-  }
-
-  .category-list-container .btn:hover {
-    opacity: 0.9;
-  }
-
-  .category-list-container .status {
-    font-weight: 600;
-    padding: 6px 10px;
-    border-radius: 8px;
-    display: inline-block;
-  }
-
-  .category-list-container .active {
-    background: #d4edda;
-    color: #155724;
-  }
-
-  .category-list-container .inactive {
-    background: #f8d7da;
-    color: #721c24;
-  }
-
-  .category-list-container .top-actions {
-    margin-bottom: 20px;
+.top-actions {
+    margin-bottom: 18px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 10px;
-  }
+    gap: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
 
-  .category-list-container .btn-create {
-    background: #007bff;
-    color: #fff;
-    text-decoration: none;
-    padding: 8px 14px;
-    border-radius: 8px;
-  }
-
-  .category-list-container .btn-create:hover {
-    background: #0056b3;
-  }
-
-  .filters {
+.filters {
     display: flex;
     gap: 10px;
     align-items: center;
-  }
+}
 
-  .filters input {
-    padding: 6px 10px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    font-size: 14px;
-  }
+.filters input,
+.filters select {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 0.95rem;
+    background-color: #f9fafb;
+}
+.filters input:focus, .filters select:focus { outline: none; box-shadow: 0 0 0 2px rgba(37,99,235,0.08); border-color:#2563eb; }
 
-  .modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-  }
+.btn-create { background: #2563eb; color: #fff; padding:10px 16px; border-radius:8px; text-decoration:none; font-weight:600; }
+.btn-create:hover { background:#1e40af }
 
-  .modal-content {
-    position: relative;
-    z-index: 1001;
-  }
+.category-list-container table { width:100%; border-collapse:separate; border-spacing:0; margin-top:12px; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden }
+.category-list-container th, .category-list-container td { padding:12px 14px; border-bottom:1px solid #e5e7eb; text-align:left; font-size:0.95rem }
+.category-list-container th { background:#f9fafb; color:#4b5563; font-weight:600; text-transform:uppercase; font-size:0.8rem }
+.category-list-container td:last-child { text-align:center }
+.category-list-container tbody tr:hover { background:#f7faff }
 
-  .modal-overlay {
-    position: fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background: rgba(0,0,0,0.4);
-    z-index: 1000;
-  }
+.status { font-weight:600; padding:6px 10px; border-radius:18px; display:inline-block; font-size:0.85rem }
+.active { background:#d1fae5; color:#065f46 }
+.inactive { background:#fee2e2; color:#991b1b }
+
+.btn { border:none; padding:8px 10px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center }
+.btn-edit { background:#3b82f6; color:#fff }
+.btn-delete { background:#ef4444; color:#fff }
+.btn:hover { transform:translateY(-1px); box-shadow:0 4px 8px rgba(0,0,0,0.08) }
+
+/* Smaller action icons inside the categories list so both buttons sit on one row */
+.category-list-container td a.btn {
+  padding: 4px;           /* reduce internal padding */
+  width: 28px;            /* fixed square to keep icons compact */
+  height: 28px;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+.category-list-container td a.btn i {
+  font-size: 14px;        /* slightly smaller icon */
+  line-height: 1;
+}
+
+.modal { display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; overflow:auto; background:rgba(0,0,0,0.4) }
+.modal-content { background:#fff; max-width:400px; margin:15vh auto; padding:26px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.25); text-align:center }
+.modal-content h3 { color:#1f2937; margin-bottom:12px }
+.modal-content p { color:#6b7280; margin-bottom:18px }
+#cancelBtn, #confirmDeleteBtn { padding:10px 18px; border-radius:8px; font-weight:600; cursor:pointer; border:none }
+#cancelBtn { background:#e5e7eb; color:#374151 }
+#confirmDeleteBtn { background:#ef4444; color:#fff }
+
+.toast-notification { position:fixed; top:20px; right:20px; background:#10b981; color:#fff; padding:14px 20px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.12); display:flex; gap:10px; align-items:center; font-weight:600; z-index:10000; animation:slideIn 0.28s }
+.toast-notification.error { background:#ef4444 }
+.toast-notification.hide { animation:slideOut 0.3s forwards }
+@keyframes slideIn { from { transform:translateX(400px); opacity:0 } to { transform:translateX(0); opacity:1 } }
+@keyframes slideOut { from { transform:translateX(0); opacity:1 } to { transform:translateX(400px); opacity:0 } }
+
+@media (max-width:768px) { .category-list-container { padding:10px } .top-actions { flex-direction:column; align-items:stretch } .filters { flex-wrap:wrap } .filters input, .filters select { flex-grow:1; min-width:45% } .btn-create { width:100% } .category-list-container table { min-width:720px } }
 </style>
 
 <div class="category-list-container">
   <div class="top-actions">
-    <h2><i class="fa-solid fa-list"></i> Quản lý danh mục sản phẩm</h2>
+    <h2><i class="fa-solid fa-list"></i> Quản lý loại sản phẩm</h2>
 
     <div class="filters">
-      <input type="text" id="searchInput" placeholder="Tìm kiếm danh mục...">
+      <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên...">
       <select id="filter-status">
         <option value="">Lọc theo trạng thái</option>
         <option value="1">Hoạt động</option>
         <option value="0">Ngừng hoạt động</option>
       </select>
-      <a href="index.php?page=categories/createCategories" class="btn-create"><i class="fa-solid fa-plus"></i> Thêm danh mục</a>
+      <a href="index.php?page=categories/createCategories" class="btn-create"><i class="fa-solid fa-plus"></i> Thêm loại sản phẩm</a>
     </div>
   </div>
 
   <table id="category-table">
     <thead>
       <tr>
-        <th>Mã danh mục</th>
-        <th>Tên danh mục</th>
+        <th>Mã loại</th>
+        <th>Tên loại SP</th>
         <th>Mã code</th>
         <th>Mô tả</th>
         <th>Trạng thái</th>
@@ -212,10 +184,10 @@ $tblCategory = $p->getAllCategories();
             <td>{$createDate}</td>
             <td>{$updateDate}</td>
             <td>
-              <a href='index.php?page=categories/updateCategories&id={$id}' class='btn btn-edit'>
+              <a href='index.php?page=categories/updateCategories&id={$id}' class='btn btn-edit' title='Chỉnh sửa'>
                 <i class='fa-solid fa-pen'></i>
               </a>
-              <a href='#' class='btn btn-delete' data-id='{$id}'>
+              <a href='#' class='btn btn-delete' data-id='{$id}' title='Xóa'>
                 <i class='fa-solid fa-trash'></i>
               </a>
             </td>
@@ -231,19 +203,39 @@ $tblCategory = $p->getAllCategories();
 
 <!-- Modal xác nhận xóa -->
 <div id="deleteModal" class="modal" style="display:none;">
-  <div class="modal-content" style="max-width:400px; margin:100px auto; background:#fff; padding:20px; border-radius:10px; box-shadow:0 4px 8px rgba(0,0,0,0.2); text-align:center;">
-    <h3 style="margin-top:0;">Xác nhận xóa</h3>
+  <div class="modal-content">
+    <h3>Xác nhận xóa</h3>
     <p>Bạn có chắc chắn muốn xóa danh mục này?</p>
-    <div style="margin-top:20px;">
-      <button id="cancelBtn" style="background:#ccc; color:#333; margin-right:10px; padding:8px 16px; border:none; border-radius:8px; cursor:pointer;">Hủy</button>
-      <button id="confirmDeleteBtn" style="background:red; color:white; padding:8px 16px; border:none; border-radius:8px; cursor:pointer;">Xóa</button>
+    <div>
+      <button id="cancelBtn">Hủy</button>
+      <button id="confirmDeleteBtn">Xóa</button>
     </div>
   </div>
-  <div class="modal-overlay"></div>
 </div>
 
 <script>
-  // --- Bộ lọc và tìm kiếm ---
+  // --- Hiển thị thông báo thành công/không thành công ---
+  const urlParams = new URLSearchParams(window.location.search);
+  const msg = urlParams.get('msg');
+    if (msg === 'success' || msg === 'updated' || msg === 'deleted' || msg === 'error') {
+      // If server already rendered a toast, don't create a duplicate
+      if (!document.getElementById('serverToast')) {
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification ' + (msg === 'error' ? 'error' : '');
+        if (msg === 'success') toast.innerHTML = '<i class="fa-solid fa-circle-check"></i> Thêm loại sản phẩm thành công!';
+        else if (msg === 'updated') toast.innerHTML = '<i class="fa-solid fa-circle-check"></i> Cập nhật loại sản phẩm thành công!';
+        else if (msg === 'deleted') toast.innerHTML = '<i class="fa-solid fa-trash-can"></i> Xóa loại sản phẩm thành công!';
+        else toast.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Có lỗi xảy ra.';
+        document.body.appendChild(toast);
+
+        setTimeout(() => { toast.classList.add('hide'); setTimeout(() => toast.remove(), 300); }, 3000);
+
+        const newUrl = window.location.pathname + '?page=categories';
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+
+  // --- Bộ lọc trạng thái và tìm kiếm ---
   const statusFilter = document.getElementById('filter-status');
   const searchInput = document.getElementById('searchInput');
   const rows = document.querySelectorAll('#category-table tbody tr');
@@ -284,18 +276,30 @@ $tblCategory = $p->getAllCategories();
   });
 
   confirmDeleteBtn.addEventListener('click', function(){
-    if(deleteCategoryId){
-      fetch('categories/deleteCategories/process.php?id=' + deleteCategoryId)
-        .then(response => response.text())
-        .then(result => {
-          deleteModal.style.display = 'none';
-          if(result.trim() === "success"){
-            window.location.reload();
-          } else {
-            alert("Không thể xóa danh mục!");
-          }
-        })
-        .catch(err => console.error('Lỗi xóa category:', err));
-    }
+      if(deleteCategoryId){
+          fetch('/KLTN/view/page/manage/categories/deleteCategories/process.php?id=' + encodeURIComponent(deleteCategoryId))
+              .then(response => response.json())
+              .then((data) => {
+                  deleteModal.style.display = 'none';
+                  if (data && data.success) {
+                      window.location.href = '/KLTN/view/page/manage/index.php?page=categories&msg=deleted';
+                  } else {
+                      const errToast = document.createElement('div');
+                      errToast.className = 'toast-notification error';
+                      errToast.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Xóa loại sản phẩm thất bại!';
+                      document.body.appendChild(errToast);
+                      setTimeout(() => { errToast.classList.add('hide'); setTimeout(() => errToast.remove(), 300); }, 3000);
+                  }
+              })
+              .catch(err => {
+                  deleteModal.style.display = 'none';
+                  console.error('Lỗi xóa category:', err);
+                  const errToast = document.createElement('div');
+                  errToast.className = 'toast-notification error';
+                  errToast.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Lỗi kết nối khi xóa.';
+                  document.body.appendChild(errToast);
+                  setTimeout(() => { errToast.classList.add('hide'); setTimeout(() => errToast.remove(), 300); }, 3000);
+              });
+      }
   });
 </script>

@@ -13,265 +13,141 @@ $barcodeGenerator = new Picqer\Barcode\BarcodeGeneratorPNG();
 ?>
 
 <style>
-  .product-list-container {
-    max-width: 1400px;
-    margin: 30px auto;
-    background: #fff;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 3px 15px rgba(0,0,0,0.08);
-  }
-
-  .product-list-container h2 {
-    text-align: center;
-    margin-bottom: 25px;
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7fa;
     color: #333;
-  }
+}
 
-  .product-list-container table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-  }
+.category-list-container {
+    max-width: 1200px;
+    margin: 30px auto;
+    background: #ffffff;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+}
 
-  .product-list-container th,
-  .product-list-container td {
-    padding: 10px 12px;
-    border: 1px solid #e1e4e8;
-    text-align: center;
-    font-size: 14px;
-    vertical-align: middle;
-  }
+.category-list-container h2 {
+    text-align: left;
+    margin-bottom: 0;
+    font-size: 1.6rem;
+    color: #1f2937;
+    font-weight: 700;
+}
 
-  .product-list-container th {
-    background: #f9fafb;
-  }
-
-  .product-list-container tr:hover {
-    background: #f1f7ff;
-  }
-
-  .product-list-container .btn {
-    border: none;
-    padding: 6px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    text-decoration: none;
-    display: inline-block;
-  }
-
-  .btn-edit { background: #17a2b8; color: #fff; }
-  .btn-delete { background: #dc3545; color: #fff; }
-  .btn:hover { opacity: 0.9; }
-
-  .status {
-    font-weight: 600;
-    padding: 6px 10px;
-    border-radius: 8px;
-    display: inline-block;
-  }
-  .status-active { background: #d4edda; color: #155724; }
-  .status-inactive { background: #f8d7da; color: #721c24; }
-
-  .top-actions {
-    margin-bottom: 20px;
+.top-actions {
+    margin-bottom: 18px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 10px;
-  }
+    gap: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
 
-  .btn-create {
-    background: #007bff;
-    color: #fff;
-    padding: 8px 14px;
-    border-radius: 8px;
-    text-decoration: none;
-  }
-  .btn-create:hover { background: #0056b3; }
-
-  .filters {
+.filters {
     display: flex;
     gap: 10px;
     align-items: center;
-    flex-wrap: wrap;
-  }
+}
 
-  .filters input,
-  .filters select {
-    padding: 6px 10px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    font-size: 14px;
-  }
-
-  .product-image {
-    width: 60px;
-    height: 60px;
+.filters input,
+.filters select {
+    padding: 10px 12px;
     border-radius: 8px;
-    object-fit: cover;
-  }
-
-  .barcode-box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .barcode-box img { height: 40px; }
-
-  .barcode-text {
-    font-size: 12px;
-    font-family: monospace;
-    color: #222;
-    background: #f4f6f8;
-    padding: 2px 6px;
-    border-radius: 4px;
-    margin-top: 2px;
-  }
-
-  /* Modal */
-  .modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-  }
-
-  .modal-content {
-    position: relative;
-    z-index: 1001;
-  }
-
-  .modal-overlay {
-    position: fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background: rgba(0,0,0,0.4);
-    z-index: 1000;
-  }
-  
-.action-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 18px;
-  color: #555;
-  padding: 6px;
-  border-radius: 50%;
-  transition: 0.2s;
+    border: 1px solid #d1d5db;
+    font-size: 0.95rem;
+    background-color: #f9fafb;
 }
+.filters input:focus, .filters select:focus { outline: none; box-shadow: 0 0 0 2px rgba(37,99,235,0.08); border-color:#2563eb; }
 
-.action-btn:hover {
-  background: #f1f3f5;
-  color: #007bff;
-}
+/* Thumbnails and barcode sizing for products */
+.product-image { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; }
+.barcode-box { display: flex; flex-direction: column; align-items: center; }
+.barcode-box img { height: 32px; }
+.barcode-text { font-size: 12px; font-family: monospace; color: #222; background: #f4f6f8; padding: 2px 6px; border-radius: 4px; margin-top: 4px; }
 
-/* Menu icon bật ra */
-.icon-menu {
-  display: none; /* Ẩn mặc định */
-  position: absolute;
-  top: 65%;
-  right: 0;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 6px 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  z-index: 10;
-  gap: 8px;
-  animation: fadeIn 0.15s ease-out;
-}
+.btn-create { background: #2563eb; color: #fff; padding:10px 16px; border-radius:8px; text-decoration:none; font-weight:600; }
+.btn-create:hover { background:#1e40af }
 
+.category-list-container table { width:100%; border-collapse:separate; border-spacing:0; margin-top:12px; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden }
+.category-list-container th, .category-list-container td { padding:12px 14px; border-bottom:1px solid #e5e7eb; text-align:left; font-size:0.95rem }
+.category-list-container th { background:#f9fafb; color:#4b5563; font-weight:600; text-transform:uppercase; font-size:0.8rem }
+.category-list-container td:last-child { text-align:center }
+.category-list-container tbody tr:hover { background:#f7faff }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-3px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+.status { font-weight:600; padding:6px 10px; border-radius:18px; display:inline-block; font-size:0.85rem }
+.active { background:#d1fae5; color:#065f46 }
+.inactive { background:#fee2e2; color:#991b1b }
 
-/* Icon trong menu */
-.icon-item {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
+.btn { border:none; padding:8px 10px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center }
+.btn-edit { background:#3b82f6; color:#fff }
+.btn-view { background:#10b981; color:#fff }
+.btn-delete { background:#ef4444; color:#fff }
+.btn:hover { transform:translateY(-1px); box-shadow:0 4px 8px rgba(0,0,0,0.08) }
+
+/* Smaller action icons inside tables */
+.category-list-container td a.btn {
+  padding: 4px;
+  width: 28px;
+  height: 28px;
   border-radius: 6px;
-  font-size: 14px;
-  transition: 0.2s;
+  box-sizing: border-box;
 }
+.category-list-container td a.btn i { font-size: 14px; line-height: 1 }
 
-.icon-item.edit {
-  color: #007bff;
-  background: #e7f0ff;
-}
+.modal { display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; overflow:auto; background:rgba(0,0,0,0.4) }
+.modal-content { background:#fff; max-width:400px; margin:15vh auto; padding:26px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.25); text-align:center }
+.modal-content h3 { color:#1f2937; margin-bottom:12px }
+.modal-content p { color:#6b7280; margin-bottom:18px }
+#cancelBtn, #confirmDeleteBtn { padding:10px 18px; border-radius:8px; font-weight:600; cursor:pointer; border:none }
+#cancelBtn { background:#e5e7eb; color:#374151 }
+#confirmDeleteBtn { background:#ef4444; color:#fff }
 
-.icon-item.edit:hover {
-  background: #007bff;
-  color: #fff;
-}
+.toast-notification { position:fixed; top:20px; right:20px; background:#10b981; color:#fff; padding:14px 20px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.12); display:flex; gap:10px; align-items:center; font-weight:600; z-index:10000; animation:slideIn 0.28s }
+.toast-notification.error { background:#ef4444 }
+.toast-notification.hide { animation:slideOut 0.3s forwards }
+@keyframes slideIn { from { transform:translateX(400px); opacity:0 } to { transform:translateX(0); opacity:1 } }
+@keyframes slideOut { from { transform:translateX(0); opacity:1 } to { transform:translateX(400px); opacity:0 } }
 
-.icon-item.delete {
-  color: #dc3545;
-  background: #fde8ea;
-}
+@media (max-width:768px) { .category-list-container { padding:10px } .top-actions { flex-direction:column; align-items:stretch } .filters { flex-wrap:wrap } .filters input, .filters select { flex-grow:1; min-width:45% } .btn-create { width:100% } .category-list-container table { min-width:720px } }
 
-.icon-item.delete:hover {
-  background: #dc3545;
-  color: #fff;
-}
-
-
-/* Mục trong menu */
-.action-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  font-size: 14px;
-  color: #333;
-  text-decoration: none;
-  transition: background 0.2s, color 0.2s;
-}
-
-.action-item i {
-  font-size: 14px;
-}
-
-/* Hiệu ứng hover */
-.action-item:hover {
-  background: #f0f6ff;
-  color: #007bff;
-}
-
-/* Phân biệt hai nút */
-.action-item:nth-child(2):hover {
-  background: #ffeaea;
-  color: #dc3545;
-}
-
-
+/* Keep product-specific detail modal styles (preserve existing product modal look) */
+#detailModal .modal-content { max-width: 900px; width: 95%; margin: 40px auto; padding: 0; border-radius: 16px; background: #f8f9fa; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: none; }
+.modal-detail-header { background: linear-gradient(135deg, #007bff, #0056b3); padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; color: #fff; }
+.modal-detail-header h3 { margin: 0; font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 10px; border: none; color: #fff; padding: 0; }
+.btn-close-icon { background: rgba(255,255,255,0.2); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+.btn-close-icon:hover { background: rgba(255,255,255,0.4); }
+.modal-detail-body { display: flex; flex-wrap: wrap; padding: 30px; gap: 30px; }
+.detail-sidebar { flex: 0 0 300px; display: flex; flex-direction: column; align-items: center; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center; }
+.detail-image-box { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; background: #f9fafb; border-radius: 8px; border: 1px dashed #dee2e6; }
+.detail-image-box img { max-width: 100%; max-height: 160px; object-fit: contain; border-radius: 6px; }
+.detail-sku-tag { background: #e9ecef; color: #495057; padding: 5px 12px; border-radius: 20px; font-family: monospace; font-weight: bold; font-size: 14px; margin-bottom: 10px; display: inline-block; }
+.detail-main { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+.info-section { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+.section-title { font-size: 15px; font-weight: 700; color: #007bff; text-transform: uppercase; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid #eee; letter-spacing: 0.5px; }
+.info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px 20px; }
+.info-item { display: flex; flex-direction: column; }
+.info-label { font-size: 12px; color: #8898aa; margin-bottom: 4px; font-weight: 500; }
+.info-value { font-size: 14px; color: #32325d; font-weight: 600; word-break: break-word; }
+.detail-status-badge { display: inline-block; padding: 8px 16px; border-radius: 50px; font-weight: 600; font-size: 14px; margin-top: 10px; }
+@media (max-width: 768px) { .modal-detail-body { flex-direction: column; } .detail-sidebar { width: 100%; flex: none; } .info-grid { grid-template-columns: 1fr; } }
 
 </style>
 
-<div class="product-list-container">
+<div class="category-list-container">
   <div class="top-actions">
-    <h2><i class="fa-solid fa-boxes"></i> Danh sách sản phẩm</h2>
+    <h2><i class="fa-solid fa-boxes"></i> Quản lý sản phẩm</h2>
 
     <div class="filters">
       <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên hoặc SKU...">
 
       <select id="filter-status">
         <option value="">Lọc theo trạng thái</option>
-        <option value="1">Đang bán</option>
-        <option value="0">Ngừng bán</option>
+        <option value="1">Có sẵn</option>
+        <option value="0">Hết hàng</option>
       </select>
 
       <select id="filter-supplier">
@@ -293,18 +169,16 @@ function formatCurrency($amount) {
   return number_format((float)$amount, 0, ',', '.') . '₫';
 }
 ?>
-  <table id="product-table">
+  <table id="category-table">
     <thead>
       <tr>
+        <th>STT</th>
         <th>Hình ảnh</th>
+        <th>Tên SP</th>
         <th>SKU</th>
-        <th>Tên sản phẩm</th>
-        <th>Barcode</th>
-        <th>Loại</th>
+        <!-- <th>Model</th> -->
+        <th>Loại SP</th>
         <th>Nhà cung cấp</th>
-        <th>Giá nhập gần nhất</th>
-        <!-- <th>Giá vốn bình quân</th> -->
-        <th>Tồn hiện tại</th>
         <th>Tồn kho tối thiểu</th>
         <th>Trạng thái</th>
         <th>Hành động</th>
@@ -313,16 +187,99 @@ function formatCurrency($amount) {
     <tbody>
       <?php
       if (is_array($products) && !empty($products)) {
+        $counter = 1;
         foreach ($products as $p) {
           $id = $p['sku'];
+          // Ensure id is always a string
+          $id = is_array($id) ? ($id['_id'] ?? (string)($id[0] ?? '')) : (string)$id;
+          
           $name = $p['product_name'];
+          $name = is_array($name) ? (string)($name[0] ?? '') : (string)$name;
+          
           $barcode = $p['barcode'];
-          $type = $p['category']['name'] ?? '';
-          $supplier = $p['supplier']['name'] ?? '';
-          $supplier_id = $p['supplier']['id'] ?? '';
+          $barcode = is_array($barcode) ? (string)($barcode[0] ?? '') : (string)$barcode;
+          
+          $model = $p['model'] ?? '-';
+          $model = is_array($model) ? (string)($model[0] ?? '-') : (string)$model;
+          
+          // Handle category - check if it's an array or string
+          $type = '';
+          if (isset($p['category'])) {
+            $type = is_array($p['category']) ? ($p['category']['name'] ?? '') : $p['category'];
+          }
+          
+          // Handle supplier - check if it's an array or string and extract a stable supplier ID
+          $supplier = '';
+          $supplier_id = '';
+          if (isset($p['supplier'])) {
+            if (is_array($p['supplier'])) {
+              // supplier name may be under different keys depending on source
+              $supplier = $p['supplier']['name'] ?? $p['supplier']['supplier_name'] ?? '';
+
+              // try common id fields in order
+              if (isset($p['supplier']['_id'])) {
+                $supplier_id = $p['supplier']['_id'];
+              } elseif (isset($p['supplier']['id'])) {
+                $supplier_id = $p['supplier']['id'];
+              } elseif (isset($p['supplier']['supplier_id'])) {
+                $supplier_id = $p['supplier']['supplier_id'];
+              } else {
+                // fallback to supplier name (not ideal but keeps something)
+                $supplier_id = $supplier;
+              }
+
+              // if supplier_id is an array (nested), try to extract its _id or first element
+              if (is_array($supplier_id)) {
+                $supplier_id = $supplier_id['_id'] ?? (string)($supplier_id[0] ?? '');
+              }
+            } else {
+              $supplier = $p['supplier'];
+              $supplier_id = $p['supplier'];
+            }
+          }
+          // Final safeguard to ensure supplier_id is always a string
+          $supplier_id = is_array($supplier_id) ? '' : (string)$supplier_id;
+          
+          // Đơn vị và kích thước
+          $baseUnit = $p['baseUnit'] ?? '-';
+          $baseUnit = is_array($baseUnit) ? (string)($baseUnit[0] ?? '-') : (string)$baseUnit;
+          
+          $packageDim = $p['package_dimensions'] ?? [];
+          $packageWeight = $p['package_weight'] ?? 0;
+          $volumePerUnit = $p['volume_per_unit'] ?? 0;
+          
+          $dimensionText = '-';
+          if (!empty($packageDim)) {
+            $w = $packageDim['width'] ?? 0;
+            $d = $packageDim['depth'] ?? 0;
+            $h = $packageDim['height'] ?? 0;
+            $dimensionText = "{$w}×{$d}×{$h} cm";
+          }
+          
+          $weightText = $packageWeight > 0 ? $packageWeight . ' kg' : '-';
+          $volumeText = $volumePerUnit > 0 ? number_format($volumePerUnit, 0) . ' cm³' : '-';
+          
+          // Đơn vị quy đổi
+          $conversionUnits = $p['conversionUnits'] ?? [];
+          $conversionText = '-';
+          if (!empty($conversionUnits)) {
+            $conversionList = [];
+            foreach ($conversionUnits as $conv) {
+              $unit = $conv['unit'] ?? '';
+              $factor = $conv['factor'] ?? 0;
+              if ($unit && $factor > 0) {
+                $conversionList[] = "1 {$unit} = {$factor} {$baseUnit}";
+              }
+            }
+            $conversionText = !empty($conversionList) ? implode('<br>', $conversionList) : '-';
+          }
           
           $min_stock = $p['min_stock'] ?? '';
+          $min_stock = is_array($min_stock) ? (string)($min_stock[0] ?? '') : (string)$min_stock;
+          
+          $stackable = isset($p['stackable']) ? ($p['stackable'] ? 'Có' : 'Không') : '-';
           $status = $p['status'];
+          $status = is_array($status) ? (string)($status[0] ?? '0') : (string)$status;
 
           $imagePath = isset($p['image']) ? "../../../img/" . $p['image'] : "";
           $imageTag = $imagePath ? "<img src='{$imagePath}' alt='Ảnh sản phẩm' class='product-image'>" : "";
@@ -331,45 +288,65 @@ function formatCurrency($amount) {
           if ($barcode) {
             $barcodeBinary = $barcodeGenerator->getBarcode($barcode, $barcodeGenerator::TYPE_CODE_128, 2, 40);
             $barcodeBase64 = base64_encode($barcodeBinary);
+            $barcodeDataUri = 'data:image/png;base64,' . $barcodeBase64;
             $barcodeImg = "
               <div class='barcode-box'>
-                <img src='data:image/png;base64,{$barcodeBase64}' alt='Barcode'>
+                <img src='" . $barcodeDataUri . "' alt='Barcode'>
                 <div class='barcode-text'>{$barcode}</div>
               </div>";
           }
 
-          $statusClass = $status == 1 ? 'status-active' : 'status-inactive';
+          // use existing CSS classes 'active' / 'inactive' for the status badge
+          $statusClass = $status == 1 ? 'active' : 'inactive';
           $statusText = $status == 1 ? 'Có sẵn' : 'Hết hàng';
 
+          // Prepare product details for modal (JSON encoded for data attribute)
+          $productDetails = json_encode([
+            'sku' => $id,
+            'name' => $name,
+            'barcode' => $barcode,
+            'barcode_img' => $barcodeDataUri ?? '',
+            'model' => $model,
+            'category' => $type,
+            'supplier' => $supplier,
+            'baseUnit' => $baseUnit,
+            'dimensions' => $dimensionText,
+            'weight' => $weightText,
+            'volume' => $volumeText,
+            'conversion' => $conversionText,
+            'min_stock' => $min_stock,
+            'stackable' => $stackable,
+            'status' => $statusText,
+            'image' => $imagePath
+          ], JSON_HEX_APOS | JSON_HEX_QUOT);
+
+          $dataSupplier = htmlspecialchars($supplier_id, ENT_QUOTES);
+          $dataSupplierName = htmlspecialchars($supplier, ENT_QUOTES);
           echo "
-            <tr data-status='{$status}' data-supplier='{$supplier_id}'>
+            <tr data-status='{$status}' data-supplier='{$dataSupplier}' data-supplier-name='{$dataSupplierName}'>
+              <td>{$counter}</td>
               <td>{$imageTag}</td>
-              <td>{$id}</td>
               <td>{$name}</td>
-              <td>{$barcodeImg}</td>
+              <td>{$id}</td>
               <td>{$type}</td>
               <td>{$supplier}</td>
-              <td></td>
-              <td></td>
               <td>{$min_stock}</td>
               <td><span class='status {$statusClass}'>{$statusText}</span></td>
-              <td style='position: relative;'>
-  <button class='action-btn'><i class='fa-solid fa-gear'></i></button>
-  <div class='icon-menu'>
-    <a href='index.php?page=products/updateProduct&id={$id}' class='icon-item edit'><i class='fa-solid fa-pen'></i></a>
-    <a href='#' class='icon-item delete btn-delete' data-id='{$id}'><i class='fa-solid fa-trash'></i></a>
-  </div>
-</td>
-
-
+              <td>
+                <a href='#' class='btn btn-view btn-view-detail' data-product='{$productDetails}' title='Xem chi tiết'><i class='fa-solid fa-eye'></i></a>
+                <a href='index.php?page=products/updateProduct&id={$id}' class='btn btn-edit' title='Chỉnh sửa'><i class='fa-solid fa-pen'></i></a>
+                <a href='#' class='btn btn-delete' data-id='{$id}' title='Xóa'><i class='fa-solid fa-trash'></i></a>
+              </td>
             </tr>";
+          $counter++;
         }
       } else {
-        echo "<tr><td colspan='9'>Không có sản phẩm nào.</td></tr>";
+        echo "<tr><td colspan='10'>Không có sản phẩm nào.</td></tr>";
       }
       ?>
     </tbody>
   </table>
+  <div id="pagination" style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px; align-items:center;"></div>
 </div>
 
 <!-- Modal xác nhận xóa -->
@@ -385,34 +362,199 @@ function formatCurrency($amount) {
   <div class="modal-overlay"></div>
 </div>
 
+<!-- Modal chi tiết sản phẩm -->
+<div id="detailModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    
+    <div class="modal-detail-header">
+        <h3><i class="fa-solid fa-box-open"></i> Thông tin sản phẩm</h3>
+        <button class="btn-close-icon" id="closeDetailBtnHeader">
+            <i class="fa-solid fa-times"></i>
+        </button>
+    </div>
+
+    <div class="modal-detail-body">
+        
+        <div class="detail-sidebar">
+            <div class="detail-sku-tag">SKU: <span id="detail-sku"></span></div>
+            <div class="detail-image-box" id="detailImage">
+                </div>
+            <div id="detail-barcode-area" style="margin-top: 10px; font-family: monospace; font-size: 16px; letter-spacing: 2px; background: #f1f1f1; padding: 5px 10px; border-radius: 4px;">
+                <span id="detail-barcode"></span>
+            </div>
+            <div id="detail-status-container" style="margin-top: 15px; width: 100%;">
+                <span id="detail-status-badge" class="detail-status-badge"></span>
+            </div>
+        </div>
+
+        <div class="detail-main">
+            
+            <div class="info-section">
+                <div class="section-title"><i class="fa-solid fa-circle-info"></i> Tổng quan</div>
+                <div class="info-grid">
+                    <div class="info-item" style="grid-column: 1 / -1;">
+                        <span class="info-label">Tên sản phẩm</span>
+                        <span class="info-value" id="detail-name" style="font-size: 16px; color: #007bff;"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Model</span>
+                        <span class="info-value" id="detail-model"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Danh mục</span>
+                        <span class="info-value" id="detail-category"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Nhà cung cấp</span>
+                        <span class="info-value" id="detail-supplier"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Đơn vị tính (Cơ sở)</span>
+                        <span class="info-value" id="detail-baseUnit"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <div class="section-title"><i class="fa-solid fa-truck-ramp-box"></i> Vận chuyển & Kho</div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Kích thước (D×R×C)</span>
+                        <span class="info-value" id="detail-dimensions"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Trọng lượng</span>
+                        <span class="info-value" id="detail-weight"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Thể tích</span>
+                        <span class="info-value" id="detail-volume"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Xếp chồng</span>
+                        <span class="info-value" id="detail-stackable"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Tồn kho tối thiểu</span>
+                        <span class="info-value" id="detail-minStock" style="color: #dc3545;"></span>
+                    </div>
+                     <div class="info-item" style="grid-column: 1 / -1;">
+                        <span class="info-label">Đơn vị quy đổi</span>
+                        <span class="info-value" id="detail-conversion"></span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <!-- <div style="text-align: right; padding: 0 30px 30px;">
+         <button id="closeDetailBtnBottom" style="padding: 8px 20px; border: 1px solid #ccc; background: #fff; border-radius: 6px; cursor: pointer;">Đóng</button>
+    </div> -->
+  </div>
+  <div class="modal-overlay"></div>
+</div>
+
 <script>
   const statusFilter = document.getElementById('filter-status');
   const searchInput = document.getElementById('searchInput');
   const supplierFilter = document.getElementById('filter-supplier');
-  const rows = document.querySelectorAll('#product-table tbody tr');
+  const rows = document.querySelectorAll('#category-table tbody tr');
+  const paginationContainer = document.getElementById('pagination');
+  const pageSize = 10;
+  let currentPage = 1;
+
+  // Helper: convert NodeList to array
+  const rowsArray = Array.from(rows);
 
   function applyFilters() {
-    const statusValue = statusFilter.value;
-    const supplierValue = supplierFilter.value;
+    const statusValue = (statusFilter.value || '').toString().trim();
+    const supplierValue = (supplierFilter.value || '').toString().trim();
+    const supplierText = (supplierFilter.options[supplierFilter.selectedIndex] || {}).text ? supplierFilter.options[supplierFilter.selectedIndex].text.toString().trim() : '';
     const searchValue = searchInput.value.toLowerCase();
-
-    rows.forEach(row => {
-      const rowStatus = row.dataset.status;
-      const rowSupplier = row.dataset.supplier;
+    // mark rows with data-filtered instead of directly hiding; pagination will handle display
+    rowsArray.forEach(row => {
+      const rowStatus = (row.dataset.status || '').toString().trim();
+      const rowSupplier = (row.dataset.supplier || '').toString().trim();
+      const rowSupplierName = (row.dataset.supplierName || '').toString().trim();
       const rowName = row.children[2].textContent.toLowerCase();
-      const rowSKU = row.children[1].textContent.toLowerCase();
+      const rowSKU = row.children[3].textContent.toLowerCase();
 
       const matchStatus = !statusValue || rowStatus === statusValue;
-      const matchSupplier = !supplierValue || rowSupplier === supplierValue;
+      const matchSupplier = !supplierValue || rowSupplier === supplierValue || rowSupplierName === supplierValue || rowSupplier === supplierText || rowSupplierName === supplierText;
       const matchSearch = !searchValue || rowName.includes(searchValue) || rowSKU.includes(searchValue);
 
-      row.style.display = (matchStatus && matchSupplier && matchSearch) ? '' : 'none';
+      row.dataset.filtered = (matchStatus && matchSupplier && matchSearch) ? '1' : '0';
     });
+
+    // reset to first page whenever filters change
+    currentPage = 1;
+    paginate();
   }
 
   statusFilter.addEventListener('change', applyFilters);
   searchInput.addEventListener('input', applyFilters);
   supplierFilter.addEventListener('change', applyFilters);
+
+  // --- Pagination functions ---
+  function paginate() {
+    const visibleRows = rowsArray.filter(r => r.dataset.filtered === '1');
+    const total = visibleRows.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    // clamp currentPage
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    // hide all rows first
+    rowsArray.forEach(r => r.style.display = 'none');
+
+    // show slice for current page
+    const start = (currentPage - 1) * pageSize;
+    const slice = visibleRows.slice(start, start + pageSize);
+    slice.forEach(r => r.style.display = '');
+
+    renderPaginationControls(totalPages);
+  }
+
+  function renderPaginationControls(totalPages) {
+    // clear
+    paginationContainer.innerHTML = '';
+
+    if (totalPages <= 1) return; // no controls if only one page
+
+    const prev = document.createElement('button');
+    prev.className = 'btn';
+    prev.textContent = '‹';
+    prev.disabled = currentPage === 1;
+    prev.addEventListener('click', () => { currentPage--; paginate(); });
+    paginationContainer.appendChild(prev);
+
+    // show up to 7 page numbers (with truncation)
+    const maxButtons = 7;
+    let startPage = Math.max(1, currentPage - Math.floor(maxButtons/2));
+    let endPage = startPage + maxButtons - 1;
+    if (endPage > totalPages) { endPage = totalPages; startPage = Math.max(1, endPage - maxButtons + 1); }
+
+    for (let p = startPage; p <= endPage; p++) {
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.textContent = p;
+      if (p === currentPage) { btn.style.fontWeight = '700'; }
+      btn.addEventListener('click', () => { currentPage = p; paginate(); });
+      paginationContainer.appendChild(btn);
+    }
+
+    const next = document.createElement('button');
+    next.className = 'btn';
+    next.textContent = '›';
+    next.disabled = currentPage === totalPages;
+    next.addEventListener('click', () => { currentPage++; paginate(); });
+    paginationContainer.appendChild(next);
+  }
+
+  // initialize: mark all rows as filtered then paginate
+  rowsArray.forEach(r => r.dataset.filtered = '1');
+  paginate();
 
   // --- Modal Xóa ---
   const deleteModal = document.getElementById('deleteModal');
@@ -443,6 +585,96 @@ function formatCurrency($amount) {
         })
         .catch(err => console.error('Lỗi xóa sản phẩm:', err));
     }
+  });
+
+  // --- Modal Chi tiết sản phẩm (Logic mới) ---
+  const detailModal = document.getElementById('detailModal');
+  const closeDetailBtnHeader = document.getElementById('closeDetailBtnHeader');
+  const closeDetailBtnBottom = document.getElementById('closeDetailBtnBottom');
+
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.btn-view-detail')) {
+      e.preventDefault();
+      const btn = e.target.closest('.btn-view-detail');
+      // Parse dữ liệu JSON
+      let productData = {};
+      try {
+          productData = JSON.parse(btn.dataset.product);
+      } catch (err) {
+          console.error("Lỗi parse JSON", err);
+          return;
+      }
+      
+      // Fill dữ liệu text
+      const setText = (id, val) => {
+          const el = document.getElementById(id);
+          if(el) el.textContent = (val && val !== 'null') ? val : '-';
+      };
+
+      setText('detail-sku', productData.sku);
+      setText('detail-name', productData.name);
+      // Render barcode image (if available) and code text
+      const barcodeContainer = document.getElementById('detail-barcode');
+      if (barcodeContainer) {
+        if (productData.barcode_img) {
+          barcodeContainer.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:6px;"><img src="${productData.barcode_img}" alt="Barcode" style="height:40px;"/><div style="font-family:monospace;background:#f4f6f8;padding:4px 8px;border-radius:6px;font-size:12px;color:#222;">${productData.barcode || ''}</div></div>`;
+        } else {
+          barcodeContainer.textContent = productData.barcode || '-';
+        }
+      }
+      setText('detail-model', productData.model);
+      setText('detail-category', productData.category);
+      setText('detail-supplier', productData.supplier);
+      setText('detail-baseUnit', productData.baseUnit);
+      setText('detail-dimensions', productData.dimensions);
+      setText('detail-weight', productData.weight);
+      setText('detail-volume', productData.volume);
+      setText('detail-minStock', productData.min_stock);
+      setText('detail-stackable', productData.stackable);
+
+      // Xử lý HTML inner (cho conversion)
+      const conversionEl = document.getElementById('detail-conversion');
+      if(conversionEl) conversionEl.innerHTML = productData.conversion || '-';
+      
+      // Xử lý ảnh
+      const imageContainer = document.getElementById('detailImage');
+      if (productData.image) {
+        imageContainer.innerHTML = `<img src="${productData.image}" alt="${productData.name}">`;
+      } else {
+        imageContainer.innerHTML = '<div style="color: #adb5bd; display:flex; flex-direction:column; align-items:center;"><i class="fa-solid fa-image" style="font-size:40px; margin-bottom:10px;"></i><span>No Image</span></div>';
+      }
+
+      // Xử lý badge trạng thái (Màu sắc)
+      const statusEl = document.getElementById('detail-status-badge');
+      const statusText = productData.status || '';
+      statusEl.textContent = statusText;
+      
+      // Reset class cũ và gán class màu mới
+      statusEl.className = 'detail-status-badge'; 
+      if (statusText === 'Có sẵn' || statusText.includes('Available')) {
+          statusEl.style.background = '#d4edda';
+          statusEl.style.color = '#155724';
+      } else {
+          statusEl.style.background = '#f8d7da';
+          statusEl.style.color = '#721c24';
+      }
+      
+      detailModal.style.display = 'block';
+    }
+  });
+
+  // Sự kiện đóng modal
+  const closeDetailModal = () => { detailModal.style.display = 'none'; };
+  
+  if(closeDetailBtnHeader) closeDetailBtnHeader.addEventListener('click', closeDetailModal);
+  if(closeDetailBtnBottom) closeDetailBtnBottom.addEventListener('click', closeDetailModal);
+
+  // Close modals when clicking overlay
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', () => {
+      deleteModal.style.display = 'none';
+      detailModal.style.display = 'none';
+    });
   });
 
 // --- Menu icon hành động ---

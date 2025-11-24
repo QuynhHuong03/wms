@@ -158,5 +158,38 @@ class MWarehouse
         }
         return null;
     }
+
+    // 🏷️ Lấy kho theo loại (warehouse_type)
+    public function getWarehousesByType($type)
+    {
+        $p = new clsKetNoi();
+        $con = $p->moKetNoi();
+        if ($con) {
+            try {
+                $col = $con->selectCollection('warehouses');
+                $cursor = $col->find([
+                    'warehouse_type' => (int)$type,
+                    'status' => 1 // Chỉ lấy kho đang hoạt động
+                ]);
+                $results = [];
+
+                foreach ($cursor as $doc) {
+                    $item = json_decode(json_encode($doc), true);
+                    if (isset($item['address']) && is_array($item['address'])) {
+                        $item['address_text'] = "{$item['address']['street']}, {$item['address']['city']}, {$item['address']['province']}";
+                    }
+                    $results[] = $item;
+                }
+
+                $p->dongKetNoi($con);
+                return $results;
+            } catch (\Exception $e) {
+                $p->dongKetNoi($con);
+                error_log("❌ Lỗi MongoDB (getWarehousesByType): " . $e->getMessage());
+                return [];
+            }
+        }
+        return [];
+    }
 }
 ?>

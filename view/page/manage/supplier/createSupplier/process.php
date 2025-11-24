@@ -15,12 +15,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = $cSupplier->addSupplier($supplier_name, $contact, $created_at, $contact_name, $tax_code, $country, $description);
 
         if ($result) {
-            echo "<script>alert('Thêm nhà cung cấp thành công!'); window.location.href='../../index.php?page=supplier';</script>";
+            header("Location: /KLTN/view/page/manage/index.php?page=supplier&msg=success");
+            exit();
         } else {
-            echo "<script>alert('Thêm nhà cung cấp thất bại!'); window.location.href='../../index.php?page=supplier/createSupplier';</script>";
+            header("Location: /KLTN/view/page/manage/index.php?page=supplier/createSupplier&msg=error");
+            exit();
         }
     } else {
-        echo "<script>alert('Vui lòng nhập đầy đủ thông tin!'); window.location.href='../../index.php?page=supplier/createSupplier';</script>";
+        header("Location: /KLTN/view/page/manage/index.php?page=supplier/createSupplier&msg=error");
+        exit();
     }
 }
 ?>

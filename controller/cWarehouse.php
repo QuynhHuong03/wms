@@ -44,5 +44,12 @@ class CWarehouse
         $m = new MWarehouse();
         return $m->getWarehouseById($warehouse_id);
     }
+
+    // 🏷️ Lấy kho theo loại (warehouse_type)
+    public function getWarehousesByType($type)
+    {
+        $m = new MWarehouse();
+        return $m->getWarehousesByType($type);
+    }
 }
 ?>

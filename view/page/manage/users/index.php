@@ -22,7 +22,7 @@ body {
     max-width: 1400px;
     margin: 30px auto;
     background: #ffffff;
-    padding: 30px;
+    padding: 10px 10px;
     border-radius: 12px;
     box-shadow: 0 8px 20px rgba(0,0,0,0.05);
 }
@@ -129,7 +129,7 @@ body {
 .role-tag {
     font-weight: 600;
     padding: 6px 12px;
-    border-radius: 20px;/* Pill shape */
+    border-radius: 20px;
     display: inline-block;
     font-size: 0.8rem;
 }
@@ -143,7 +143,6 @@ body {
     color: #991b1b; 
 }
 
-/* Role */
 .role-admin {
     background-color: #fef9c3;
     color: #a16207;
@@ -265,7 +264,7 @@ body {
 
 @media (max-width: 768px) {
     .user-list-container {
-        padding: 20px 10px;
+        padding: 10px 10px;
         margin: 15px;
     }
     .top-actions {
@@ -290,6 +289,62 @@ body {
     .user-list-container table {
         min-width: 800px;
     }
+}
+
+/* Toast notification */
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #10b981;
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+    z-index: 10000;
+    animation: slideIn 0.3s ease-out;
+}
+
+.toast-notification i {
+    font-size: 1.2rem;
+}
+
+.toast-notification.success {
+    background: #10b981;
+}
+
+.toast-notification.error {
+    background: #ef4444;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+}
+
+.toast-notification.hide {
+    animation: slideOut 0.3s ease-out forwards;
 }
 </style>
 
@@ -381,6 +436,29 @@ if ($tblNV && is_array($tblNV)) {
 </div>
 
 <script>
+    // --- Hiển thị thông báo thành công/không thành công ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const msg = urlParams.get('msg');
+    if (msg === 'success' || msg === 'updated' || msg === 'deleted' || msg === 'error') {
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification ' + (msg === 'error' ? 'error' : 'success');
+        if (msg === 'success') toast.innerHTML = '<i class="fa-solid fa-circle-check"></i> Thêm người dùng thành công!';
+        else if (msg === 'updated') toast.innerHTML = '<i class="fa-solid fa-circle-check"></i> Cập nhật người dùng thành công!';
+        else if (msg === 'deleted') toast.innerHTML = '<i class="fa-solid fa-trash-can"></i> Xóa người dùng thành công!';
+        else toast.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Có lỗi xảy ra.';
+        document.body.appendChild(toast);
+
+        // Xóa thông báo sau 3 giây
+        setTimeout(() => {
+            toast.classList.add('hide');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+
+        // Xóa tham số msg khỏi URL (giữ `?page=users`)
+        const newUrl = window.location.pathname + '?page=users';
+        window.history.replaceState({}, '', newUrl);
+    }
+
   // --- Bộ lọc vai trò và tìm kiếm ---
   const roleFilter = document.getElementById('filter-role');
   const searchInput = document.getElementById('searchInput');
@@ -421,15 +499,33 @@ if ($tblNV && is_array($tblNV)) {
     deleteUserId = null;
   });
 
-  confirmDeleteBtn.addEventListener('click', function(){
-    if(deleteUserId){
-      fetch('users/deleteUsers/process.php?id=' + deleteUserId)
-        .then(response => response.text())
-        .then(() => {
-          deleteModal.style.display = 'none';
-          window.location.reload();
-        })
-        .catch(err => console.error('Lỗi xóa user:', err));
-    }
-  });
+    confirmDeleteBtn.addEventListener('click', function(){
+        if(deleteUserId){
+            fetch('/KLTN/view/page/manage/users/deleteUsers/process.php?id=' + encodeURIComponent(deleteUserId))
+                .then(response => response.json())
+                .then((data) => {
+                    deleteModal.style.display = 'none';
+                    if (data && data.success) {
+                        // Redirect to users list with deleted message
+                        window.location.href = '/KLTN/view/page/manage/index.php?page=users&msg=deleted';
+                    } else {
+                        // Show error toast
+                        const errToast = document.createElement('div');
+                        errToast.className = 'toast-notification error';
+                        errToast.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Xóa người dùng thất bại!';
+                        document.body.appendChild(errToast);
+                        setTimeout(() => { errToast.classList.add('hide'); setTimeout(() => errToast.remove(), 300); }, 3000);
+                    }
+                })
+                .catch(err => {
+                    deleteModal.style.display = 'none';
+                    console.error('Lỗi xóa user:', err);
+                    const errToast = document.createElement('div');
+                    errToast.className = 'toast-notification error';
+                    errToast.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Lỗi kết nối khi xóa.';
+                    document.body.appendChild(errToast);
+                    setTimeout(() => { errToast.classList.add('hide'); setTimeout(() => errToast.remove(), 300); }, 3000);
+                });
+        }
+    });
 </script>

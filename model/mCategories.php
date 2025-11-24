@@ -75,6 +75,11 @@ class MCategories {
         }
     }
 
+    // Alias cho getAllCategories (để tương thích)
+    public function getAllCategories() {
+        return $this->SelectAllCategories();
+    }
+
     // Lấy 1 category theo ID
     public function SelectCategoryById($id) {
         try {
@@ -123,6 +128,26 @@ class MCategories {
         }
     }
 
+    // Lấy mã category tiếp theo theo pattern DMxxx (ví dụ DM001)
+    public function getNextCategoryId() {
+        try {
+            $last = $this->categoriesCollection->findOne(
+                ['category_id' => ['$regex' => '^DM[0-9]+$']],
+                ['sort' => ['category_id' => -1]]
+            );
+            $nextNumber = 1;
+            if ($last && isset($last['category_id'])) {
+                $lastCode = $last['category_id'];
+                $num = (int)substr($lastCode, 2);
+                $nextNumber = $num + 1;
+            }
+            return "DM" . str_pad($nextNumber, 3, "0", STR_PAD_LEFT);
+        } catch (\Throwable $e) {
+            error_log('getNextCategoryId error: ' . $e->getMessage());
+            return null;
+        }
+    }
+
     // Update category
     public function updateCategory($id, $data) {
         try {
@@ -133,7 +158,10 @@ class MCategories {
             }
             $update = ['$set' => $data];
             $result = $this->categoriesCollection->updateOne($filter, $update);
-            return $result->getModifiedCount() > 0;
+            // If a document was matched it's a successful operation even if modifiedCount is 0
+            // (e.g., only timestamps or identical values). Treat matchedCount>0 as success.
+            if ($result->getMatchedCount() > 0) return true;
+            return false;
         } catch (\Throwable $e) {
             throw new \RuntimeException('Lỗi updateCategory: ' . $e->getMessage());
         }

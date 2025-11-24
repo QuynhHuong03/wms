@@ -224,6 +224,7 @@ class MLocation {
 					'_id' => $zone_id,
 					'zone_id' => $zone_id,
 					'name' => $name,
+					'level' => 1, // Zone = Level 1
 					'warehouse' => $warehouse,
 					'description' => $description,
 					'created_at' => $created_at,
@@ -703,7 +704,12 @@ class MLocation {
 		if ($con) {
 			try {
 				$col = $con->selectCollection('locations');
-				$rack = [ 'rack_id' => $rack_id, 'name' => $name, 'bins' => [] ];
+				$rack = [ 
+					'rack_id' => $rack_id, 
+					'name' => $name, 
+					'level' => 2,        // Rack = Level 2 (kệ)
+					'shelves' => []      // Mảng chứa các tầng (Shelf)
+				];
 				// Existence check within this warehouse doc only
 				$exists = $col->findOne([
 					'warehouse.id' => $warehouseId,
@@ -1116,6 +1122,277 @@ class MLocation {
 			return false;
 		} finally {
 			$p->dongKetNoi($con);
+		}
+	}
+	
+	/**
+	 * Update bin capacity percentage based on product volume
+	 * @param string $warehouseId
+	 * @param string $zoneId
+	 * @param string $rackId
+	 * @param string $binId
+	 * @param float $productVolume - Volume of products being added (cm³)
+	 * @param int $quantity - Number of items
+	 * @param bool $isAdding - true to add, false to subtract
+	 */
+	public function updateBinCapacity($warehouseId, $zoneId, $rackId, $binId, $productVolume, $quantity, $isAdding = true) {
+		$p = new clsKetNoi();
+		$con = $p->moKetNoi();
+		if (!$con) return false;
+		
+		try {
+			$col = $con->selectCollection('locations');
+			
+			// Find the location document - try multiple ways
+			$doc = $col->findOne(['warehouse.id' => $warehouseId]);
+			if (!$doc) {
+				$doc = $col->findOne(['warehouse_id' => $warehouseId]);
+			}
+			if (!$doc) {
+				// Try searching in zones' warehouse references
+				$doc = $col->findOne(['zones.warehouse_id' => $warehouseId]);
+			}
+			if (!$doc) {
+				error_log("updateBinCapacity: Location not found for warehouse $warehouseId. Tried warehouse.id, warehouse_id, zones.warehouse_id");
+				$p->dongKetNoi($con);
+				return false;
+			}
+			
+			error_log("updateBinCapacity: Found location document for warehouse $warehouseId");
+			
+			// Navigate to the specific bin
+			$zones = json_decode(json_encode($doc['zones'] ?? []), true);
+			$updated = false;
+			
+			foreach ($zones as $zIdx => &$zone) {
+				$zId = $zone['_id'] ?? $zone['zone_id'] ?? '';
+				if ($zId !== $zoneId) continue;
+				
+				$racks = &$zone['racks'];
+				foreach ($racks as $rIdx => &$rack) {
+					if (($rack['rack_id'] ?? '') !== $rackId) continue;
+					
+					$bins = &$rack['bins'];
+					foreach ($bins as $bIdx => &$bin) {
+						$bId = $bin['bin_id'] ?? $bin['id'] ?? '';
+						if ($bId !== $binId) continue;
+						
+						// Get bin dimensions
+						$dims = $bin['dimensions'] ?? [];
+						$binWidth = (float)($dims['width'] ?? 100);
+						$binDepth = (float)($dims['depth'] ?? 100);
+						$binHeight = (float)($dims['height'] ?? 100);
+						$binVolume = $binWidth * $binDepth * $binHeight;
+						
+						// Calculate volume change
+						$totalProductVolume = $productVolume * $quantity;
+						$volumeChange = $isAdding ? $totalProductVolume : -$totalProductVolume;
+						
+						// Get current capacity
+						$currentCapacity = (float)($bin['current_capacity'] ?? 0);
+						
+						// Calculate new capacity percentage
+						$capacityChange = ($binVolume > 0) ? ($volumeChange / $binVolume * 100) : 0;
+						$newCapacity = max(0, min(100, $currentCapacity + $capacityChange));
+						
+						error_log("=== BIN CAPACITY UPDATE ===");
+						error_log("Bin: $binId");
+						error_log("Product volume (per unit): $productVolume cm³");
+						error_log("Quantity: $quantity");
+						error_log("Total product volume: $totalProductVolume cm³");
+						error_log("Bin volume: $binVolume cm³");
+						error_log("Is adding: " . ($isAdding ? 'true' : 'false'));
+						error_log("Volume change: $volumeChange cm³");
+						error_log("Current capacity: {$currentCapacity}%");
+						error_log("Capacity change: {$capacityChange}%");
+						error_log("New capacity: {$newCapacity}%");
+						error_log("=========================");
+						
+						// Update bin
+						$bin['current_capacity'] = $newCapacity;
+						$zones[$zIdx]['racks'][$rIdx]['bins'][$bIdx] = $bin; // Ensure assignment
+						$updated = true;
+						break 3;
+					}
+				}
+			}
+			
+			if ($updated) {
+				$filter = ['$or' => [
+					['warehouse.id' => $warehouseId],
+					['warehouse_id' => $warehouseId]
+				]];
+				
+				$result = $col->updateOne($filter, ['$set' => ['zones' => $zones]]);
+				
+				$matched = $result->getMatchedCount();
+				$modified = $result->getModifiedCount();
+				
+				error_log("updateBinCapacity MongoDB update: matched=$matched, modified=$modified");
+				
+				$p->dongKetNoi($con);
+				return $modified > 0 || $matched > 0;
+			} else {
+				error_log("updateBinCapacity: Bin not found - Zone: $zoneId, Rack: $rackId, Bin: $binId");
+			}
+			
+			$p->dongKetNoi($con);
+			return false;
+		} catch (\Exception $e) {
+			error_log('updateBinCapacity error: ' . $e->getMessage());
+			$p->dongKetNoi($con);
+			return false;
+		}
+	}
+
+	/**
+	 * Recalculate all bin capacities based on actual inventory
+	 * @param string $warehouseId
+	 * @return array Result with statistics
+	 */
+	public function recalculateAllBinCapacities($warehouseId) {
+		require_once(__DIR__ . '/mInventory.php');
+		require_once(__DIR__ . '/mProduct.php');
+		
+		$p = new clsKetNoi();
+		$con = $p->moKetNoi();
+		if (!$con) return ['success' => false, 'error' => 'Database connection failed'];
+		
+		try {
+			$col = $con->selectCollection('locations');
+			
+			// Find location document
+			$doc = $col->findOne(['warehouse.id' => $warehouseId]);
+			if (!$doc) {
+				$doc = $col->findOne(['warehouse_id' => $warehouseId]);
+			}
+			if (!$doc) {
+				$p->dongKetNoi($con);
+				return ['success' => false, 'error' => 'Warehouse location not found'];
+			}
+			
+			// Get all inventory for this warehouse
+			$mInventory = new MInventory();
+			$mProduct = new MProduct();
+			$inventoryItems = $mInventory->getInventoryByWarehouse($warehouseId);
+			
+			// Group inventory by bin location
+			$binInventory = [];
+			foreach ($inventoryItems as $item) {
+				$zoneId = $item['zone_id'] ?? '';
+				$rackId = $item['rack_id'] ?? '';
+				$binId = $item['bin_id'] ?? '';
+				$productId = $item['product_id'] ?? '';
+				$qty = (int)($item['qty'] ?? 0);
+				
+				if (!$zoneId || !$rackId || !$binId || !$productId || $qty <= 0) continue;
+				
+				$key = "{$zoneId}|{$rackId}|{$binId}";
+				
+				if (!isset($binInventory[$key])) {
+					$binInventory[$key] = [
+						'zoneId' => $zoneId,
+						'rackId' => $rackId,
+						'binId' => $binId,
+						'products' => []
+					];
+				}
+				
+				// Get product dimensions
+				$product = $mProduct->getProductById($productId);
+				if ($product) {
+					$dims = $product['package_dimensions'] ?? $product['dimensions'] ?? [];
+					$width = (float)($dims['width'] ?? 0);
+					$depth = (float)($dims['depth'] ?? 0);
+					$height = (float)($dims['height'] ?? 0);
+					$volume = $width * $depth * $height;
+					
+					$binInventory[$key]['products'][] = [
+						'product_id' => $productId,
+						'quantity' => $qty,
+						'volume' => $volume,
+						'total_volume' => $volume * $qty
+					];
+				}
+			}
+			
+			// Update all bins
+			$zones = json_decode(json_encode($doc['zones'] ?? []), true);
+			$stats = [
+				'total_bins' => 0,
+				'updated_bins' => 0,
+				'bins_with_inventory' => count($binInventory),
+				'errors' => []
+			];
+			
+			foreach ($zones as $zIdx => &$zone) {
+				$zoneId = $zone['_id'] ?? $zone['zone_id'] ?? '';
+				
+				foreach ($zone['racks'] as $rIdx => &$rack) {
+					$rackId = $rack['rack_id'] ?? '';
+					
+					foreach ($rack['bins'] as $bIdx => &$bin) {
+						$binId = $bin['bin_id'] ?? $bin['id'] ?? '';
+						$stats['total_bins']++;
+						
+						// Get bin dimensions
+						$dims = $bin['dimensions'] ?? [];
+						$binWidth = (float)($dims['width'] ?? 100);
+						$binDepth = (float)($dims['depth'] ?? 100);
+						$binHeight = (float)($dims['height'] ?? 100);
+						$binVolume = $binWidth * $binDepth * $binHeight;
+						
+						// Calculate total volume of products in this bin
+						$key = "{$zoneId}|{$rackId}|{$binId}";
+						$totalProductVolume = 0;
+						
+						if (isset($binInventory[$key])) {
+							foreach ($binInventory[$key]['products'] as $product) {
+								$totalProductVolume += $product['total_volume'];
+							}
+						}
+						
+						// Calculate capacity percentage
+						$newCapacity = 0;
+						if ($binVolume > 0) {
+							$newCapacity = min(100, ($totalProductVolume / $binVolume) * 100);
+						}
+						
+						// Update bin capacity
+						$oldCapacity = (float)($bin['current_capacity'] ?? 0);
+						$bin['current_capacity'] = round($newCapacity, 2);
+						
+						if (abs($oldCapacity - $newCapacity) > 0.01) {
+							$stats['updated_bins']++;
+						}
+					}
+				}
+			}
+			
+			// Save updated zones back to database
+			$filter = ['$or' => [
+				['warehouse.id' => $warehouseId],
+				['warehouse_id' => $warehouseId]
+			]];
+			
+			$result = $col->updateOne($filter, ['$set' => ['zones' => $zones]]);
+			
+			$p->dongKetNoi($con);
+			
+			return [
+				'success' => true,
+				'stats' => $stats,
+				'matched' => $result->getMatchedCount(),
+				'modified' => $result->getModifiedCount()
+			];
+			
+		} catch (\Exception $e) {
+			$p->dongKetNoi($con);
+			return [
+				'success' => false,
+				'error' => $e->getMessage(),
+				'trace' => $e->getTraceAsString()
+			];
 		}
 	}
 }
