@@ -53,12 +53,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnAdd"])) {
     $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
     // Gọi controller để thêm người dùng
+    // Normalize numeric-like IDs so they match types stored in collections
+    if (is_numeric($role_id)) $role_id = (int)$role_id;
+    if (is_numeric($status)) $status = (int)$status;
+    if (is_numeric($warehouse_id)) $warehouse_id = (int)$warehouse_id;
+
     $obj = new CUsers();
     $result = $obj->addUser($name, $email, $gender, $phone, $hashedPassword, $role_id, $status, $warehouse_id);
 
     if ($result) {
-        // thành công → về danh sách users
-        header("Location: ../../index.php?page=users&msg=success");
+        // thành công → về trang quản lý users (correct manage index path)
+        header("Location: /KLTN/view/page/manage/index.php?page=users&msg=success");
         exit();
     } else {
         echo "Thêm người dùng thất bại. <a href='../page/index.php?page=users_add'>Thử lại</a>";

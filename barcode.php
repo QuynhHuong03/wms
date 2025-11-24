@@ -3,7 +3,7 @@ require 'vendor/autoload.php';
 
 use Picqer\Barcode\BarcodeGeneratorPNG;
 
-$productCode = "ASUS12345";  // thay bằng SKU thực tế
+$productCode = "BAR1000";  // thay bằng SKU thực tế
 
 $generator = new BarcodeGeneratorPNG();
 $barcodeBinary = $generator->getBarcode($productCode, $generator::TYPE_CODE_128);

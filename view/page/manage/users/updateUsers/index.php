@@ -2,486 +2,234 @@
 // session_start();
 // error_reporting(E_ALL);
 // ini_set('display_errors', 1);
-
-include_once("../../../model/mRoles.php");
-$mRoles = new MRoles();
-if (!isset($_SESSION["login"])) {
-    header("Location: ../page/index.php?page=login");
-    exit();
-}
 ?>
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Cập nhật nhân viên</title>
+    <title>Cập nhật người dùng</title>
 
+<?php // Reuse same styles as createUsers for consistent UI ?>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
+/* --- BASE & TYPOGRAPHY --- */
 body {
-  font-family: 'Arial', sans-serif;
-  background-color: #f9f9f9;
-  color: #333;
-  margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f3f8;
+    color: #1f2937;
+    margin: 0;
+    padding: 20px 0;
 }
 
 .page-header {
-  width: 90%;
-  max-width: 800px;
-  margin: 30px auto 10px;
+    width: 90%;
+    max-width: 700px;
+    margin: 30px auto 15px;
+    padding-left: 10px;
+    border-left: 4px solid #2563eb;
 }
+.page-header h2 { margin: 0; color: #111827; font-size: 2rem; font-weight:700 }
+.page-header p { margin:5px 0 0; color:#6b7280 }
 
-.page-header h2 {
-  margin: 0;
-  color: #222;
-}
+.container { width:90%; max-width:700px; margin:20px auto; background:#fff; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.08); padding:30px 40px }
+.form-group { margin-bottom:20px }
+.form-group label { display:block; margin-bottom:8px; font-weight:600; color:#374151 }
+.form-group input, .form-group select { width:100%; padding:12px 15px; border:1px solid #d1d5db; border-radius:8px; background:#f9fafb }
+.form-group input:focus, .form-group select:focus { border-color:#2563eb; background:#fff; outline:none; box-shadow:0 0 0 3px rgba(37,99,235,0.12) }
+.error-message { font-size:0.85rem; color:#ef4444; margin-top:6px; display:block }
+.password-wrapper { position:relative }
+.toggle-password { position:absolute; right:15px; top:50%; transform:translateY(-50%); cursor:pointer; color:#9ca3af }
+.form-actions { text-align:right; margin-top:30px; display:flex; justify-content:flex-end; gap:12px }
+.form-actions a, .form-actions button { padding:12px 20px; border-radius:8px; font-weight:600 }
+.form-actions a { text-decoration: none; }
+.form-actions a:hover { text-decoration: none; }
+.btn-success { background:#10b981; color:#fff; border:none }
+.btn-success:hover { background:#059669 }
+.btn-secondary { background:#e5e7eb; color:#374151; border:none }
 
-.page-header p {
-  margin: 5px 0 0;
-  color: #666;
-  font-size: 16px;
-}
+/* Modal */
+.modal { display:none; position:fixed; z-index:10000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5); }
+.modal-content { background:#fff; max-width:450px; margin:15vh auto; padding:30px; border-radius:12px; text-align:center }
+.modal-actions { display:flex; justify-content:center; gap:12px }
+.modal-actions button { padding:10px 22px; border-radius:8px; font-weight:600 }
 
-.container {
-  width: 90%;
-  max-width: 800px;
-  margin: 20px auto;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  padding: 25px 30px;
-}
-
-/* Input group */
-.form-group {
-  margin-bottom: 18px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: 600;
-  font-size: 18px;
-  color: #333;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 18px;
-  transition: border-color 0.2s;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  border-color: #3b82f6;
-  outline: none;
-  box-shadow: 0 0 5px rgba(59,130,246,0.3);
-}
-
-.form-group .radio-group {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-}
-
-.form-group .radio-group input {
-  width: auto;
-}
-
-.password-wrapper {
-  position: relative;
-}
-
-.password-wrapper input {
-  width: 100%;
-  padding-right: 40px; /* chừa chỗ cho icon */
-}
-
-.toggle-password {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  cursor: pointer;
-  font-size: 18px;
-  color: #666;
-  user-select: none;
-}
-
-.toggle-password:hover {
-  color: #111;
-}
-
-.error-message {
-  font-size: 14px;
-  color: #e11d48;
-  margin-top: 4px;
-  display: block;
-}
-
-/* Button group */
-.form-actions {
-  text-align: center;
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-}
-
-.form-actions button,
-.form-actions a {
-  background-color: #3b82f6;
-  color: #fff;
-  padding: 10px 20px;
-  font-size: 15px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.2s;
-  text-decoration: none;
-  display: inline-block;
-}
-
-.form-actions button:hover,
-.form-actions a:hover {
-  background-color: #2563eb;
-}
-
-.form-actions .btn-secondary {
-  background-color: #6b7280;
-}
-
-.form-actions .btn-secondary:hover {
-  background-color: #4b5563;
-}
-
-.form-actions .btn-success {
-  background-color: #16a34a;
-}
-
-.form-actions .btn-success:hover {
-  background-color: #15803d;
-}
 </style>
 </head>
-
 <body>
-    <?php
-    include_once("../../../controller/cUsers.php");
-    $id = $_GET['id'];
-    $p = new CUsers();
-    $user = $p->get($id);
-    ?>
+<?php
+include_once("../../../controller/cUsers.php");
+$id = $_GET['id'];
+$p = new CUsers();
+$user = $p->getUserById($id);
+?>
+
   <div class="page-header">
     <h2>Cập nhật người dùng</h2>
     <p>Cập nhật tài khoản người dùng</p>
   </div>
 
   <div class="container">
-    <form action="users/updateUsers/process.php" method="post" enctype="multipart/form-data" onsubmit="return validateForm()">
-      
-      <!-- Họ và tên -->
+  <form action="/KLTN/view/page/manage/users/updateUsers/process.php" method="post" enctype="multipart/form-data">
+      <input type="hidden" name="id" id="id" value="<?php echo htmlspecialchars($user['user_id']); ?>">
+
       <div class="form-group">
         <label for="name">Họ và tên</label>
-        <input type="text" id="name" name="name" 
-                placeholder="Nhập họ và tên" 
-                value="<?php echo $user['name']?>"
-            onblur="validateField(this, 'Họ và tên không được để trống.', value => value.length > 0)">
+        <input type="text" id="name" name="name" placeholder="Nhập họ và tên" value="<?php echo htmlspecialchars($user['name']); ?>">
         <span class="error-message"></span>
       </div>
 
-      <!-- Email -->
       <div class="form-group">
         <label for="email">Email</label>
-        <input type="email" id="email" name="email" placeholder="Nhập email" 
-                value="<?php echo $user['email']?>"
-            onblur="validateField(this, 'Email không được để trống.', value => value.length > 0)">
+        <input type="email" id="email" name="email" placeholder="Nhập email" value="<?php echo htmlspecialchars($user['email']); ?>">
         <span class="error-message"></span>
       </div>
 
-      <!-- Giới tính -->
       <div class="form-group">
         <label for="gender">Giới tính</label>
         <select name="gender" id="gender">
-          <option value="1" <?php echo ($user['gender'] == 1) ? "selected" : ""; ?>>Nam</option>
-          <option value="0" <?php echo ($user['gender'] == 0) ? "selected" : ""; ?>>Nữ</option>
+          <option value="">- Chọn giới tính -</option>
+          <option value="1" <?php echo (isset($user['gender']) && $user['gender']==1) ? 'selected' : ''; ?>>Nam</option>
+          <option value="0" <?php echo (isset($user['gender']) && $user['gender']==0) ? 'selected' : ''; ?>>Nữ</option>
         </select>
         <span class="error-message"></span>
       </div>
 
-      <!-- Số điện thoại -->
       <div class="form-group">
         <label for="phone">Số điện thoại</label>
-        <input type="text" id="phone" name="phone" placeholder="Nhập số điện thoại" 
-                value="<?php echo $user['phone']?>"
-            onblur="validateField(this, 'Số điện thoại không được để trống.', value => value.length > 0)">
+        <input type="text" id="phone" name="phone" placeholder="Nhập số điện thoại" value="<?php echo htmlspecialchars($user['phone']); ?>">
         <span class="error-message"></span>
       </div>
 
-      <!-- Vai trò -->
       <div class="form-group">
         <label for="role_id">Vai trò</label>
-          <select name="role_id" id="role_id">
-            <?php
-              include("../../../controller/cRoles.php");
-              $obj = new CRoles();
-              $listRole = $obj->getAllRoles(); // trả về array
-              if ($listRole && is_array($listRole) && count($listRole) > 0) {
-                  foreach ($listRole as $r) {
-                      $selected = ($r['role_id'] == $user['role_id']) ? 'selected' : '';
-                      echo '<option value="' . htmlspecialchars($r['role_id']) . '" ' . $selected . '>' . htmlspecialchars($r['role_name']) . '</option>';
-                  }
-              } else {
-                  echo '<option value="">Không có dữ liệu vai trò</option>';
+        <select name="role_id" id="role_id">
+          <option value="">- Chọn vai trò -</option>
+          <?php
+            include("../../../controller/cRoles.php");
+            $obj = new CRoles();
+            $tblRole = $obj->getAllRoles();
+            if (is_array($tblRole) && count($tblRole)>0) {
+              foreach ($tblRole as $r) {
+                $value = isset($r['role_id']) ? $r['role_id'] : $r['_id'];
+                $sel = (isset($user['role_id']) && $user['role_id'] == $value) ? 'selected' : '';
+                echo '<option value="'.htmlspecialchars($value).'" '.$sel.'>'.htmlspecialchars($r['description'] ?? $r['role_name'] ?? '').'</option>';
               }
-            ?>
-          </select>
+            } else {
+              echo '<option value="">⚠ Không có dữ liệu vai trò</option>';
+            }
+          ?>
+        </select>
         <span class="error-message"></span>
       </div>
 
-      <!-- Trạng thái -->
       <div class="form-group">
         <label for="status">Trạng thái</label>
         <select id="status" name="status">
-          <option value="1" <?php echo ($user['status'] == 1) ? 'selected' : ''; ?>>Đang làm việc</option>
-          <option value="2" <?php echo ($user['status'] == 2) ? 'selected' : ''; ?>>Nghỉ việc</option>
+          <option value="">- Chọn trạng thái -</option>
+          <option value="1" <?php echo (isset($user['status']) && $user['status']==1) ? 'selected' : ''; ?>>Đang làm việc</option>
+          <option value="2" <?php echo (isset($user['status']) && $user['status']==2) ? 'selected' : ''; ?>>Nghỉ việc</option>
         </select>
         <span class="error-message"></span>
       </div>
 
-      <!-- Kho làm việc -->
-  <div class="form-group">
-    <label for="warehouse_id">Kho làm việc</label>
-    <select name="warehouse_id" id="warehouse_id">
-      <option value="">- Chọn kho -</option>
-      <?php
-        include_once(__DIR__ . "/../../../../../controller/cWarehouse.php");
-        $Obj = new CWarehouse();
-        $warehouses = $Obj->getAllWarehouses();
-        if ($warehouses && is_array($warehouses) && count($warehouses) > 0) {
-          foreach ($warehouses as $r) {
-            $selected = ($r['warehouse_id'] == $user['warehouse_id']) ? 'selected' : '';
-            echo '<option value="' . htmlspecialchars($r['warehouse_id']) . '" ' . $selected . '>' . htmlspecialchars($r['warehouse_name']) . '</option>';
-          }
-        } else {
-          echo '<option value="">Không có dữ liệu kho</option>';
-        }
-      ?>
-    </select>
-    <span class="error-message"></span>
-  </div>
+      <div class="form-group">
+        <label for="warehouse_id">Kho làm việc</label>
+        <select name="warehouse_id" id="warehouse_id">
+          <option value="">- Chọn kho -</option>
+          <?php
+            include_once(__DIR__ . "/../../../../../controller/cWarehouse.php");
+            $Obj = new CWarehouse();
+            $warehouses = $Obj->getAllWarehouses();
+            if (!empty($warehouses)) {
+              foreach ($warehouses as $r) {
+                $sel = (isset($user['warehouse_id']) && $user['warehouse_id'] == $r['warehouse_id']) ? 'selected' : '';
+                echo '<option value="'.htmlspecialchars($r['warehouse_id']).'" '.$sel.'>'.htmlspecialchars($r['warehouse_name']).'</option>';
+              }
+            } else {
+              echo '<option value="">⚠ Không có dữ liệu kho</option>';
+            }
+          ?>
+        </select>
+        <span class="error-message"></span>
+      </div>
 
-      <!-- Nút thao tác -->
       <div class="form-actions">
-        <a href="index.php?page=users">Quay lại</a>
-        <button type="button" class="btn-secondary" id="btnCancel">Hủy</button>
+        <a href="/KLTN/view/page/manage/index.php?page=users" class="btn-secondary">Quay lại</a>
+        <button type="reset" class="btn-secondary">Hủy</button>
         <button type="submit" class="btn-success" name="btnUpdate">Cập nhật</button>
       </div>
 
     </form>
   </div>
 
-<!-- Modal xác nhận -->
-<div id="confirmModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
-    background: rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
-  <div style="background:#fff; padding:20px 30px; border-radius:12px; max-width:400px; width:90%; text-align:center;">
-    <p style="font-size:18px; margin-bottom:20px;">Bạn có chắc chắn muốn cập nhật nhân viên này không?</p>
-    <button id="confirmYes" style="background:#16a34a; color:#fff; padding:10px 20px; border:none; border-radius:8px; margin-right:10px; cursor:pointer;">Có</button>
-    <button id="confirmNo" style="background:#6b7280; color:#fff; padding:10px 20px; border:none; border-radius:8px; cursor:pointer;">Hủy</button>
+  <!-- Modal xác nhận cập nhật -->
+  <div id="confirmModal" class="modal">
+    <div class="modal-content">
+      <h3>Xác nhận cập nhật</h3>
+      <p>Bạn có chắc chắn muốn cập nhật thông tin người dùng này không?</p>
+      <div class="modal-actions">
+        <button type="button" id="cancelModalBtn" class="btn-secondary">Hủy</button>
+        <button type="button" id="confirmUpdateBtn" class="btn-success">Xác nhận</button>
+      </div>
+    </div>
   </div>
-</div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const form = document.querySelector("form");
-    const modal = document.getElementById("confirmModal");
-    const btnYes = document.getElementById("confirmYes");
-    const btnNo = document.getElementById("confirmNo");
-
-    form.addEventListener("submit", function(e){
-        e.preventDefault(); // ngăn submit mặc định
-        modal.style.display = "flex"; // hiện popup
-    });
-
-    btnNo.addEventListener("click", function(){
-        modal.style.display = "none"; // đóng popup
-    });
-
-    btnYes.addEventListener("click", function(){
-    const formData = new FormData(form);
-    formData.append('id', '<?php echo $user['user_id']; ?>'); // gửi id
-    formData.append('btnUpdate', '1'); // gửi để process.php nhận biết là form submit
-
-    fetch("users/updateUsers/process.php", {  // cùng cấp với index.php
-        method: "POST",
-        body: formData
-    })
-    .then(() => {
-        // Sau khi update xong, redirect về trang danh sách
-        window.location.href = "index.php?page=users";
-    })
-    .catch(error => {
-        alert("Lỗi: " + error);
-    });
-});
-
-});
-</script>
-
-</body>
-</html>
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-  const form = document.querySelector("form");
-  const inputs = form.querySelectorAll("input, select");
+document.addEventListener('DOMContentLoaded', function(){
+  const form = document.querySelector('form');
+  const inputs = form.querySelectorAll('input:not([type="hidden"]), select');
   const saveBtn = form.querySelector("button[name='btnUpdate']");
-  const cancelBtn = document.getElementById("btnCancel");
+  const confirmModal = document.getElementById('confirmModal');
+  const confirmUpdateBtn = document.getElementById('confirmUpdateBtn');
+  const cancelModalBtn = document.getElementById('cancelModalBtn');
+  let isConfirmed = false;
 
-  // 🟢 Lưu dữ liệu gốc ban đầu
-  const originalData = {};
-  inputs.forEach((field) => {
-    if (field.type === "checkbox" || field.type === "radio") {
-      originalData[field.id] = field.checked;
-    } else {
-      originalData[field.id] = field.value;
-    }
-  });
+  // initial state: do not add visual 'is-disabled' class so button remains clickable
+  // we'll control enabled state via validateForm() which toggles the class as needed
+  inputs.forEach(f=> f.dataset.touched = 'false');
 
-  // 🟢 Hàm reset khi nhấn Hủy
-  cancelBtn.addEventListener("click", function () {
-    // Reset lại giá trị ban đầu
-    inputs.forEach((field) => {
-      if (field.type === "checkbox" || field.type === "radio") {
-        field.checked = originalData[field.id];
-      } else {
-        field.value = originalData[field.id];
-      }
-      field.dataset.touched = "false"; // reset trạng thái touched
-    });
-
-    // Xóa lỗi hiển thị
-    const errors = form.querySelectorAll(".error-message");
-    errors.forEach((error) => {
-      error.innerText = "";
-    });
-
-    // Disable lại nút cập nhật
-    saveBtn.disabled = true;
-    saveBtn.style.opacity = "0.6";
-    saveBtn.style.cursor = "not-allowed";
-  });
-
-  // Disable nút cập nhật lúc đầu
-  saveBtn.disabled = true;
-  saveBtn.style.opacity = "0.6";
-  saveBtn.style.cursor = "not-allowed";
-
-  inputs.forEach((field) => (field.dataset.touched = "false"));
-
-  function validateField(field) {
-    let value = field.value.trim();
-    let error = field.closest(".form-group").querySelector(".error-message"); 
+  function validateField(field){
+    const val = field.value.trim();
+    const group = field.closest('.form-group');
+    if (!group) return true; // ignore inputs not wrapped in a form-group (e.g. hidden fields)
+    const err = group.querySelector('.error-message');
+    if (field.dataset.touched === 'false') { err.innerText = ''; return true; }
     let valid = true;
-
-    if (field.dataset.touched === "false") return true;
-
-    // --- Check rỗng ---
-    if (value === "") {
-      switch (field.id) {
-        case "name":
-          error.innerText = "Họ tên không được để trống";
-          break;
-        case "email":
-          error.innerText = "Email không được để trống";
-          break;
-        case "phone":
-          error.innerText = "Số điện thoại không được để trống";
-          break;
-        case "gender":
-          error.innerText = "Vui lòng chọn giới tính";
-          break;
-        case "role_id":
-          error.innerText = "Vui lòng chọn vai trò";
-          break;
-        case "status":
-          error.innerText = "Vui lòng chọn trạng thái";
-          break;
-        default:
-          error.innerText = "Trường này không được để trống";
-      }
-      return false;
-    } else {
-      error.innerText = "";
-    }
-
-    // --- Check chi tiết ---
-    if (field.id === "name") {
-      let regex = /^[\p{L}\s]+$/u;
-      if (!regex.test(value)) {
-        error.innerText = "Họ tên chỉ được chứa chữ cái và khoảng trắng";
-        valid = false;
-      }
-    }
-
-    if (field.id === "email") {
-      let regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!regex.test(value)) {
-        error.innerText = "Email không hợp lệ";
-        valid = false;
-      }
-    }
-
-    if (field.id === "phone") {
-      let regex = /^[0-9]{10}$/;
-      if (!regex.test(value)) {
-        error.innerText = "Số điện thoại phải gồm 10 chữ số";
-        valid = false;
-      }
-    }
+    if (['name','email','phone'].includes(field.id) && val === '') { err.innerText = 'Vui lòng nhập trường này'; return false; }
+    if (field.id === 'name' && !/^[\p{L}\s]+$/u.test(val)) { err.innerText = 'Họ tên không hợp lệ'; valid=false }
+    if (field.id === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { err.innerText='Email không hợp lệ'; valid=false }
+    if (field.id === 'phone' && !/^[0-9]{10}$/.test(val)) { err.innerText='SĐT phải 10 số'; valid=false }
+    if (['role_id','status','warehouse_id','gender'].includes(field.id) && val==='') { err.innerText='Vui lòng chọn mục này'; valid=false }
+    if (valid) err.innerText='';
     return valid;
   }
 
-  function validateForm() {
-    let isValid = true;
-    inputs.forEach((field) => {
-      if (field.type !== "radio") {
-        if (!validateField(field)) isValid = false;
-      }
-    });
-
-    saveBtn.disabled = !isValid;
-    saveBtn.style.opacity = isValid ? "1" : "0.6";
-    saveBtn.style.cursor = isValid ? "pointer" : "not-allowed";
-
-    return isValid;
+  function validateForm(){
+    let ok = true; inputs.forEach(f=> { if (!validateField(f)) ok=false });
+    if (!ok) { saveBtn.classList.add('is-disabled'); saveBtn.setAttribute('aria-disabled','true'); }
+    else { saveBtn.classList.remove('is-disabled'); saveBtn.removeAttribute('aria-disabled'); }
+    return ok;
   }
 
-  inputs.forEach((field) => {
-    if (field.type !== "radio") {
-      field.addEventListener("input", function () {
-        field.dataset.touched = "true";
-        validateField(field);
-        validateForm();
-      });
-
-      field.addEventListener("blur", function () {
-        field.dataset.touched = "true";
-        validateField(field);
-        validateForm();
-      });
-
-      field.addEventListener("change", function () {
-        field.dataset.touched = "true";
-        validateField(field);
-        validateForm();
-      });
-    }
+  inputs.forEach(field=>{
+    field.addEventListener('input', ()=>{ field.dataset.touched='true'; validateField(field); validateForm(); });
+    field.addEventListener('blur', ()=>{ field.dataset.touched='true'; validateField(field); validateForm(); });
+    field.addEventListener('change', ()=>{ field.dataset.touched='true'; validateField(field); validateForm(); });
   });
-  
+
+  form.addEventListener('submit', function(e){
+    if (!validateForm()) { e.preventDefault(); return false }
+    if (!isConfirmed) { e.preventDefault(); confirmModal.style.display='block'; return false }
+  });
+
+  confirmUpdateBtn.addEventListener('click', function(){ isConfirmed=true; confirmModal.style.display='none'; saveBtn.click(); });
+  cancelModalBtn.addEventListener('click', function(){ confirmModal.style.display='none'; isConfirmed=false });
+  window.addEventListener('click', function(ev){ if (ev.target === confirmModal) { confirmModal.style.display='none'; isConfirmed=false } });
+
 });
 </script>
+
+
+
+</body>
+</html>

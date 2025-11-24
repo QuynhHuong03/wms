@@ -116,10 +116,13 @@ if (!$role) {
                 <textarea id="description" name="description" rows="3" required><?php echo htmlspecialchars($role['description']); ?></textarea>
             </div>
             <div class="form-actions">
-                <a href="../index.php?page=roles" class="btn-secondary">Quay lại</a>
+                <a href="index.php?page=roles" class="btn-secondary">Quay lại</a>
                 <button type="submit" name="btnUpdate" class="btn-success">Cập nhật</button>
             </div>
         </form>
     </div>
 </body>
 </html>
+
+
+

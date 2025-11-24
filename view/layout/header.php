@@ -8,7 +8,7 @@
     .header-bar {
       background: #fff;
       border-bottom: 1px solid #e5e7eb;
-      padding: 15px 40px;
+      padding: 10px 40px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -44,14 +44,10 @@
       font-size: 30px;
       color: #6366f1;
     }
-
-    /* Buổi sáng */
     .fa-sun.morning {
       color: #FFA500;
       font-size: 32px;
     }
-
-    /* Buổi chiều */
     .afternoon-icon {
       position: relative;
       display: inline-block;
@@ -74,8 +70,6 @@
       top: 10px;
       z-index: 2;
     }
-
-    /* Buổi tối */
     .fa-moon.evening {
       color: #6366f1;
       font-size: 32px;

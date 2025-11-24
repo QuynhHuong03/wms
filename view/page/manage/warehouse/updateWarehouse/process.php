@@ -27,7 +27,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnUpdate"])) {
         // Hiển thị thông báo lỗi và dừng xử lý
         echo "<script>
             alert('Lỗi: " . implode("\\n", $errors) . "');
-            setTimeout(() => { window.location.href = './../index.php?id=$warehouse_id'; }, 1000);
+            setTimeout(() => { window.location.href = '../index.php?id=$warehouse_id'; }, 1000);
         </script>";
         exit();
     }

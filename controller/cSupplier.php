@@ -16,9 +16,9 @@ class CSupplier {
     }
 
     // Thêm nhà cung cấp
-    public function addSupplier($supplier_name, $contact, $created_at) {
+    public function addSupplier($supplier_name, $contact, $created_at, $contact_name, $tax_code, $country, $description) {
         $p = new MSupplier();
-        return $p->addSupplier($supplier_name, $contact, $created_at);
+        return $p->addSupplier($supplier_name, $contact, $created_at, $contact_name, $tax_code, $country, $description);
     }
 
     // Xóa nhà cung cấp
@@ -29,9 +29,9 @@ class CSupplier {
     }
 
     // Cập nhật thông tin nhà cung cấp
-    public function updateSupplier($supplier_id, $supplier_name, $contact, $status) {
+    public function updateSupplier($supplier_id, $supplier_name, $contact, $status, $contact_name = '', $tax_code = '', $country = '', $description = '') {
         $p = new MSupplier();
-        return $p->updateSupplier($supplier_id, $supplier_name, $contact, $status);
+        return $p->updateSupplier($supplier_id, $supplier_name, $contact, $status, $contact_name, $tax_code, $country, $description);
     }
 
     // Lấy thông tin nhà cung cấp theo ID

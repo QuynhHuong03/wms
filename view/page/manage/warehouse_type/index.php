@@ -302,7 +302,7 @@ $warehouseTypes = $cWarehouseType->getAllWarehouseTypes();
         ?>
         <div class="col-md-4" style="padding-top: 20px;">
             <button>
-                <a href="index.php?page=quanly" style="text-decoration: none; color: inherit;">Quay lại</a>
+                <a href="index.php?page=manage" style="text-decoration: none; color: inherit;">Quay lại</a>
             </button>
         </div>
     </div>

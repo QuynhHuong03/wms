@@ -1,361 +1,418 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) session_start();
 include_once(__DIR__ . "/../../../../controller/cWarehouse.php");
 $cWarehouse = new CWarehouse();
 
 $warehouses = $cWarehouse->getAllWarehouses();
 ?>
+<style>
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7fa;
+    color: #333;
+}
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Quản lý kho</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <style>
-        /* CSS giống với Quản lý nhân viên */
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f9f9f9;
-            margin: 0;
-            padding: 0;
-        }
+.warehouse-list-container {
+    max-width: 1400px;
+    margin: 30px auto;
+    background: #ffffff;
+    padding: 10px 10px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+}
 
-        .container.qlkho {
-            width: 100%;
-            max-width: 1400px;
-            margin: 20px auto;
-            background: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-        }
+.warehouse-list-container h2 {
+    text-align: left;
+    margin-bottom: 0;
+    font-size: 1.8rem;
+    color: #1f2937;
+    font-weight: 700;
+}
 
-        button {
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            background-color: #3b82f6;
-            color: white;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
-        }
+.top-actions {
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e5e7eb;
+}
 
-        button a {
-            text-decoration: none;
-            color: white;
-        }
+.filters {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
 
-        /* Header quản lý kho */
-        .header-warehouse {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            margin: 20px 0;
-        }
+.filters input,
+.filters select {
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 0.9rem;
+    transition: border-color 0.3s;
+    background-color: #f9fafb;
+}
+.filters input:focus,
+.filters select:focus {
+    border-color: #2563eb;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
 
-        .header-left h3 {
-            margin: 0;
-            color: #333;
-        }
+.btn-create {
+    background: #2563eb;
+    color: #fff;
+    text-decoration: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: background-color 0.3s, transform 0.1s;
+}
+.btn-create:hover {
+    background: #1e40af;
+    transform: translateY(-1px);
+}
 
-        .header-left p {
-            margin: 4px 0 0;
-            color: #666;
-            font-size: 14px;
-        }
+.warehouse-list-container table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+}
 
-        /* Phần tìm kiếm + nút thêm */
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+.warehouse-list-container th,
+.warehouse-list-container td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+    font-size: 0.9rem;
+}
+.warehouse-list-container td:last-child {
+    text-align: center;
+}
+.warehouse-list-container th:last-child {
+    text-align: center;
+}
 
-        /* Ô tìm kiếm */
-        .qlkho-search-container {
-            position: relative;
-        }
+.warehouse-list-container th {
+    background: #f9fafb;
+    color: #4b5563;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
 
-        .qlkho-search {
-            display: flex;
-            align-items: center;
-            gap: 10px; /* Tăng khoảng cách giữa icon và input */
-            padding: 8px 16px; /* Tăng padding */
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            background: #fff;
-            width: 400px; /* Kéo dài ô tìm kiếm */
-        }
+.warehouse-list-container tbody tr:hover {
+    background: #f7faff;
+    transition: background-color 0.2s;
+}
 
-        .qlkho-search i {
-            color: #666; /* Màu của icon */
-            font-size: 18px; /* Kích thước icon */
-        }
+.status,
+.type-tag {
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 20px;
+    display: inline-block;
+    font-size: 0.8rem;
+}
+.active {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+.inactive {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+.type-main { background-color: #fef9c3; color: #a16207; }
+.type-branch { background-color: #dbeafe; color: #1e40af; }
 
-        .qlkho-search input {
-            border: none;
-            outline: none;
-            font-size: 14px;
-            padding: 4px 6px;
-            flex: 1; /* Để input chiếm toàn bộ không gian còn lại */
-        }
+.btn-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
 
-        #searchResult {
-            position: absolute;
-            top: 110%;
-            left: 0;
-            right: 0;
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            max-height: 250px;
-            overflow-y: auto;
-            display: none;
-            z-index: 99;
-        }
+.btn {
+    border: none;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+.btn-edit { background: #3b82f6; color: #fff; }
+.btn-delete { background: #ef4444; color: #fff; }
+.btn-edit:hover { background: #2563eb; }
+.btn-delete:hover { background: #dc2626; }
 
-        /* Nút Thêm kho */
-        .btn-add-warehouse {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 16px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.3s;
-        }
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background: rgba(0,0,0,0.4);
+}
+.modal-content {
+    background: #fff;
+    max-width: 400px;
+    margin: 15vh auto;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+    text-align: center;
+    animation: fadeIn 0.3s;
+}
 
-        .btn-add-warehouse a {
-            color: white;
-            text-decoration: none;
-        }
+#cancelBtn, #confirmDeleteBtn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s;
+}
+#cancelBtn { background: #e5e7eb; color: #374151; }
+#confirmDeleteBtn { background: #ef4444; color: white; }
 
-        .btn-add-warehouse:hover {
-            background: #2563eb;
-        }
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #10b981;
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+    z-index: 10000;
+    animation: slideIn 0.3s ease-out;
+}
+.toast-notification.error { background: #ef4444; }
+.toast-notification.hide { animation: slideOut 0.3s ease-out forwards; }
 
-        /* Responsive nhỏ */
-        @media (max-width: 600px) {
-            .header-warehouse {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+@keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(400px); opacity: 0; } }
 
-            .header-right {
-                width: 100%;
-                justify-content: flex-start;
-                gap: 8px;
-            }
+@media (max-width: 768px) {
+    .warehouse-list-container { padding: 10px 10px; margin: 15px; }
+    .top-actions { flex-direction: column; align-items: stretch; }
+    .filters { flex-wrap: wrap; justify-content: space-between; }
+    .filters input, .filters select { flex-grow: 1; min-width: 45%; }
+    .btn-create { width: 100%; text-align: center; }
+    .warehouse-list-container { overflow-x: auto; }
+    .warehouse-list-container table { min-width: 800px; }
+}
+</style>
 
-            .qlkho-search input {
-                width: 150px;
-            }
-        }
+<div class="warehouse-list-container">
+  <div class="top-actions">
+    <h2><i class="fa-solid fa-warehouse"></i> Danh sách kho</h2>
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        thead {
-            background-color: #3b82f6;
-            color: white;
-            font-size: 16px;
-            text-align: left;
-        }
-
-        thead th {
-            padding: 10px;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        tbody tr:nth-child(odd) {
-            background-color: #f2f2f2;
-        }
-
-        tbody tr:nth-child(even) {
-            background-color: #ffffff;
-        }
-
-        tbody td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        td a {
-            color: #3b82f6;
-            text-decoration: none;
-            font-size: 18px;
-        }
-
-        td a:hover {
-            color: #2563eb; /* Màu khi hover */
-        }
-
-        .status-active, .status-inactive {
-            background: none; /* Loại bỏ màu nền */
-            color: #333; /* Đổi màu chữ thành màu tối */
-            padding: 0; /* Loại bỏ padding */
-            font-size: 14px;
-            font-weight: normal; /* Loại bỏ font-weight */
-            display: inline-block;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-        }
-
-        .action-buttons a {
-            text-decoration: none;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .btn-edit {
-            background-color: #10b981;
-        }
-
-        .btn-edit:hover {
-            background-color: #059669;
-        }
-
-        .btn-delete {
-            margin-left: 10px;
-            color: red;
-        }
-
-        .btn-delete:hover {
-            color: #dc2626; /* Màu khi hover */
-        }
-
-        .btn-edit i, .btn-delete i {
-            font-size: 16px;
-        }
-    </style>
-</head>
-<body>
-    <div class="header-warehouse">
-        <div class="header-left">
-            <h3>QUẢN LÝ KHO</h3>
-            <p>Danh sách kho tổng và kho chi nhánh</p>
-        </div>
-
-        <div class="header-right">
-            <div class="qlkho-search-container">
-                <div class="qlkho-search">
-                    <i class="fas fa-search"></i> <!-- Icon kính lúp -->
-                    <input id="searchInput" type="text" placeholder="Tìm kiếm...">
-                </div>
-                <div id="searchResult"></div>
-            </div>
-
-            <button class="btn-add-warehouse">
-                <a href="index.php?page=warehouse/createWarehause">+ Thêm kho</a>
-            </button>
-        </div>
+    <div class="filters">
+      <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên...">
+      <select id="filter-type">
+        <option value="">Lọc theo loại</option>
+        <option value="tổng">Kho tổng</option>
+        <option value="chi nhánh">Kho chi nhánh</option>
+      </select>
+      <select id="filter-status">
+        <option value="">Lọc theo trạng thái</option>
+        <option value="đang hoạt động">Đang hoạt động</option>
+        <option value="ngừng hoạt động">Ngừng hoạt động</option>
+      </select>
+      <a href="index.php?page=warehouse/createWarehouse" class="btn-create"><i class="fa-solid fa-plus"></i> Thêm kho</a>
     </div>
+  </div>
 
-    <div class="container qlkho">
-        <?php
-        if (is_array($warehouses) && !empty($warehouses)) {
-            echo '<table>';
-            echo '
-                <thead>
-                    <tr>
-                        <th>ID</th> <!-- Thêm cột ID -->
-                        <th>Mã kho</th>
-                        <th>Tên kho</th>
-                        <th>Địa chỉ</th>
-                        <th>Loại kho</th>
-                        <th>Trạng thái</th>
-                        <th>Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-            ';
-            foreach ($warehouses as $warehouse) {
-                $statusText = $warehouse['status'] == 1 ? 'Đang hoạt động' : 'Ngừng hoạt động';
+  <table id="warehouse-table">
+    <thead>
+      <tr>
+        <th>STT</th>
+        <th>Mã kho</th>
+        <th>Tên kho</th>
+        <th>Địa chỉ</th>
+        <th>Loại kho</th>
+        <th>Trạng thái</th>
+        <th>Hành động</th>
+      </tr>
+    </thead>
+    <tbody>
+      <?php
+      if (is_array($warehouses) && !empty($warehouses)) {
+        $i = 1;
+        foreach ($warehouses as $w) {
+          $statusText = ($w['status'] ?? 0) == 1 ? 'Đang hoạt động' : 'Ngừng hoạt động';
+          $statusClass = ($w['status'] ?? 0) == 1 ? 'active' : 'inactive';
 
-                echo "
-                    <tr>
-                        <td>{$warehouse['id']}</td> <!-- Hiển thị ID -->
-                        <td>{$warehouse['warehouse_id']}</td>
-                        <td>{$warehouse['warehouse_name']}</td>
-                        <td>{$warehouse['address']}</td>
-                        <td>{$warehouse['type_name']}</td>
-                        <td>{$statusText}</td>
-                        <td>
-                            <a href='index.php?page=warehouse/updateWarehouse&id={$warehouse['warehouse_id']}' title='Sửa' style='margin-right:10px; color:#3b82f6;'>
-                                <i class='fas fa-edit'></i>
-                            </a>
-                            <a href='#' class='btn-delete' data-id='{$warehouse['warehouse_id']}' title='Xóa' style='margin-left:10px; color:red;'>
-                                <i class='fas fa-trash-alt'></i>
-                            </a>
-                        </td>
-                    </tr>
-                ";
-            }
-            echo '</tbody></table>';
-        } else {
-            echo "<p>Không có kho nào.</p>";
+          $typeName = $w['type_name'] ?? ($w['type'] ?? 'Không rõ');
+          $typeLower = mb_strtolower($typeName, 'UTF-8');
+          $typeClass = (mb_stripos($typeLower, 'tổng') !== false || mb_stripos($typeLower, 'tong') !== false) ? 'type-main' : 'type-branch';
+
+          // Xử lý địa chỉ
+          $addressText = '';
+          if (isset($w['address']) && is_array($w['address'])) {
+            $parts = [];
+            if (!empty($w['address']['street'])) $parts[] = $w['address']['street'];
+            if (!empty($w['address']['city'])) $parts[] = $w['address']['city'];
+            if (!empty($w['address']['province'])) $parts[] = $w['address']['province'];
+            $addressText = implode(', ', $parts);
+          } else {
+            $addressText = htmlspecialchars($w['address_text'] ?? '');
+          }
+
+          $safeName = htmlspecialchars($w['warehouse_name']);
+          echo "
+            <tr data-type='" . htmlspecialchars($typeLower) . "' data-status='" . mb_strtolower($statusText, 'UTF-8') . "' data-name='" . mb_strtolower($safeName, 'UTF-8') . "'>
+              <td>{$i}</td>
+              <td>{$w['warehouse_id']}</td>
+              <td>{$safeName}</td>
+              <td>{$addressText}</td>
+              <td><span class='{$typeClass}'>" . htmlspecialchars($typeName) . "</span></td>
+              <td><span class='status {$statusClass}'>{$statusText}</span></td>
+              <td>
+                <a href='index.php?page=warehouse/updateWarehouse&id={$w['warehouse_id']}' class='btn btn-edit'>
+                  <i class='fa-solid fa-pen'></i>
+                </a>
+                <a href='#' class='btn btn-delete' data-id='" . htmlspecialchars($w['warehouse_id']) . "'>
+                  <i class='fa-solid fa-trash'></i>
+                </a>
+              </td>
+            </tr>
+          ";
+          $i++;
         }
-        ?>
-        <div class="col-md-4" style="padding-top: 20px;">
-            <button>
-                <a href="index.php?page=quanly" style="text-decoration: none; color: inherit;">Quay lại</a>
-            </button>
-        </div>
+      } else {
+        echo "<tr><td colspan='7'>Không có kho nào.</td></tr>";
+      }
+      ?>
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal xác nhận xóa -->
+<div id="deleteModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <h3>Xác nhận xóa</h3>
+    <p>Bạn có chắc chắn muốn xóa kho này?</p>
+    <div style="margin-top:20px;">
+      <button id="cancelBtn">Hủy</button>
+      <button id="confirmDeleteBtn">Xóa</button>
     </div>
+  </div>
+</div>
 
-    <script>
-        const searchInput = document.getElementById('searchInput');
-        const searchResult = document.getElementById('searchResult');
+<script>
+  // --- Hiển thị thông báo thành công/không thành công giống users page ---
+  const urlParams = new URLSearchParams(window.location.search);
+  const msg = urlParams.get('msg');
+  if (msg === 'success' || msg === 'updated' || msg === 'deleted' || msg === 'error') {
+      const toast = document.createElement('div');
+      toast.className = 'toast-notification ' + (msg === 'error' ? 'error' : '');
+      if (msg === 'success') toast.innerHTML = '<i class="fa-solid fa-circle-check"></i> Thêm kho thành công!';
+      else if (msg === 'updated') toast.innerHTML = '<i class="fa-solid fa-circle-check"></i> Cập nhật kho thành công!';
+      else if (msg === 'deleted') toast.innerHTML = '<i class="fa-solid fa-trash-can"></i> Xóa kho thành công!';
+      else toast.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Có lỗi xảy ra.';
+      document.body.appendChild(toast);
 
-        searchInput.addEventListener('input', function() {
-            const query = searchInput.value.trim();
-            if (query !== '') {
-                fetch(`../../../view/page/manage/warehouse/searchWarehouse.php?q=${query}`)
-                    .then(response => response.text())
-                    .then(data => {
-                        searchResult.innerHTML = data;
-                        searchResult.style.display = 'block';
-                    })
-                    .catch(error => console.error('Error:', error));
-            } else {
-                searchResult.style.display = 'none';
-            }
+      setTimeout(() => {
+          toast.classList.add('hide');
+          setTimeout(() => toast.remove(), 300);
+      }, 3000);
+
+      const newUrl = window.location.pathname + '?page=warehouse';
+      window.history.replaceState({}, '', newUrl);
+  }
+
+  // --- Bộ lọc loại + tìm kiếm ---
+  const roleTypeFilter = document.getElementById('filter-type');
+  const statusFilter = document.getElementById('filter-status');
+  const searchInput = document.getElementById('searchInput');
+  const rows = document.querySelectorAll('#warehouse-table tbody tr');
+
+  function applyFilters() {
+    const typeValue = (roleTypeFilter.value || '').toLowerCase();
+    const statusValue = (statusFilter.value || '').toLowerCase();
+    const searchValue = (searchInput.value || '').toLowerCase();
+
+    rows.forEach(row => {
+      const rowType = (row.getAttribute('data-type') || '').toLowerCase();
+      const rowStatus = (row.getAttribute('data-status') || '').toLowerCase();
+      const rowName = (row.getAttribute('data-name') || row.children[2].textContent || '').toLowerCase();
+
+      const matchType = !typeValue || rowType.includes(typeValue);
+      const matchStatus = !statusValue || rowStatus.includes(statusValue);
+      const matchName = !searchValue || rowName.includes(searchValue);
+
+      row.style.display = (matchType && matchStatus && matchName) ? '' : 'none';
+    });
+  }
+
+  [roleTypeFilter, statusFilter].forEach(el => el.addEventListener('change', applyFilters));
+  searchInput.addEventListener('input', applyFilters);
+
+  // --- Modal Xóa ---
+  const deleteModal = document.getElementById('deleteModal');
+  const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+  const cancelBtn = document.getElementById('cancelBtn');
+  let deleteWarehouseId = null;
+
+  document.querySelectorAll('.btn-delete').forEach(btn => {
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      deleteWarehouseId = this.dataset.id;
+      deleteModal.style.display = 'block';
+    });
+  });
+
+  cancelBtn.addEventListener('click', function(){
+    deleteModal.style.display = 'none';
+    deleteWarehouseId = null;
+  });
+
+  confirmDeleteBtn.addEventListener('click', function(){
+    if(deleteWarehouseId){
+      fetch('/KLTN/view/page/manage/warehouse/deleteWarehouse/process.php?id=' + encodeURIComponent(deleteWarehouseId))
+        .then(response => response.json())
+        .then((data) => {
+          deleteModal.style.display = 'none';
+          if (data && data.success) {
+            window.location.href = '/KLTN/view/page/manage/index.php?page=warehouse&msg=deleted';
+          } else {
+            const errToast = document.createElement('div');
+            errToast.className = 'toast-notification error';
+            errToast.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Xóa kho thất bại!';
+            document.body.appendChild(errToast);
+            setTimeout(() => { errToast.classList.add('hide'); setTimeout(() => errToast.remove(), 300); }, 3000);
+          }
+        })
+        .catch(err => {
+          deleteModal.style.display = 'none';
+          console.error('Lỗi xóa kho:', err);
+          const errToast = document.createElement('div');
+          errToast.className = 'toast-notification error';
+          errToast.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Lỗi kết nối khi xóa.';
+          document.body.appendChild(errToast);
+          setTimeout(() => { errToast.classList.add('hide'); setTimeout(() => errToast.remove(), 300); }, 3000);
         });
-
-        document.querySelectorAll('.btn-delete').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const warehouseId = this.dataset.id;
-
-                if (confirm('Bạn có chắc chắn muốn xóa kho này?')) {
-                    fetch(`../../../view/page/manage/warehouse/deleteWarehouse/deleteWarehouse.php?id=${warehouseId}`)
-                        .then(response => response.text())
-                        .then(data => {
-                            alert(data);
-                            window.location.reload(); // Reload lại trang sau khi xóa
-                        })
-                        .catch(err => console.error('Lỗi xóa kho:', err));
-                }
-            });
-        });
-    </script>
-</body>
-</html>
+    }
+  });
+</script>

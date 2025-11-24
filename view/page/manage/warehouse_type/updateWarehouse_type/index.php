@@ -144,7 +144,7 @@ if (!$warehouseType) {
                 <input type="text" id="name" name="name" value="<?= $warehouseType['name'] ?>" required>
             </div>
             <div class="form-actions">
-                <a href="../index.php?page=warehouse_type" class="btn-secondary">Quay lại</a>
+                <a href="index.php?page=warehouse_type" class="btn-secondary">Quay lại</a>
                 <button type="submit" name="btnUpdate" class="btn-success">Cập nhật</button>
             </div>
         </form>

@@ -1,6 +1,6 @@
 <?php
 session_start();
-ob_start(); // Bật output buffering để dùng header()
+ob_start();
 
 include_once("../../../controller/cUsers.php");
 
@@ -11,7 +11,7 @@ if (isset($_POST["btDangnhap"])) {
     $password = $_POST['password'] ?? '';
 
     $obj = new CUsers();
-    $result = $obj->dangnhaptaikhoan($email, $password);
+    $result = $obj->login($email, $password);
 
     if ($result === false) {
         $loginError = "Email hoặc mật khẩu không đúng, hoặc tài khoản bị khóa.";
@@ -27,215 +27,248 @@ if (isset($_POST["btDangnhap"])) {
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 body {
-  font-family: Arial, sans-serif;
+    /* Đổi font sang một font hiện đại hơn, ví dụ: Inter, hoặc giữ lại Segoe UI */
+    font-family: 'Inter', "Segoe UI", Arial, sans-serif;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Nền màu trắng nhẹ hoặc gradient tinh tế */
+    background: linear-gradient(135deg, #f0f4f8 0%, #e0e7ee 100%);
+    color: #1f2937; /* Màu chữ cơ bản */
 }
 
-.background {
-  width: 100%;
-  height: 100vh;
-  background-image: url('../../../img/Warehouse-Management-Systems-WMS.png');
-  background-size: cover;
-  background-position: center 35%;
-  background-repeat: no-repeat;
+/* --- Container Chính --- */
+.container {
+    display: flex;
+    width: 90%;
+    max-width: 1100px;
+    height: 80vh;
+    min-height: 550px;
+    border-radius: 20px;
+    overflow: hidden; /* Cần thiết cho việc bo góc */
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15); /* Bóng đổ lớn hơn, ấn tượng hơn */
+    background-color: #ffffff; /* Đảm bảo nền là màu trắng */
 }
 
-.header {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #fff;
-  padding: 10px 80px;
-  border-bottom-left-radius: 50px;
-  border-bottom-right-radius: 50px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+/* --- Phần Đăng Nhập (Left) --- */
+.left {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    background-color: #ffffff;
 }
 
-.header img {
-    width: 130px;
-    height: 80px;
+.card {
+    /* Loại bỏ box-shadow ở đây vì đã có ở .container */
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    width: 100%;
+    max-width: 380px; /* Giảm max-width để form trông gọn gàng hơn */
+    text-align: center;
 }
 
-.btn-login {
-  background: #3b82f6;
-  color: #fff;
-  border: none;
-  padding: 14px 28px;
-  font-size: 15px;
-  font-weight: bold;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-.btn-login:hover {
-  opacity: 0.9;
-}
-
-.modal {
-  display: none; /* Ẩn mặc định */
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.6);
-  justify-content: center;
-  align-items: center;
-}
-.modal-content {
-  background-color: white;
-  border-radius: 12px;
-  box-shadow: 0px 4px 12px rgba(0,0,0,0.2);
-  padding: 32px;
-  width: 400px;
-  text-align: center;
-  position: relative;
-}
-.close {
-  position: absolute;
-  top: 10px; right: 15px;
-  font-size: 30px;
-  cursor: pointer;
-}
-
-.logo-container {
-  background-color: #ebf5ff;
-  border-radius: 50%;
-  padding: 5px;
-  display: inline-block;
-  margin-bottom: 10px;
-}
 .logo {
-  width: 60px;
-  height: 50px;
+    width: 80px; /* Nhỏ lại một chút */
+    height: 80px;
+    object-fit: contain;
+    margin-bottom: 20px;
 }
+
+h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: #111827;
+}
+
 h3 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 15px;
+    font-size: 1rem; /* Nhỏ hơn, dùng làm phụ đề */
+    font-weight: 400;
+    margin-bottom: 30px;
+    color: #6b7280;
 }
-.input-group {
-  display: flex;
-  align-items: center;
-  border-bottom: 2px solid #d1d5db;
-  margin-bottom: 15px;
-  padding-bottom: 5px;
-}
-.input-group i {
-  color: #4a5568;
-  margin-right: 8px;
-}
-.input-group input {
-  width: 100%;
-  border: none;
-  outline: none;
-  padding: 8px 0;
-}
-.input-group input:focus {
-  border-bottom-color: #3b82f6;
-}
-.button-group {
-  margin-top: 20px;
-}
-.button {
-  width: 100%;
-  padding: 10px;
-  border-radius: 8px;
-  color: white;
-  background-color: #3b82f6;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-}
+
 .error-message {
-  color: red;
-  margin-bottom: 15px;
+    color: #ef4444; /* Màu đỏ nổi bật hơn */
+    background-color: #fee2e2;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #fca5a5;
+    font-weight: 500;
 }
 .error-field {
-  color: red;
-  font-size: 0.9rem;
-  margin: 4px 0 12px 28px; /* căn dưới input */
-  text-align: left;
+    color: #ef4444;
+    font-size: 0.8rem;
+    margin: 4px 0 12px 0; /* Căn lề trái */
+    text-align: left;
 }
 
+/* --- Nhóm Input --- */
+.input-group {
+    display: flex;
+    align-items: center;
+    border: 2px solid #e5e7eb; /* Độ dày border */
+    border-radius: 12px; /* Bo góc nhiều hơn */
+    padding: 12px 15px; /* Tăng padding */
+    margin-bottom: 15px;
+    background: #ffffff;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.input-group:focus-within {
+    border-color: #3b82f6; /* Màu xanh khi focus */
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); /* Hiệu ứng focus ring */
+}
+
+.input-group i {
+    color: #9ca3af; /* Màu icon xám nhạt */
+    margin-right: 12px;
+    font-size: 1.1rem;
+}
+
+.input-group input {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 1rem;
+    color: #1f2937;
+}
+
+/* --- Nút Đăng Nhập --- */
+.button {
+    width: 100%;
+    padding: 14px; /* Tăng padding cho nút */
+    border-radius: 12px; /* Bo góc nhiều hơn */
+    color: white;
+    background: linear-gradient(135deg, #2563eb, #3b82f6);
+    border: none;
+    cursor: pointer;
+    font-size: 1.05rem;
+    font-weight: 600;
+    transition: 0.3s ease;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+}
+.button:hover {
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+    transform: translateY(-1px);
+}
+.button:active {
+    transform: translateY(0);
+}
+
+.forgot {
+    margin-top: 20px;
+    font-size: 0.9rem;
+}
+.forgot a {
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 500;
+}
+.forgot a:hover {
+    text-decoration: underline;
+    color: #1d4ed8;
+}
+
+/* --- Phần Hình Ảnh (Right) --- */
+.right {
+    flex: 1.5; /* Làm phần hình ảnh lớn hơn */
+    background-image: url('../../../img/wms1.png');
+    background-size: cover;
+    background-position: center;
+    /* Thêm lớp overlay màu nhẹ để hình ảnh trông hài hòa hơn */
+    position: relative;
+}
+.right::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(30, 64, 175, 0.1); /* Overlay màu xanh dương nhẹ */
+    border-radius: 0 20px 20px 0;
+}
+
+/* --- Responsive design cho màn hình nhỏ hơn --- */
+@media (max-width: 900px) {
+    .right {
+        display: none; /* Ẩn phần hình ảnh trên màn hình nhỏ */
+    }
+    .container {
+        width: 90%;
+        max-width: 450px;
+        height: auto;
+        min-height: 0;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border-radius: 16px;
+    }
+    .left {
+        flex: 1;
+    }
+    .card {
+        max-width: 100%;
+    }
+    body {
+        padding: 20px;
+    }
+}
 </style>
 </head>
 <body>
 
-<div class="background"></div>
+<div class="container">
+  <div class="left">
+    <div class="card">
+      <img src="../../../img/logo1.png" alt="Logo" class="logo">
+      <h2>Hệ thống quản lý kho hàng</h2>
+      <h3>Đăng nhập</h3>
 
-<header class="header">
-  <img src="../../../img/logo1.png" alt="" >
-  <h2>Hệ thống quản lý kho hàng</h2>
-  <button class="btn-login" id="openLogin">ĐĂNG NHẬP</button>
-</header>
+      <?php if($loginError): ?>
+        <div class="error-message"><?php echo $loginError; ?></div>
+      <?php endif; ?>
 
-<div class="modal" id="loginModal">
-  <div class="modal-content">
-    <span class="close" id="closeModal">&times;</span>
-    <div class="logo-container">
-      <img src="../../../img/logo1.png" class="logo" alt="Logo">
+      <form method="POST" action="" id="loginForm">
+        <!-- Email -->
+        <div class="input-group">
+          <i class="fas fa-envelope"></i>
+          <input type="text" id="email" name="email" placeholder="Email">
+        </div>
+        <div id="errorEmail" class="error-field"></div>
+
+        <!-- Password -->
+        <div class="input-group">
+          <i class="fas fa-lock"></i>
+          <input type="password" id="password" name="password" placeholder="Mật khẩu">
+          <i class="fas fa-eye" id="togglePassword" style="cursor:pointer; margin-left:8px;"></i>
+        </div>
+        <div id="errorPassword" class="error-field"></div>
+
+        <button type="submit" class="button" name="btDangnhap">Đăng nhập</button>
+      </form>
+
+      <div class="forgot">
+        <a href="#">Quên mật khẩu?</a>
+      </div>
     </div>
-    <h3>Đăng nhập vào hệ thống</h3>
-
-    <?php if($loginError): ?>
-      <div class="error-message"><?php echo $loginError; ?></div>
-    <?php endif; ?>
-
-    <form method="POST" action="" id="loginForm">
-<!-- Email -->
-<div class="input-group">
-  <i class="fas fa-envelope"></i>
-  <input type="text" id="email" name="email" placeholder="Email">
-</div>
-<div id="errorEmail" class="error-field"></div>
-
-<!-- Password -->
-<div class="input-group">
-  <i class="fas fa-lock"></i>
-  <input type="password" id="password" name="password" placeholder="Mật khẩu">
-  <i class="fas fa-eye" id="togglePassword" style="cursor:pointer; margin-left:8px;"></i>
-</div>
-<div id="errorPassword" class="error-field"></div>
-
-
-  <div class="button-group">
-    <button type="submit" class="button" name="btDangnhap">Đăng nhập</button>
   </div>
-</form>
 
-
-<!-- Thông báo lỗi -->
-<div id="clientError" style="color:red; margin-top:10px;"></div>
-
-  </div>
+  <!-- Bên phải: hình -->
+  <div class="right"></div>
 </div>
-
-<script>
-// Mở modal
-document.getElementById("openLogin").onclick = function() {
-  document.getElementById("loginModal").style.display = "flex";
-}
-// Đóng modal
-document.getElementById("closeModal").onclick = function() {
-  document.getElementById("loginModal").style.display = "none";
-}
-// Click ra ngoài cũng đóng
-window.onclick = function(e) {
-  if (e.target == document.getElementById("loginModal")) {
-    document.getElementById("loginModal").style.display = "none";
-  }
-}
-</script>
-
-</body>
-</html>
 
 <script>
 document.getElementById("loginForm").addEventListener("submit", function(e) {
@@ -245,13 +278,11 @@ document.getElementById("loginForm").addEventListener("submit", function(e) {
   let errorEmail = document.getElementById("errorEmail");
   let errorPassword = document.getElementById("errorPassword");
 
-  // reset lỗi
   errorEmail.innerText = "";
   errorPassword.innerText = "";
 
   let isValid = true;
 
-  // Kiểm tra email (bằng regex, không dùng validate HTML)
   if (email === "") {
     errorEmail.innerText = "Vui lòng nhập email";
     isValid = false;
@@ -263,7 +294,6 @@ document.getElementById("loginForm").addEventListener("submit", function(e) {
     }
   }
 
-  // Kiểm tra password
   if (password === "") {
     errorPassword.innerText = "Vui lòng nhập mật khẩu";
     isValid = false;
@@ -272,13 +302,12 @@ document.getElementById("loginForm").addEventListener("submit", function(e) {
     isValid = false;
   }
 
-  // Nếu có lỗi → chặn submit
   if (!isValid) {
     e.preventDefault();
   }
 });
 
-// Toggle password eye 
+// Toggle password eye
 const togglePassword = document.getElementById("togglePassword");
 const passwordInput = document.getElementById("password");
 
@@ -286,15 +315,15 @@ togglePassword.addEventListener("click", function () {
   const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
   passwordInput.setAttribute("type", type);
 
-  // đổi icon
   if (type === "text") {
     this.classList.remove("fa-eye");
-    this.classList.add("fa-eye-slash"); // mắt có gạch chéo
+    this.classList.add("fa-eye-slash");
   } else {
     this.classList.remove("fa-eye-slash");
-    this.classList.add("fa-eye"); // mắt mở
+    this.classList.add("fa-eye");
   }
 });
-
 </script>
 
+</body>
+</html>
