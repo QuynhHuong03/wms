@@ -69,19 +69,136 @@ class CDashboard {
 			// Alerts
 			'alerts' => $this->getSystemAlerts(),
 			'lowStockProducts' => $this->getLowStockProducts(10)
+			,
+			// Per-warehouse summary
+			'warehousesSummary' => $this->getWarehousesSummary()
 		];
+	}
+
+	// Tổng hợp thống kê cho từng kho
+	private function getWarehousesSummary() {
+		try {
+			$warehouses = $this->mWarehouse->getAllWarehouses();
+			$result = [];
+			foreach ($warehouses as $w) {
+				// Accept multiple possible id fields from different data shapes
+				$wid = null;
+				if (isset($w['warehouse_id'])) $wid = $w['warehouse_id'];
+				elseif (isset($w['warehouseId'])) $wid = $w['warehouseId'];
+				elseif (isset($w['id'])) $wid = $w['id'];
+				elseif (isset($w['_id'])) {
+					// _id may be an array like ['$oid' => '...'] or a scalar
+					if (is_array($w['_id']) && isset($w['_id']['$oid'])) $wid = $w['_id']['$oid'];
+					else $wid = (string)$w['_id'];
+				}
+				if (!$wid) continue;
+				// Get product-level stock in this warehouse
+				$stockByProduct = $this->mInventory->getProductsStockByWarehouse($wid);
+				$totalSku = count($stockByProduct);
+				$totalQty = array_sum($stockByProduct);
+				// compute total value by fetching product prices
+				$totalValue = 0;
+				$lowStockCount = 0;
+				foreach ($stockByProduct as $pid => $qty) {
+					$prod = $this->mProduct->getProductById($pid);
+					$price = 0;
+					if ($prod && isset($prod['purchase_price']) && floatval($prod['purchase_price']) > 0) {
+						$price = floatval($prod['purchase_price']);
+					} else {
+						// Fallback: try to get latest receipt that contains this product in this warehouse and use its unit_price
+						$latest = $this->mReceipt->getLatestReceiptByProduct($pid, $wid);
+						if ($latest) {
+							$latestArr = json_decode(json_encode($latest), true);
+							// search details/items for this product
+							$list = $latestArr['details'] ?? ($latestArr['items'] ?? []);
+							foreach ($list as $it) {
+								if (($it['product_id'] ?? '') == $pid && isset($it['unit_price'])) {
+									$price = floatval($it['unit_price']);
+									break;
+								}
+							}
+						}
+					}
+					$totalValue += ($price * $qty);
+					$minStock = isset($prod['min_stock']) ? intval($prod['min_stock']) : 0;
+					if ($minStock > 0 && $qty < $minStock) $lowStockCount++;
+				}
+				// utilization fields may exist on warehouse
+				$maxCap = isset($w['max_capacity']) ? floatval($w['max_capacity']) : 0;
+				$currentCap = isset($w['current_capacity']) ? floatval($w['current_capacity']) : 0;
+				$util = $maxCap > 0 ? round(($currentCap / $maxCap) * 100, 1) : 0;
+				$result[] = [
+					'warehouse_id' => $wid,
+					'name' => isset($w['warehouse_name']) ? $w['warehouse_name'] : (isset($w['name']) ? $w['name'] : (isset($w['warehouseName']) ? $w['warehouseName'] : $wid)),
+					'total_sku' => $totalSku,
+					'total_qty' => $totalQty,
+					'total_value' => $totalValue,
+					'low_stock_count' => $lowStockCount,
+					'utilization' => $util
+				];
+			}
+			return $result;
+		} catch (\Exception $e) {
+			error_log('getWarehousesSummary error: ' . $e->getMessage());
+			return [];
+		}
 	}
 
 	// Dashboard cho Manager
 	private function getManagerDashboard($warehouseId) {
-		// TODO: Implement manager dashboard
-		return ['message' => 'Manager dashboard - Coming soon'];
+		try {
+			// Use warehouses summary and pick the requested warehouse
+			$all = $this->getWarehousesSummary();
+			$ws = null;
+			foreach ($all as $w) {
+				if ($w['warehouse_id'] === $warehouseId) { $ws = $w; break; }
+			}
+			if (!$ws) {
+				// fallback: empty dataset
+				return [
+					'totalSKU' => 0,
+					'totalQty' => 0,
+					'totalValue' => 0,
+					'lowStockCount' => 0,
+					'totalWarehouses' => 1,
+					'warehouseUtilization' => 0,
+					'receiptExportChart' => ['labels'=>[], 'receipts'=>[], 'exports'=>[]],
+					'categoryDistribution' => ['labels'=>[], 'values'=>[]],
+					'stockStatusChart' => ['labels'=>[], 'values'=>[]],
+					'recentTransactions' => [],
+					'topProducts' => [],
+					'alerts' => [],
+					'lowStockProducts' => [],
+					'warehousesSummary' => []
+				];
+			}
+			// Build manager-level payload
+			return [
+				'totalSKU' => $ws['total_sku'],
+				'totalQty' => $ws['total_qty'],
+				'totalValue' => $ws['total_value'],
+				'lowStockCount' => $ws['low_stock_count'],
+				'totalWarehouses' => 1,
+				'warehouseUtilization' => $ws['utilization'],
+				'receiptExportChart' => $this->getReceiptExportChartData(),
+				'categoryDistribution' => $this->getCategoryDistribution(),
+				'stockStatusChart' => $this->getStockStatusChart(),
+				'recentTransactions' => $this->getRecentTransactions(10),
+				'topProducts' => $this->getTopMovingProducts(10),
+				'alerts' => $this->getSystemAlerts(),
+				'lowStockProducts' => $this->getLowStockProducts(10),
+				'warehousesSummary' => [$ws]
+			];
+		} catch (\Exception $e) {
+			error_log('getManagerDashboard error: ' . $e->getMessage());
+			return ['message' => 'Error building manager dashboard'];
+		}
 	}
 
 	// Dashboard cho Staff
 	private function getStaffDashboard($warehouseId) {
-		// TODO: Implement staff dashboard
-		return ['message' => 'Staff dashboard - Coming soon'];
+		// For staff, we provide the same view as manager for their warehouse
+		return $this->getManagerDashboard($warehouseId);
 	}
 
 	// ============ KPI Methods ============
@@ -117,7 +234,8 @@ class CDashboard {
 			foreach ($products as $product) {
 				$minStock = isset($product['min_stock']) ? intval($product['min_stock']) : 0;
 				$currentStock = isset($product['quantity']) ? intval($product['quantity']) : 0;
-				if ($minStock > 0 && $currentStock < $minStock) {
+				// Count only products that currently have stock > 0 but below min_stock
+				if ($minStock > 0 && $currentStock > 0 && $currentStock < $minStock) {
 					$count++;
 				}
 			}
@@ -171,6 +289,10 @@ class CDashboard {
 			$receipts = $this->mReceipt->getReceiptsByDateRange($today, $today);
 			$count = 0;
 			foreach ($receipts as $r) {
+				// Normalize type: prefer explicit transaction_type, fallback to type
+				$tt = $r['transaction_type'] ?? ($r['type'] ?? null);
+				// Ignore exports and other request-like transactions
+				if ($tt === 'export' || $tt === 'goods_request') continue;
 				$count++;
 			}
 			return $count;
@@ -185,7 +307,8 @@ class CDashboard {
 			$receipts = $this->mReceipt->getReceiptsByDateRange($today, $today);
 			$count = 0;
 			foreach ($receipts as $r) {
-				if (isset($r['transaction_type']) && $r['transaction_type'] == 'export') {
+				$tt = $r['transaction_type'] ?? ($r['type'] ?? null);
+				if ($tt === 'export') {
 					$count++;
 				}
 			}
@@ -228,30 +351,133 @@ class CDashboard {
 
 	private function getReceiptExportChartData() {
 		try {
+			// Debug logging to help trace reload/loop issues
+			$logFile = dirname(__DIR__) . '/backups/dashboard_chart_debug.log';
+			@file_put_contents($logFile, "--- getReceiptExportChartData called: " . date(DATE_ATOM) . "\n", FILE_APPEND);
+			@file_put_contents($logFile, "REQUEST_URI: " . ($_SERVER['REQUEST_URI'] ?? '') . "\n", FILE_APPEND);
+			@file_put_contents($logFile, "GET: " . json_encode($_GET) . "\n", FILE_APPEND);
+			
+			// Support per-chart filters via GET params: inout_period, inout_warehouse
+			$period = array_key_exists('inout_period', $_GET) ? $_GET['inout_period'] : (array_key_exists('period', $_GET) ? $_GET['period'] : '7d');
+			$warehouseFilter = array_key_exists('inout_warehouse', $_GET) ? $_GET['inout_warehouse'] : null;
 			$data = ['labels' => [], 'receipts' => [], 'exports' => []];
 			
-			// Lấy dữ liệu 7 ngày gần nhất
-			for ($i = 6; $i >= 0; $i--) {
-				$date = date('Y-m-d', strtotime("-$i days"));
-				$data['labels'][] = date('d/m', strtotime($date));
-				
-				$receipts = $this->mReceipt->getReceiptsByDateRange($date, $date);
-				$receiptCount = 0;
-				$exportCount = 0;
-				
-				foreach ($receipts as $r) {
-					if (isset($r['transaction_type']) && $r['transaction_type'] == 'export') {
-						$exportCount++;
-					} else {
-						$receiptCount++;
+			if ($period === '7d') {
+				for ($i = 6; $i >= 0; $i--) {
+					$start = date('Y-m-d', strtotime("-$i days"));
+					$end = $start;
+					$data['labels'][] = date('d/m', strtotime($start));
+					$receipts = $this->mReceipt->getReceiptsByDateRange($start, $end);
+					$receiptCount = 0; $exportCount = 0;
+					foreach ($receipts as $r) {
+						$tt = $r['transaction_type'] ?? ($r['type'] ?? null);
+						if ($tt === 'goods_request') continue;
+						if ($warehouseFilter && isset($r['warehouse_id']) && $r['warehouse_id'] != $warehouseFilter) continue;
+						if ($tt === 'export') $exportCount++; else $receiptCount++;
 					}
+					@file_put_contents($logFile, "7d-bin: start={$start} receipt={$receiptCount} export={$exportCount}\n", FILE_APPEND);
+					$data['receipts'][] = $receiptCount;
+					$data['exports'][] = $exportCount;
 				}
-				
-				$data['receipts'][] = $receiptCount;
-				$data['exports'][] = $exportCount;
-			}
-			
-			return $data;
+			} elseif ($period === 'week') {
+				for ($i = 7; $i >= 0; $i--) {
+					$ts = strtotime("-{$i} weeks");
+					$start = date('Y-m-d', strtotime('monday this week', $ts));
+					$end = date('Y-m-d', strtotime('sunday this week', $ts));
+					$data['labels'][] = date('d/m', strtotime($start));
+					$receipts = $this->mReceipt->getReceiptsByDateRange($start, $end);
+					$receiptCount = 0; $exportCount = 0;
+					foreach ($receipts as $r) {
+						$tt = $r['transaction_type'] ?? ($r['type'] ?? null);
+						if ($tt === 'goods_request') continue;
+						if ($warehouseFilter && isset($r['warehouse_id']) && $r['warehouse_id'] != $warehouseFilter) continue;
+						if ($tt === 'export') $exportCount++; else $receiptCount++;
+					}
+					@file_put_contents($logFile, "week-bin: start={$start} end={$end} receipt={$receiptCount} export={$exportCount}\n", FILE_APPEND);
+					$data['receipts'][] = $receiptCount;
+					$data['exports'][] = $exportCount;
+				}
+			} elseif ($period === 'month') {
+				for ($i = 11; $i >= 0; $i--) {
+					$ts = strtotime("first day of -$i month");
+					$start = date('Y-m-01', $ts);
+					$end = date('Y-m-t', $ts);
+					$data['labels'][] = date('m/Y', $ts);
+					$receipts = $this->mReceipt->getReceiptsByDateRange($start, $end);
+					$receiptCount = 0; $exportCount = 0;
+					foreach ($receipts as $r) {
+						$tt = $r['transaction_type'] ?? ($r['type'] ?? null);
+						if ($tt === 'goods_request') continue;
+						if ($warehouseFilter && isset($r['warehouse_id']) && $r['warehouse_id'] != $warehouseFilter) continue;
+						if ($tt === 'export') $exportCount++; else $receiptCount++;
+					}
+					@file_put_contents($logFile, "month-bin: start={$start} end={$end} receipt={$receiptCount} export={$exportCount}\n", FILE_APPEND);
+					$data['receipts'][] = $receiptCount;
+					$data['exports'][] = $exportCount;
+				}
+			} elseif ($period === 'quarter') {
+				for ($i = 7; $i >= 0; $i--) {
+					$month = date('n') - ($i * 3);
+					$year = date('Y');
+					while ($month <= 0) { $month += 12; $year -= 1; }
+					$start = date('Y-m-d', strtotime("{$year}-{$month}-01"));
+					$end = date('Y-m-d', strtotime(date('Y-m-t', strtotime("{$start} +2 months"))));
+					$qnum = intval(ceil($month / 3));
+					$data['labels'][] = "Q{$qnum} " . date('Y', strtotime($start));
+					$receipts = $this->mReceipt->getReceiptsByDateRange($start, $end);
+					$receiptCount = 0; $exportCount = 0;
+					foreach ($receipts as $r) {
+						$tt = $r['transaction_type'] ?? ($r['type'] ?? null);
+						if ($tt === 'goods_request') continue;
+						if ($warehouseFilter && isset($r['warehouse_id']) && $r['warehouse_id'] != $warehouseFilter) continue;
+						if ($tt === 'export') $exportCount++; else $receiptCount++;
+					}
+					@file_put_contents($logFile, "quarter-bin: start={$start} end={$end} receipt={$receiptCount} export={$exportCount}\n", FILE_APPEND);
+					$data['receipts'][] = $receiptCount;
+					$data['exports'][] = $exportCount;
+				}
+			} elseif ($period === 'year') {
+				// Aggregate by year for the last 5 years
+				$numYears = 5;
+				for ($i = $numYears - 1; $i >= 0; $i--) {
+					$year = date('Y') - $i;
+					$start = "$year-01-01";
+					$end = "$year-12-31";
+					$data['labels'][] = (string)$year;
+					$receipts = $this->mReceipt->getReceiptsByDateRange($start, $end);
+					$receiptCount = 0; $exportCount = 0;
+					foreach ($receipts as $r) {
+						$tt = $r['transaction_type'] ?? ($r['type'] ?? null);
+						if ($tt === 'goods_request') continue;
+						if ($warehouseFilter && isset($r['warehouse_id']) && $r['warehouse_id'] != $warehouseFilter) continue;
+						if ($tt === 'export') $exportCount++; else $receiptCount++;
+					}
+					@file_put_contents($logFile, "year-bin: start={$start} end={$end} receipt={$receiptCount} export={$exportCount}\n", FILE_APPEND);
+					$data['receipts'][] = $receiptCount;
+					$data['exports'][] = $exportCount;
+				}
+			} else {
+				// Fallback: generate last 7 days (avoid recursive call)
+				for ($i = 6; $i >= 0; $i--) {
+					$start = date('Y-m-d', strtotime("-$i days"));
+					$end = $start;
+					$data['labels'][] = date('d/m', strtotime($start));
+					$receipts = $this->mReceipt->getReceiptsByDateRange($start, $end);
+					$receiptCount = 0; $exportCount = 0;
+					foreach ($receipts as $r) {
+						$tt = $r['transaction_type'] ?? ($r['type'] ?? null);
+						if ($tt === 'goods_request') continue;
+						if ($warehouseFilter && isset($r['warehouse_id']) && $r['warehouse_id'] != $warehouseFilter) continue;
+						if ($tt === 'export') $exportCount++; else $receiptCount++;
+					}
+					@file_put_contents($logFile, "fallback-bin: start={$start} receipt={$receiptCount} export={$exportCount}\n", FILE_APPEND);
+					$data['receipts'][] = $receiptCount;
+					$data['exports'][] = $exportCount;
+				}
+
+				}
+
+				return $data;
 		} catch (\Exception $e) {
 			error_log('getReceiptExportChartData error: ' . $e->getMessage());
 			return ['labels' => [], 'receipts' => [], 'exports' => []];
@@ -262,20 +488,57 @@ class CDashboard {
 		try {
 			$categories = $this->mCategories->getAllCategories();
 			$products = $this->mProduct->getAllProducts();
-			
+			// Optional warehouse filter for category distribution
+			$warehouseFilter = array_key_exists('category_warehouse', $_GET) ? $_GET['category_warehouse'] : null;
 			$catCount = [];
 			foreach ($categories as $cat) {
-				$catId = isset($cat['category_id']) ? $cat['category_id'] : '';
-				$catName = isset($cat['category_name']) ? $cat['category_name'] : 'Unknown';
+				// category record may be array or object; normalize to string name
+				$catName = 'Unknown';
+				if (is_array($cat)) {
+					if (isset($cat['category_name'])) $catName = (string)$cat['category_name'];
+					elseif (isset($cat['name'])) $catName = (string)$cat['name'];
+				} elseif (is_object($cat)) {
+					if (isset($cat->category_name)) $catName = (string)$cat->category_name;
+					elseif (isset($cat->name)) $catName = (string)$cat->name;
+				} elseif (is_string($cat)) {
+					$catName = $cat;
+				}
 				$catCount[$catName] = 0;
 			}
 			
+			$productsInWarehouse = null;
+			if ($warehouseFilter && method_exists($this->mInventory, 'getProductsStockByWarehouse')) {
+				$productsInWarehouse = $this->mInventory->getProductsStockByWarehouse($warehouseFilter);
+				if (!is_array($productsInWarehouse)) $productsInWarehouse = null;
+			}
+			
 			foreach ($products as $p) {
-				if (isset($p['category']['name'])) {
-					$catName = $p['category']['name'];
-					if (isset($catCount[$catName])) {
-						$catCount[$catName]++;
-					}
+				// If warehouse filter set, skip products not present in that warehouse
+				$pid = $p['_id'] ?? ($p['product_id'] ?? null);
+				// Normalize pid to scalar string to safely index arrays
+				if (is_object($pid)) {
+					if (method_exists($pid, '__toString')) $pid = (string)$pid;
+					elseif (isset($pid->{'$oid'})) $pid = (string)$pid->{'$oid'};
+					else $pid = json_encode($pid);
+				} elseif (is_array($pid)) {
+					if (isset($pid['$oid'])) $pid = $pid['$oid'];
+					else $pid = json_encode($pid);
+				}
+				if ($productsInWarehouse !== null) {
+					if (!$pid || !isset($productsInWarehouse[$pid]) || intval($productsInWarehouse[$pid]) <= 0) continue;
+				}
+				// product's category may be stored in different shapes (array/object/string)
+				$catField = $p['category'] ?? null;
+				$catName = null;
+				if (is_array($catField) && isset($catField['name'])) {
+					$catName = (string)$catField['name'];
+				} elseif (is_object($catField) && isset($catField->name)) {
+					$catName = (string)$catField->name;
+				} elseif (is_string($catField)) {
+					$catName = $catField;
+				}
+				if ($catName !== null && isset($catCount[$catName])) {
+					$catCount[$catName]++;
 				}
 			}
 			
@@ -294,14 +557,27 @@ class CDashboard {
 
 	private function getStockStatusChart() {
 		try {
+			// Optional warehouse-level stock view via GET param 'stock_warehouse'
+			$warehouseFilter = array_key_exists('stock_warehouse', $_GET) ? $_GET['stock_warehouse'] : null;
 			$products = $this->mProduct->getAllProducts();
+			$stockByProduct = null;
+			if ($warehouseFilter && method_exists($this->mInventory, 'getProductsStockByWarehouse')) {
+				$stockByProduct = $this->mInventory->getProductsStockByWarehouse($warehouseFilter);
+				if (!is_array($stockByProduct)) $stockByProduct = null;
+			}
 			$outOfStock = 0;
 			$lowStock = 0;
 			$inStock = 0;
 			$overStock = 0;
 			
 			foreach ($products as $p) {
-				$qty = isset($p['quantity']) ? intval($p['quantity']) : 0;
+				// Use warehouse-specific qty when available
+				$pid = $p['_id'] ?? ($p['product_id'] ?? null);
+				if ($stockByProduct !== null && $pid) {
+					$qty = isset($stockByProduct[$pid]) ? intval($stockByProduct[$pid]) : 0;
+				} else {
+					$qty = isset($p['quantity']) ? intval($p['quantity']) : 0;
+				}
 				$minStock = isset($p['min_stock']) ? intval($p['min_stock']) : 0;
 				
 				if ($qty == 0) {
@@ -353,33 +629,33 @@ class CDashboard {
 
 	private function getTopMovingProducts($limit = 10) {
 		try {
-			// Đếm số lần xuất hiện của product trong receipts
+			// Đếm số lượng di chuyển dựa trên trường 'details' hoặc 'items'
 			$receipts = $this->mReceipt->getAllReceipts([]);
 			$productCount = [];
-			
 			foreach ($receipts as $r) {
-				if (isset($r['items']) && is_array($r['items'])) {
-					foreach ($r['items'] as $item) {
-						$productId = $item['product_id'] ?? '';
-						$qty = isset($item['quantity']) ? intval($item['quantity']) : 0;
-						
-						if ($productId) {
-							if (!isset($productCount[$productId])) {
-								$productCount[$productId] = ['qty' => 0, 'sku' => '', 'name' => ''];
-							}
-							$productCount[$productId]['qty'] += $qty;
-							$productCount[$productId]['sku'] = $item['sku'] ?? '';
-							$productCount[$productId]['name'] = $item['product_name'] ?? '';
-						}
+				// Normalize MongoDB document to PHP array
+				$ra = json_decode(json_encode($r), true);
+				$list = [];
+				if (isset($ra['details']) && is_array($ra['details'])) {
+					$list = $ra['details'];
+				} elseif (isset($ra['items']) && is_array($ra['items'])) {
+					$list = $ra['items'];
+				}
+				foreach ($list as $item) {
+					$productId = $item['product_id'] ?? '';
+					$qty = 0;
+					if (isset($item['quantity'])) $qty = intval($item['quantity']);
+					elseif (isset($item['qty'])) $qty = intval($item['qty']);
+					if ($productId) {
+						if (!isset($productCount[$productId])) $productCount[$productId] = ['qty' => 0, 'sku' => '', 'name' => ''];
+						$productCount[$productId]['qty'] += $qty;
+						$productCount[$productId]['sku'] = $item['sku'] ?? ($productCount[$productId]['sku'] ?? '');
+						$productCount[$productId]['name'] = $item['product_name'] ?? ($productCount[$productId]['name'] ?? '');
 					}
 				}
 			}
-			
 			// Sắp xếp theo số lượng giảm dần
-			uasort($productCount, function($a, $b) {
-				return $b['qty'] - $a['qty'];
-			});
-			
+			uasort($productCount, function($a, $b) { return $b['qty'] - $a['qty']; });
 			return array_slice($productCount, 0, $limit, true);
 		} catch (\Exception $e) {
 			return [];
@@ -456,7 +732,8 @@ class CDashboard {
 				$minStock = isset($p['min_stock']) ? intval($p['min_stock']) : 0;
 				$currentStock = isset($p['quantity']) ? intval($p['quantity']) : 0;
 				
-				if ($minStock > 0 && $currentStock < $minStock) {
+				// Only include products that currently have some stock ( > 0 ) but below min_stock
+				if ($minStock > 0 && $currentStock > 0 && $currentStock < $minStock) {
 					$shortage = $minStock - $currentStock;
 					$shortagePercent = ($shortage / $minStock) * 100;
 					
