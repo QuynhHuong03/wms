@@ -28,7 +28,7 @@ body {
 
 .category-list-container {
     max-width: 1200px;
-    margin: 30px auto;
+    margin: 0 auto;
     background: #ffffff;
     padding: 16px;
     border-radius: 12px;
@@ -120,7 +120,7 @@ body {
 
 <div class="category-list-container">
   <div class="top-actions">
-    <h2><i class="fa-solid fa-list"></i> Quản lý loại sản phẩm</h2>
+    <h2><i class="fa fa-list"></i> Quản lý loại sản phẩm</h2>
 
     <div class="filters">
       <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên...">

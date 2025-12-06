@@ -4,10 +4,12 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 include_once(__DIR__ . "/../../../../controller/cRequest.php");
 include_once(__DIR__ . "/../../../../model/mProduct.php");
 include_once(__DIR__ . "/../../../../model/mWarehouse.php");
+include_once(__DIR__ . "/../../../../model/mUsers.php");
 
 $cRequest = new CRequest();
 $mProduct = new MProduct();
 $mWarehouse = new MWarehouse();
+$mUsers = new MUsers();
 
 // Lấy request_id từ URL
 $request_id = $_GET['id'] ?? null;
@@ -24,10 +26,44 @@ if (!$request) {
 }
 
 // --- XỬ LÝ DATA (Giữ nguyên logic cũ) ---
-$creator_name = $request['creator_name'] ?? $request['created_by'];
-$approver_name = !empty($request['approved_by']) ? ($request['approver_name'] ?? $request['approved_by']) : '';
-$processor_name = !empty($request['processed_by']) ? ($request['processor_name'] ?? $request['processed_by']) : '';
-$assigner_name = !empty($request['assigned_by']) ? ($request['assigner_name'] ?? $request['assigned_by']) : '';
+// Lấy tên người tạo
+$creator_name = $request['creator_name'] ?? '';
+if (empty($creator_name) && !empty($request['created_by'])) {
+    $creator_user = $mUsers->getUserByUserId($request['created_by']);
+    $creator_name = $creator_user['name'] ?? $request['created_by'];
+} elseif (empty($creator_name)) {
+    $creator_name = $request['created_by'] ?? 'N/A';
+}
+
+// Lấy tên người duyệt
+$approver_name = '';
+if (!empty($request['approved_by'])) {
+    $approver_name = $request['approver_name'] ?? '';
+    if (empty($approver_name)) {
+        $approver_user = $mUsers->getUserByUserId($request['approved_by']);
+        $approver_name = $approver_user['name'] ?? $request['approved_by'];
+    }
+}
+
+// Lấy tên người xử lý
+$processor_name = '';
+if (!empty($request['processed_by'])) {
+    $processor_name = $request['processor_name'] ?? '';
+    if (empty($processor_name)) {
+        $processor_user = $mUsers->getUserByUserId($request['processed_by']);
+        $processor_name = $processor_user['name'] ?? $request['processed_by'];
+    }
+}
+
+// Lấy tên người chỉ định
+$assigner_name = '';
+if (!empty($request['assigned_by'])) {
+    $assigner_name = $request['assigner_name'] ?? '';
+    if (empty($assigner_name)) {
+        $assigner_user = $mUsers->getUserByUserId($request['assigned_by']);
+        $assigner_name = $assigner_user['name'] ?? $request['assigned_by'];
+    }
+}
 
 $warehouse = $mWarehouse->getWarehouseById($request['warehouse_id']);
 $warehouse_name = $warehouse['name'] ?? $request['warehouse_id'];
@@ -43,16 +79,16 @@ if (!empty($request['assigned_warehouse_id'])) {
 
 // Status & Priority Mapping
 $statusMap = [
-    0 => ['label' => 'Chờ duyệt', 'color' => '#b45309', 'bg' => '#fffbeb', 'icon' => '⏳'],
-    1 => ['label' => 'Đã duyệt', 'color' => '#15803d', 'bg' => '#dcfce7', 'icon' => '✅'],
-    2 => ['label' => 'Từ chối', 'color' => '#b91c1c', 'bg' => '#fee2e2', 'icon' => '⛔'],
-    3 => ['label' => 'Đủ hàng', 'color' => '#0e7490', 'bg' => '#cffafe', 'icon' => '👌'],
-    4 => ['label' => 'Thiếu hàng', 'color' => '#c2410c', 'bg' => '#ffedd5', 'icon' => '⚠️'],
-    5 => ['label' => 'Đã chỉ định kho', 'color' => '#7e22ce', 'bg' => '#f3e8ff', 'icon' => '📍'],
-    6 => ['label' => 'Hoàn thành', 'color' => '#0f766e', 'bg' => '#ccfbf1', 'icon' => '🏁']
+    0 => ['label' => 'Chờ duyệt', 'color' => '#b45309', 'bg' => '#fffbeb'],
+    1 => ['label' => 'Đã duyệt', 'color' => '#15803d', 'bg' => '#dcfce7'],
+    2 => ['label' => 'Từ chối', 'color' => '#b91c1c', 'bg' => '#fee2e2'],
+    3 => ['label' => 'Đủ hàng', 'color' => '#0e7490', 'bg' => '#cffafe'],
+    4 => ['label' => 'Thiếu hàng', 'color' => '#c2410c', 'bg' => '#ffedd5'],
+    5 => ['label' => 'Đã chỉ định kho', 'color' => '#7e22ce', 'bg' => '#f3e8ff'],
+    6 => ['label' => 'Hoàn thành', 'color' => '#0f766e', 'bg' => '#ccfbf1']
 ];
 
-$currentStatus = $statusMap[$request['status']] ?? ['label' => 'Không xác định', 'color' => '#374151', 'bg' => '#f3f4f6', 'icon' => '❓'];
+$currentStatus = $statusMap[$request['status']] ?? ['label' => 'Không xác định', 'color' => '#374151', 'bg' => '#f3f4f6'];
 
 $priorityMap = [
     'normal' => ['label' => 'Bình thường', 'color' => '#3b82f6', 'bg' => '#eff6ff'],
@@ -165,7 +201,7 @@ function formatDate($date) {
         </div>
         <div class="header-actions">
             <span class="badge badge-priority"><?= $priority['label'] ?></span>
-            <span class="badge badge-status"><?= $currentStatus['icon'] ?> <?= $currentStatus['label'] ?></span>
+            <span class="badge badge-status"><?= $currentStatus['label'] ?></span>
             <a href="index.php?page=goodsReceiptRequest" class="btn-back">
                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                 Quay lại
@@ -327,14 +363,14 @@ function formatDate($date) {
 
     <?php if (!empty($request['note'])): ?>
     <div class="note-box">
-        <div class="note-label">📝 Ghi chú yêu cầu</div>
+        <div class="note-label"> Ghi chú yêu cầu</div>
         <div class="note-content"><?= nl2br(htmlspecialchars($request['note'])) ?></div>
     </div>
     <?php endif; ?>
 
     <?php if (!empty($request['assignment_note'])): ?>
     <div class="note-box assign">
-        <div class="note-label">📝 Ghi chú chỉ định kho</div>
+        <div class="note-label"> Ghi chú chỉ định kho</div>
         <div class="note-content"><?= nl2br(htmlspecialchars($request['assignment_note'])) ?></div>
     </div>
     <?php endif; ?>

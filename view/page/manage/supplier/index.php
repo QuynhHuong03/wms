@@ -23,7 +23,7 @@ body {
 
 .user-list-container {
     max-width: 1400px;
-    margin: 30px auto;
+    margin: 0 auto;
     background: #ffffff;
     padding: 10px 10px;
     border-radius: 12px;

@@ -13,7 +13,7 @@ body {
 }
 
 .warehouse-list-container {
-    max-width: 1400px;
+    max-width: 1300px;
     margin: 30px auto;
     background: #ffffff;
     padding: 10px 10px;
@@ -130,8 +130,8 @@ body {
     background-color: #fee2e2;
     color: #991b1b;
 }
-.type-main { background-color: #fef9c3; color: #a16207; }
-.type-branch { background-color: #dbeafe; color: #1e40af; }
+.type-main { background-color: #fef9c3; color: #a16207;padding: 6px 12px; border-radius: 20px; }
+.type-branch { background-color: #dbeafe; color: #1e40af; padding: 6px 12px; border-radius: 20px;}
 
 .btn-actions {
     display: flex;
@@ -272,7 +272,8 @@ body {
           if (isset($w['address']) && is_array($w['address'])) {
             $parts = [];
             if (!empty($w['address']['street'])) $parts[] = $w['address']['street'];
-            if (!empty($w['address']['city'])) $parts[] = $w['address']['city'];
+            $wardCity = $w['address']['ward'] ?? ($w['address']['city'] ?? '');
+            if (!empty($wardCity)) $parts[] = $wardCity;
             if (!empty($w['address']['province'])) $parts[] = $w['address']['province'];
             $addressText = implode(', ', $parts);
           } else {
@@ -390,7 +391,7 @@ body {
 
   confirmDeleteBtn.addEventListener('click', function(){
     if(deleteWarehouseId){
-      fetch('/KLTN/view/page/manage/warehouse/deleteWarehouse/process.php?id=' + encodeURIComponent(deleteWarehouseId))
+      fetch('/KLTN/view/page/manage/warehouse/deleteWarehouse/deleteWarehouse.php?id=' + encodeURIComponent(deleteWarehouseId))
         .then(response => response.json())
         .then((data) => {
           deleteModal.style.display = 'none';
@@ -399,7 +400,7 @@ body {
           } else {
             const errToast = document.createElement('div');
             errToast.className = 'toast-notification error';
-            errToast.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Xóa kho thất bại!';
+            errToast.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> ' + (data.message || 'Xóa kho thất bại!');
             document.body.appendChild(errToast);
             setTimeout(() => { errToast.classList.add('hide'); setTimeout(() => errToast.remove(), 300); }, 3000);
           }

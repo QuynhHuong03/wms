@@ -51,12 +51,6 @@ class CUsers {
                 $_SESSION["login"] = (array)$result;
             }
 
-            // Kiểm tra first_login
-            if (isset($_SESSION["login"]['first_login']) && $_SESSION["login"]['first_login'] === true) {
-                header("Location: ../first_time_change_password.php");
-                exit();
-            }
-
             header("Location: ../manage");
             exit();
         }
@@ -74,8 +68,7 @@ class CUsers {
 
         return $this->mUsers->addUser(
             $name, $email, $gender, $phone,
-            $hashedPassword, $role_id, $status, $warehouse_id,
-            true // first_login = true
+            $hashedPassword, $role_id, $status, $warehouse_id
         );
     }
 
@@ -98,18 +91,7 @@ class CUsers {
        MẬT KHẨU
     ========================== */
 
-    // Đổi mật khẩu lần đầu (First Time Login)
-    public function changePasswordFirstTime($userId, $newPassword) {
-        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-        $updateData = [
-            'password'    => $hashedPassword,
-            'first_login' => false,
-            'updated_at'  => new MongoDB\BSON\UTCDateTime()
-        ];
-        return $this->mUsers->updateUserAdmin($userId, $updateData);
-    }
-
-    // Đổi mật khẩu (sau khi login bình thường)
+    // Đổi mật khẩu
     public function changePassword($userId, $currentPassword, $newPassword) {
         return $this->mUsers->updatePassword($userId, $currentPassword, $newPassword);
     }

@@ -106,7 +106,7 @@ class CRequest {
         ];
 
         $inserted = $this->mRequest->insertRequest($doc);
-        if ($inserted) return [true, $inserted];
+        if ($inserted) return [true, $doc['transaction_id']];
         return [false, 'Lưu phiếu yêu cầu thất bại'];
     }
 

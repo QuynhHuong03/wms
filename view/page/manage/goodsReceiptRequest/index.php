@@ -298,13 +298,13 @@ if ($isWarehouseMain && $isManager) {
               if ($status === 1) {
                 if ($isSufficient) {
                   echo "
-                    <a href='goodsReceiptRequest/checkStock.php?id={$r['transaction_id']}' class='btn btn-confirm' title='Xác nhận đủ hàng'>
+                    <a href='goodsReceiptRequest/checkStock.php?id={$r['transaction_id']}' class='btn btn-confirm confirm-action' data-action='confirm' data-id='{$r['transaction_id']}' title='Xác nhận đủ hàng'>
                       <i class='fa-solid fa-check-circle'></i> Đủ hàng
                     </a>
                   ";
                 } else {
                   echo "
-                    <a href='goodsReceiptRequest/checkStock.php?action=insufficient&id={$r['transaction_id']}' class='btn btn-insufficient' title='Không đủ hàng - Cần chỉ định kho'>
+                    <a href='goodsReceiptRequest/checkStock.php?action=insufficient&id={$r['transaction_id']}' class='btn btn-insufficient confirm-action' data-action='insufficient' data-id='{$r['transaction_id']}' title='Không đủ hàng - Cần chỉ định kho'>
                       <i class='fa-solid fa-exclamation-circle'></i> Không đủ
                     </a>
                   ";
@@ -604,8 +604,8 @@ if ($isWarehouseMain && $isManager) {
           // Nếu là quản lý và phiếu đang chờ duyệt
           if ($status === 0 && $isManager) {
             echo "
-              <a href='goodsReceiptRequest/approve.php?action=approve&id={$r['transaction_id']}' class='btn btn-approve' onclick='return confirm(\"Bạn có chắc chắn muốn duyệt phiếu yêu cầu này?\");'><i class=\"fa-solid fa-check\"></i></a>
-              <a href='goodsReceiptRequest/approve.php?action=reject&id={$r['transaction_id']}' class='btn btn-reject' onclick='return confirm(\"Bạn có chắc chắn muốn từ chối phiếu yêu cầu này?\");'><i class=\"fa-solid fa-xmark\"></i></a>
+              <a href='goodsReceiptRequest/approve.php?action=approve&id={$r['transaction_id']}' class='btn btn-approve confirm-action' data-action='approve' data-id='{$r['transaction_id']}' title='Duyệt'><i class=\"fa-solid fa-check\"></i></a>
+              <a href='goodsReceiptRequest/approve.php?action=reject&id={$r['transaction_id']}' class='btn btn-reject confirm-action' data-action='reject' data-id='{$r['transaction_id']}' title='Từ chối'><i class=\"fa-solid fa-xmark\"></i></a>
             ";
           }
 
@@ -666,6 +666,117 @@ if ($isWarehouseMain && $isManager) {
     // Use the passed element to set active class (safer than relying on global event)
     if (el && el.classList) el.classList.add('active');
   }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  function confirmAction(action, id, href) {
+    // Xác định các văn bản tùy theo action
+    let titleText = '';
+    let confirmText = 'Xác nhận';
+    let color = '#28a745';
+    let icon = 'question';
+    
+    switch(action) {
+      case 'approve':
+        titleText = 'Xác nhận duyệt phiếu yêu cầu này?';
+        confirmText = 'Duyệt';
+        color = '#28a745';
+        icon = 'question';
+        break;
+      case 'reject':
+        titleText = 'Nhập lý do từ chối';
+        confirmText = 'Từ chối';
+        color = '#dc3545';
+        icon = 'warning';
+        break;
+      case 'confirm':
+        titleText = 'Xác nhận kho tổng có đủ hàng?';
+        confirmText = 'Xác nhận';
+        color = '#28a745';
+        icon = 'question';
+        break;
+      case 'insufficient':
+        titleText = 'Xác nhận kho tổng không đủ hàng?';
+        confirmText = 'Xác nhận';
+        color = '#ffc107';
+        icon = 'warning';
+        break;
+      default:
+        titleText = 'Xác nhận thực hiện hành động này?';
+        confirmText = 'Xác nhận';
+        color = '#007bff';
+    }
+
+    // Nếu là từ chối, yêu cầu nhập lý do
+    if (action === 'reject') {
+      Swal.fire({
+        title: titleText,
+        input: 'textarea',
+        inputPlaceholder: 'Nhập lý do từ chối...',
+        inputAttributes: { 'aria-label': 'Lý do từ chối' },
+        showCancelButton: true,
+        confirmButtonText: confirmText,
+        cancelButtonText: 'Hủy',
+        confirmButtonColor: color,
+        cancelButtonColor: '#6c757d',
+        icon: icon,
+        preConfirm: (reason) => {
+          if (!reason || !reason.trim()) {
+            Swal.showValidationMessage('Vui lòng nhập lý do từ chối');
+          }
+          return reason;
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const reason = result.value || '';
+          const baseUrl = href ? href : `goodsReceiptRequest/approve.php?action=${action}&id=${encodeURIComponent(id)}`;
+          const sep = baseUrl.indexOf('?') === -1 ? '?' : '&';
+          window.location.href = baseUrl + sep + 'reason=' + encodeURIComponent(reason);
+        }
+      });
+      return;
+    }
+
+    // Các action khác: chỉ cần xác nhận đơn giản
+    Swal.fire({
+      title: titleText,
+      icon: icon,
+      showCancelButton: true,
+      confirmButtonText: confirmText,
+      cancelButtonText: 'Hủy',
+      confirmButtonColor: color,
+      cancelButtonColor: '#6c757d',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        if (href) {
+          window.location.href = href;
+        } else {
+          // Xây dựng URL tùy theo action
+          let targetUrl = '';
+          if (action === 'confirm') {
+            targetUrl = `goodsReceiptRequest/checkStock.php?id=${encodeURIComponent(id)}`;
+          } else if (action === 'insufficient') {
+            targetUrl = `goodsReceiptRequest/checkStock.php?action=insufficient&id=${encodeURIComponent(id)}`;
+          } else {
+            targetUrl = `goodsReceiptRequest/approve.php?action=${action}&id=${encodeURIComponent(id)}`;
+          }
+          window.location.href = targetUrl;
+        }
+      }
+    });
+  }
+
+  // Lắng nghe click trên các nút có class confirm-action
+  document.addEventListener('click', function(e) {
+    const el = e.target.closest && e.target.closest('.confirm-action');
+    if (!el) return;
+    e.preventDefault();
+    const action = el.getAttribute('data-action');
+    const id = el.getAttribute('data-id');
+    const href = el.getAttribute('href');
+    confirmAction(action, id, href);
+  });
 </script>
 
 <?php endif; ?>

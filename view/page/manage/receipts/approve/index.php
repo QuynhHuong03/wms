@@ -49,7 +49,7 @@ if ($warehouse_id) {
 
 <div class="receipt-list-container">
   <div class="top-actions">
-    <h2><i class="fa-solid fa-file-lines"></i> Danh sách phiếu nhập hàng</h2>
+    <h2><i class="fa-solid fa-file-lines"></i> Danh sách phiếu nhập kho</h2>
 
     <div class="filters">
       <select id="filter-status">

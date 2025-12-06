@@ -1,0 +1,800 @@
+--- getReceiptExportChartData called: 2025-11-30T15:06:25+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:07:02+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:07:26+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?category_warehouse=KHO_TONG_01&page=dashboard
+GET: {"category_warehouse":"KHO_TONG_01","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:12:35+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?category_warehouse=KHO_TONG_01&page=dashboard
+GET: {"category_warehouse":"KHO_TONG_01","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:15:56+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?category_warehouse=KHO_TONG_01&page=dashboard
+GET: {"category_warehouse":"KHO_TONG_01","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:16:06+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:18:09+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:18:51+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:18:56+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:19:08+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:20:18+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:20:27+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:20:30+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:20:35+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:20:53+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:21:13+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:21:59+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:23:06+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:23:46+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:24:19+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?inout_period=7d&inout_warehouse=KHO_TONG_01&page=dashboard
+GET: {"inout_period":"7d","inout_warehouse":"KHO_TONG_01","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=2 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:24:24+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?inout_period=7d&inout_warehouse=KHO_CN_04&page=dashboard
+GET: {"inout_period":"7d","inout_warehouse":"KHO_CN_04","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=0 export=0
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:24:52+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?inout_period=7d&inout_warehouse=KHO_CN_04&category_warehouse=KHO_CN_04&page=dashboard
+GET: {"inout_period":"7d","inout_warehouse":"KHO_CN_04","category_warehouse":"KHO_CN_04","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=0 export=0
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:27:19+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?inout_period=7d&inout_warehouse=KHO_CN_04&category_warehouse=KHO_CN_04&page=dashboard
+GET: {"inout_period":"7d","inout_warehouse":"KHO_CN_04","category_warehouse":"KHO_CN_04","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=0 export=0
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:27:45+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?inout_period=7d&inout_warehouse=KHO_CN_04&category_warehouse=KHO_CN_04&page=dashboard
+GET: {"inout_period":"7d","inout_warehouse":"KHO_CN_04","category_warehouse":"KHO_CN_04","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=0 export=0
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:28:00+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?inout_period=7d&inout_warehouse=KHO_CN_04&category_warehouse=KHO_CN_04&page=dashboard
+GET: {"inout_period":"7d","inout_warehouse":"KHO_CN_04","category_warehouse":"KHO_CN_04","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=0 export=0
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:28:58+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?inout_period=7d&inout_warehouse=KHO_CN_04&category_warehouse=KHO_CN_04&page=dashboard
+GET: {"inout_period":"7d","inout_warehouse":"KHO_CN_04","category_warehouse":"KHO_CN_04","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=0 export=0
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:29:40+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?inout_period=7d&inout_warehouse=KHO_CN_04&category_warehouse=KHO_CN_04&page=dashboard
+GET: {"inout_period":"7d","inout_warehouse":"KHO_CN_04","category_warehouse":"KHO_CN_04","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=0 export=0
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:29:52+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?inout_period=7d&inout_warehouse=KHO_CN_04&category_warehouse=KHO_CN_04&page=dashboard
+GET: {"inout_period":"7d","inout_warehouse":"KHO_CN_04","category_warehouse":"KHO_CN_04","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=0 export=0
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:30:45+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?inout_period=7d&inout_warehouse=KHO_CN_04&category_warehouse=KHO_CN_04&page=dashboard
+GET: {"inout_period":"7d","inout_warehouse":"KHO_CN_04","category_warehouse":"KHO_CN_04","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=0 export=0
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:32:41+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?inout_period=7d&inout_warehouse=KHO_CN_04&category_warehouse=KHO_CN_04&page=dashboard
+GET: {"inout_period":"7d","inout_warehouse":"KHO_CN_04","category_warehouse":"KHO_CN_04","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=0 export=0
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:32:51+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?inout_period=7d&inout_warehouse=KHO_CN_04&category_warehouse=KHO_CN_04&page=dashboard
+GET: {"inout_period":"7d","inout_warehouse":"KHO_CN_04","category_warehouse":"KHO_CN_04","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=0 export=0
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:33:26+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?inout_period=7d&inout_warehouse=KHO_CN_04&category_warehouse=KHO_CN_04&page=dashboard
+GET: {"inout_period":"7d","inout_warehouse":"KHO_CN_04","category_warehouse":"KHO_CN_04","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=0 export=0
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:33:55+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?inout_period=7d&inout_warehouse=KHO_CN_04&category_warehouse=KHO_CN_04&page=dashboard
+GET: {"inout_period":"7d","inout_warehouse":"KHO_CN_04","category_warehouse":"KHO_CN_04","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=0 export=0
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:34:40+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?inout_period=7d&inout_warehouse=KHO_CN_04&category_warehouse=KHO_CN_04&page=dashboard
+GET: {"inout_period":"7d","inout_warehouse":"KHO_CN_04","category_warehouse":"KHO_CN_04","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=0 export=0
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:34:52+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?inout_period=7d&inout_warehouse=KHO_CN_04&category_warehouse=KHO_CN_02&page=dashboard
+GET: {"inout_period":"7d","inout_warehouse":"KHO_CN_04","category_warehouse":"KHO_CN_02","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=0 export=0
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:34:58+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?inout_period=7d&inout_warehouse=KHO_CN_04&page=dashboard
+GET: {"inout_period":"7d","inout_warehouse":"KHO_CN_04","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=0 export=0
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:35:27+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?inout_period=7d&inout_warehouse=KHO_CN_04&page=dashboard
+GET: {"inout_period":"7d","inout_warehouse":"KHO_CN_04","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=0 export=0
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:37:15+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?inout_period=7d&inout_warehouse=KHO_CN_04&page=dashboard
+GET: {"inout_period":"7d","inout_warehouse":"KHO_CN_04","page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=0 export=0
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:38:31+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:41:15+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T15:55:08+07:00
+REQUEST_URI: /KLTN/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-11-30T16:37:35+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=1
+--- getReceiptExportChartData called: 2025-11-30T16:37:56+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=1
+--- getReceiptExportChartData called: 2025-11-30T16:39:04+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=1
+--- getReceiptExportChartData called: 2025-11-30T16:40:32+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=0 export=1
+--- getReceiptExportChartData called: 2025-11-30T16:46:16+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+--- getReceiptExportChartData called: 2025-11-30T17:10:48+07:00
+REQUEST_URI: /KLTN/view/page/manage/
+GET: []
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+--- getReceiptExportChartData called: 2025-11-30T23:53:45+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-24 receipt=3 export=1
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+--- getReceiptExportChartData called: 2025-12-01T00:12:54+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-12-01T00:13:14+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-25 receipt=0 export=0
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-12-02T12:18:27+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-12-02T13:52:33+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-12-02T14:02:37+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-12-02T18:11:58+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-12-02T18:25:44+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-12-02T18:26:32+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-12-02T19:22:21+07:00
+REQUEST_URI: /KLTN/view/page/manage/
+GET: []
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-12-02T22:14:29+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=1 export=0
+--- getReceiptExportChartData called: 2025-12-02T22:16:48+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=1 export=0
+--- getReceiptExportChartData called: 2025-12-02T22:22:08+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=1 export=0
+--- getReceiptExportChartData called: 2025-12-02T22:36:43+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=1 export=0
+--- getReceiptExportChartData called: 2025-12-02T22:39:39+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=1 export=0
+--- getReceiptExportChartData called: 2025-12-02T22:44:42+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=1 export=0
+--- getReceiptExportChartData called: 2025-12-02T23:51:48+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=1 export=0
+--- getReceiptExportChartData called: 2025-12-02T23:52:46+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=1 export=0
+--- getReceiptExportChartData called: 2025-12-02T23:56:42+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=2 export=0
+--- getReceiptExportChartData called: 2025-12-02T23:58:54+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-26 receipt=0 export=0
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=2 export=0
+--- getReceiptExportChartData called: 2025-12-03T00:00:37+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=2 export=0
+7d-bin: start=2025-12-03 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-12-03T00:01:40+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=2 export=0
+7d-bin: start=2025-12-03 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-12-03T00:07:56+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=2 export=0
+7d-bin: start=2025-12-03 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-12-03T12:43:18+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=2 export=0
+7d-bin: start=2025-12-03 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-12-03T12:43:23+07:00
+REQUEST_URI: /kltn/view/page/manage/index.php?page=dashboard
+GET: {"page":"dashboard"}
+7d-bin: start=2025-11-27 receipt=0 export=0
+7d-bin: start=2025-11-28 receipt=0 export=0
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=2 export=0
+7d-bin: start=2025-12-03 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-12-05T13:17:35+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=2 export=0
+7d-bin: start=2025-12-03 receipt=0 export=0
+7d-bin: start=2025-12-04 receipt=0 export=0
+7d-bin: start=2025-12-05 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-12-05T14:35:46+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=2 export=0
+7d-bin: start=2025-12-03 receipt=0 export=0
+7d-bin: start=2025-12-04 receipt=0 export=0
+7d-bin: start=2025-12-05 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-12-05T14:35:49+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=2 export=0
+7d-bin: start=2025-12-03 receipt=0 export=0
+7d-bin: start=2025-12-04 receipt=0 export=0
+7d-bin: start=2025-12-05 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-12-05T14:35:51+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=2 export=0
+7d-bin: start=2025-12-03 receipt=0 export=0
+7d-bin: start=2025-12-04 receipt=0 export=0
+7d-bin: start=2025-12-05 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-12-05T14:36:10+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=2 export=0
+7d-bin: start=2025-12-03 receipt=0 export=0
+7d-bin: start=2025-12-04 receipt=0 export=0
+7d-bin: start=2025-12-05 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-12-05T14:39:38+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=2 export=0
+7d-bin: start=2025-12-03 receipt=0 export=0
+7d-bin: start=2025-12-04 receipt=0 export=0
+7d-bin: start=2025-12-05 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-12-05T14:40:58+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=2 export=0
+7d-bin: start=2025-12-03 receipt=0 export=0
+7d-bin: start=2025-12-04 receipt=0 export=0
+7d-bin: start=2025-12-05 receipt=0 export=0
+--- getReceiptExportChartData called: 2025-12-05T15:43:56+07:00
+REQUEST_URI: /kltn/view/page/manage/
+GET: []
+7d-bin: start=2025-11-29 receipt=0 export=0
+7d-bin: start=2025-11-30 receipt=1 export=1
+7d-bin: start=2025-12-01 receipt=0 export=0
+7d-bin: start=2025-12-02 receipt=2 export=0
+7d-bin: start=2025-12-03 receipt=0 export=0
+7d-bin: start=2025-12-04 receipt=0 export=0
+7d-bin: start=2025-12-05 receipt=0 export=0

@@ -1,7 +1,8 @@
 <?php
 include_once(__DIR__ . "/../../../../../controller/cRoles.php");
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnAdd"])) {
+// Accept both normal submit and JS-confirm submit (no button name)
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $role_name   = trim($_POST["role_name"] ?? '');
     $description = trim($_POST["description"] ?? '');
     $status      = $_POST["status"] ?? 1;
@@ -39,10 +40,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnAdd"])) {
     $result = $cRoles->addRole($role_name, $description, $status, $create_at);
 
     if ($result) {
-        // Hiển thị thông báo thành công và chuyển hướng
+        // Chuyển hướng về danh sách vai trò với thông báo thành công
         echo "<script>
-            alert('Thêm vai trò thành công!');
-            setTimeout(() => { window.location.href = '../../index.php?page=roles'; }, 1000);
+            window.location.href = '/KLTN/view/page/manage/index.php?page=roles&msg=success';
         </script>";
         exit();
     } else {
@@ -53,12 +53,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnAdd"])) {
         </script>";
         exit();
     }
-} else {
-    // Nếu không phải phương thức POST hoặc không có nút btnAdd
-    echo "<script>
-        alert('Yêu cầu không hợp lệ.');
-        setTimeout(() => { window.location.href = 'index.php'; }, 1000);
-    </script>";
-    exit();
 }
+
+// Nếu truy cập trực tiếp, đưa về danh sách vai trò
+header('Location: /KLTN/view/page/manage/index.php?page=roles');
+exit();
 ?>

@@ -243,6 +243,9 @@ try {
             $packageDimensions = $product['package_dimensions'] ?? [];
             $packageWeight = $product['package_weight'] ?? 0;
             $volumePerUnit = $product['volume_per_unit'] ?? 0;
+            // Lấy thông tin nhà cung cấp nếu có để frontend kiểm tra
+            $supplierId = $product['supplier_id'] ?? ($product['supplierId'] ?? null);
+            $supplierName = $product['supplier_name'] ?? ($product['supplierName'] ?? null);
             
             $id = '';
             if (isset($product['_id'])) {
@@ -267,7 +270,10 @@ try {
                     "package_dimensions" => $packageDimensions,
                     "package_weight" => $packageWeight,
                     "volume_per_unit" => $volumePerUnit,
-                    "purchase_price" => $product['purchase_price'] ?? 0
+                    "purchase_price" => $product['purchase_price'] ?? 0,
+                    // Trả về thông tin NCC để hạn chế quét sai nhà cung cấp
+                    "supplier_id" => $supplierId,
+                    "supplier_name" => $supplierName
                 ]
             ]);
 

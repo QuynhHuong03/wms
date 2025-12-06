@@ -51,5 +51,12 @@ class CWarehouse
         $m = new MWarehouse();
         return $m->getWarehousesByType($type);
     }
+
+    // 🏢 Thêm kho chi nhánh
+    public function addBranchWarehouse($warehouse_id, $warehouse_name, $address, $status)
+    {
+        $m = new MWarehouse();
+        return $m->addBranchWarehouse($warehouse_id, $warehouse_name, $address, $status);
+    }
 }
 ?>

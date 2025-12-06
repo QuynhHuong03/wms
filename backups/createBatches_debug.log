@@ -19,3 +19,14 @@ No batches found for product 6920d8e439e3eda99908f192 in receipt or export
 Loaded batch info from export for 1 products
 Receipt details count: 1
 Using batches from receipt details for product 6920d8e439e3eda99908f192: 1 batches
+
+--- createBatchesFromReceipt start: 2025-11-30T10:44:19+01:00 receipt=IR0017
+Receipt details count: 1
+No batches found for product 68dd78e5dfe97d5c520ac055 in receipt or export
+
+--- createBatchesFromReceipt start: 2025-12-02T13:43:11+01:00 receipt=IR0011
+Receipt details count: 0
+
+--- createBatchesFromReceipt start: 2025-12-02T17:56:23+01:00 receipt=IR0019
+Receipt details count: 1
+No batches found for product 68f115d0836555952e05dce5 in receipt or export

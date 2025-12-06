@@ -2,21 +2,28 @@
 session_start();
 include_once(__DIR__ . "/../../../../../controller/cWarehouse.php");
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnUpdate"])) {
+// Handle both normal submit and JS-triggered submit (no button name)
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $warehouse_id   = trim($_POST["warehouse_id"] ?? '');
     $warehouse_name = trim($_POST["warehouse_name"] ?? '');
-    $address        = trim($_POST["address"] ?? '');
+    $province       = trim($_POST["province_name"] ?? '');
+    $ward           = trim($_POST["ward_name"] ?? '');
+    $street         = trim($_POST["street"] ?? '');
     $status         = $_POST["status"] ?? '';
 
     $errors = [];
 
     // Validate dữ liệu
-    if ($warehouse_name === '' || !preg_match('/^[\p{L}\s]+$/u', $warehouse_name)) {
-        $errors[] = "Tên kho không hợp lệ.";
+    if ($province === '') {
+        $errors[] = "Tỉnh/Thành phố không được để trống.";
     }
 
-    if ($address === '') {
-        $errors[] = "Địa chỉ không được để trống.";
+    if ($ward === '') {
+        $errors[] = "Phường/Xã không được để trống.";
+    }
+
+    if ($street === '') {
+        $errors[] = "Tên đường không được để trống.";
     }
 
     if ($status === '') {
@@ -32,23 +39,41 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnUpdate"])) {
         exit();
     }
 
+    // Ghép địa chỉ đầy đủ
+    $address = "$street, $ward, $province";
+
+    // Chuẩn hóa dữ liệu update theo Model: truyền mảng $data
+    $data = [
+        'warehouse_name' => $warehouse_name,
+        // Lưu địa chỉ theo cấu trúc object để tương thích hiển thị
+        'address' => [
+            'street' => $street,
+            'ward' => $ward,
+            'province' => $province
+        ],
+        'status' => (int)$status
+    ];
+
     $cWarehouse = new CWarehouse();
-    $result = $cWarehouse->updateWarehouse($warehouse_id, $warehouse_name, $address, $status);
+    $result = $cWarehouse->updateWarehouse($warehouse_id, $data);
 
     if ($result) {
-        // Hiển thị thông báo thành công và chuyển hướng
+        // Chuyển hướng về danh sách kho với thông báo thành công
         echo "<script>
-            alert('Cập nhật kho thành công!');
-            setTimeout(() => { window.location.href = '../../index.php?page=warehouse'; }, 1000);
+            window.location.href = '/kltn/view/page/manage/index.php?page=warehouse&msg=updated';
         </script>";
         exit();
     } else {
         // Hiển thị thông báo thất bại và chuyển hướng
         echo "<script>
             alert('Cập nhật kho thất bại. Vui lòng thử lại.');
-            setTimeout(() => { window.location.href = 'index.php?id=$warehouse_id'; }, 1000);
+            setTimeout(() => { window.location.href = '/kltn/view/page/manage/index.php?page=warehouse/updateWarehouse&id=$warehouse_id'; }, 1000);
         </script>";
         exit();
     }
 }
+
+// Nếu không phải POST request, chuyển về trang danh sách kho
+header("Location: /kltn/view/page/manage/index.php?page=warehouse");
+exit();
 ?>

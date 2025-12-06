@@ -271,8 +271,9 @@ if ($warehouseId) {
         
         .bins {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(110px, 110px));
             gap: 10px;
+            justify-content: start;
         }
         
         .bin {
@@ -282,7 +283,8 @@ if ($warehouseId) {
             text-align: center;
             background: #fff;
             transition: all 0.2s ease;
-            min-height: 90px;
+            min-height: 140px;
+            width: 110px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -442,7 +444,7 @@ if ($warehouseId) {
     <div id="editBinModal" class="modal" role="dialog" aria-hidden="true">
         <div class="modal-backdrop" onclick="closeEditBinModal()"></div>
         <div class="modal-panel" role="document" style="max-width:560px">
-            <h3>✏️ Chỉnh sửa Bin</h3>
+            <h3>Chỉnh sửa Bin</h3>
             <form id="editBinForm" onsubmit="return submitEditBin(event)">
                 <input type="hidden" id="editBinZoneId">
                 <input type="hidden" id="editBinRackId">
@@ -455,7 +457,7 @@ if ($warehouseId) {
                 
                 <div style="margin-bottom:16px">
                     <label style="display:block;margin-bottom:8px;font-weight:600">
-                        📝 Tên Bin:
+                        Tên Bin:
                     </label>
                     <input type="text" id="editBinName" class="form-control" placeholder="Nhập tên bin" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px">
                     <div style="font-size:12px;color:#6b7280;margin-top:4px">Ví dụ: Bin hàng điện tử, Kệ sách, v.v.</div>
@@ -463,7 +465,7 @@ if ($warehouseId) {
                 
                 <!-- Kích thước bin -->
                 <div style="margin-bottom:16px">
-                    <label style="display:block;margin-bottom:8px;font-weight:600">📏 Kích thước bin (cm)</label>
+                    <label style="display:block;margin-bottom:8px;font-weight:600">Kích thước bin (cm)</label>
                     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
                         <div>
                             <label class="muted" style="font-size:12px">Chiều rộng</label>
@@ -482,29 +484,28 @@ if ($warehouseId) {
                 
                 <!-- Sức chứa (readonly - tự động tính) -->
                 <div style="margin-bottom:16px">
-                    <label style="display:block;margin-bottom:8px;font-weight:600">📊 Sức chứa hiện tại (0-100%)</label>
+                    <label style="display:block;margin-bottom:8px;font-weight:600">Sức chứa hiện tại (0-100%)</label>
                     <input id="editBinCurrentCapacity" type="number" min="0" max="100" value="0" readonly style="width:100%;padding:10px;border:2px solid #d1d5db;border-radius:6px;background:#f9fafb;color:#6b7280;cursor:not-allowed;font-size:16px;font-weight:600;text-align:center">
                     <input type="hidden" id="editBinMaxCapacity" value="100">
                     <div style="margin-top:6px;font-size:12px;color:#6b7280;display:flex;align-items:center;gap:4px">
-                        🔒 Sức chứa được tính tự động dựa trên thể tích sản phẩm trong bin
+                        Sức chứa được tính tự động dựa trên thể tích sản phẩm trong bin
                     </div>
                 </div>
                 
                 <div style="margin-bottom:16px;padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-                        <span style="font-size:16px">ℹ️</span>
                         <span style="font-weight:600;color:#0369a1">Tự động tính toán</span>
                     </div>
                     <div style="font-size:12px;color:#0c4a6e;line-height:1.5">
                         <strong>Sức chứa:</strong> Được tính tự động từ 0-100% dựa trên thể tích sản phẩm so với thể tích bin.<br>
                         <strong>Trạng thái:</strong> Cập nhật tự động theo % chiếm dụng:<br>
-                        • 🟢 Empty (0%) | 🟠 Partial (1-79%) | 🔴 Full (≥80%)
+                        • Empty (0%) | Partial (1-79%) | Full (≥80%)
                     </div>
                 </div>
                 
                 <div style="display:flex;gap:8px;justify-content:flex-end">
                     <button type="button" class="btn small ghost" onclick="closeEditBinModal()">Hủy</button>
-                    <button type="submit" class="btn small"> Lưu thay đổi</button>
+                    <button type="submit" class="btn small">Lưu thay đổi</button>
                 </div>
             </form>
         </div>
@@ -514,7 +515,7 @@ if ($warehouseId) {
     <div id="editQuantityModal" class="modal" role="dialog" aria-hidden="true">
         <div class="modal-backdrop" onclick="closeEditQuantityModal()"></div>
         <div class="modal-panel" role="document" style="max-width:420px">
-            <h3>📦 Chỉnh sửa số lượng</h3>
+            <h3>Chỉnh sửa số lượng</h3>
             <form id="editQuantityForm" onsubmit="return submitEditQuantity(event)">
                 <input type="hidden" id="editQtyZoneId">
                 <input type="hidden" id="editQtyRackId">
@@ -543,12 +544,12 @@ if ($warehouseId) {
                 </div>
                 
                 <div style="padding:10px;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:6px;margin-bottom:16px;font-size:13px">
-                    <strong>⚠️ Lưu ý:</strong> Thao tác này sẽ cập nhật số lượng trong bảng <code>inventory</code>. Không ảnh hưởng đến <code>warehouse_structure</code>.
+                    <strong>Lưu ý:</strong> Thao tác này sẽ cập nhật số lượng trong bảng <code>inventory</code>. Không ảnh hưởng đến <code>warehouse_structure</code>.
                 </div>
                 
                 <div style="display:flex;gap:8px;justify-content:flex-end">
                     <button type="button" class="btn small ghost" onclick="closeEditQuantityModal()">Hủy</button>
-                    <button type="submit" class="btn small">💾 Lưu</button>
+                    <button type="submit" class="btn small">Lưu</button>
                 </div>
             </form>
         </div>
@@ -556,19 +557,19 @@ if ($warehouseId) {
 	<div class="panel">
 		<div class="header">
 			<div class="header-info">
-				<h2> Quản lý Vị trí Kho (Zone/Rack/Bin)</h2>
+				<h2>Quản lý Vị trí Kho (Zone/Rack/Bin)</h2>
 				<div class="muted" style="margin-top: 8px;">
 					<strong>Giới hạn cấu trúc:</strong> Tối đa 3 Zones | 4 Racks/Zone | 10 Bins/Rack
 				</div>
 				<div style="margin-top: 10px;">
 					<div class="info-badge" style="background:#e0f2fe;border-color:#7dd3fc;color:#0c4a6e">
-						 Sức chứa tính theo thể tích sản phẩm
+						Sức chứa tính theo thể tích sản phẩm
 					</div>
 				</div>
 				<div style="margin-top: 8px;">
-					<span class="info-badge status-empty">🟢 Empty (0%)</span>
-					<span class="info-badge status-partial">🟠 Partial (1-79%)</span>
-					<span class="info-badge status-full">🔴 Full (≥80%)</span>
+					<span class="info-badge status-empty">Empty (0%)</span>
+					<span class="info-badge status-partial">Partial (1-79%)</span>
+					<span class="info-badge status-full">Full (≥80%)</span>
 				</div>
 			</div>
 			<div class="controls">
@@ -609,7 +610,7 @@ if ($warehouseId) {
                         </div>
                         <div>
                             <button class="btn small ghost" onclick="deleteZone('<?=htmlspecialchars($zone_id)?>')" title="Xóa Zone">
-                                <i class="fas fa-trash"></i>
+                                <i class="fas fa-times-circle"></i>
                             </button>
                         </div>
                     </div>
@@ -716,12 +717,12 @@ if ($warehouseId) {
                                                             }
                                                         }
                                                     ?>
-                                                    <div class="muted" style="font-size:11px" title="Kích thước (cm)">📏 <?=htmlspecialchars($dimsText)?></div>
+                                                    <div class="muted" style="font-size:11px" title="Kích thước (cm)"> <?=htmlspecialchars($dimsText)?></div>
                                                     <div class="muted" style="font-size:11px;color:<?=htmlspecialchars($occupancyColor)?>;font-weight:700" title="% chiếm dụng thể tích">
-                                                        📊 <?=htmlspecialchars($occupancyText)?>
+                                                         <?=htmlspecialchars($occupancyText)?>
                                                     </div>
                                                                     <div class="muted" style="cursor:pointer;color:#2563eb;font-weight:600;font-size:11px" onclick="editBinQuantity('<?=htmlspecialchars($zone_id)?>','<?=htmlspecialchars($rack_id)?>','<?=htmlspecialchars($bin_id)?>',<?=htmlspecialchars($quantity)?>)" title="Click để sửa số lượng">
-                                                        📦 Qty: <?=htmlspecialchars($quantity)?>
+                                                         Qty: <?=htmlspecialchars($quantity)?>
                                                     </div>
                                                     <div style="font-size:10px;font-weight:600;margin-top:2px;padding:2px 4px;border-radius:4px;background:rgba(255,255,255,0.7);color:<?=htmlspecialchars($occupancyColor)?>" title="Trạng thái tự động dựa vào % chiếm dụng">
                                                         <?php
@@ -734,12 +735,12 @@ if ($warehouseId) {
                                                     </div>
                                                     <div style="margin-top:6px">
                                                         <?php $bin_numeric_id = isset($bin['id']) ? $bin['id'] : ''; ?>
-                                                        <button class="btn small secondary" onclick="editBinName('<?=htmlspecialchars($zone_id)?>','<?=htmlspecialchars($rack_id)?>','<?=htmlspecialchars($bin_id)?>','<?=htmlspecialchars($bin_name)?>')" title="Đổi tên"><i class="fas fa-edit"></i></button>
+                                                        <button class="btn small" style="background:#93c5fd;color:#1e3a8a" onclick="editBinName('<?=htmlspecialchars($zone_id)?>','<?=htmlspecialchars($rack_id)?>','<?=htmlspecialchars($bin_id)?>','<?=htmlspecialchars($bin_name)?>')" title="Chỉnh sửa"><i class="fas fa-pen"></i></button>
                                                         <?php if ($quantity == 0): ?>
-                                                        <button class="btn small" style="background:#f59e0b" onclick="clearBinProduct('<?=htmlspecialchars($zone_id)?>','<?=htmlspecialchars($rack_id)?>','<?=htmlspecialchars($bin_id)?>')" title="Xóa sản phẩm"><i class="fas fa-broom"></i></button>
-                                                        <button class="btn small" style="background:#ef4444" onclick="deleteBin('<?=htmlspecialchars($zone_id)?>','<?=htmlspecialchars($rack_id)?>','<?=htmlspecialchars($bin_id)?>','<?=htmlspecialchars((string)$bin_numeric_id)?>')" title="Xóa bin"><i class="fas fa-trash-alt"></i></button>
+                                                        <button class="btn small" style="background:#fde68a;color:#92400e" onclick="clearBinProduct('<?=htmlspecialchars($zone_id)?>','<?=htmlspecialchars($rack_id)?>','<?=htmlspecialchars($bin_id)?>')" title="Xóa sản phẩm"><i class="fas fa-times"></i></button>
+                                                        <button class="btn small" style="background:#fca5a5;color:#7f1d1d" onclick="deleteBin('<?=htmlspecialchars($zone_id)?>','<?=htmlspecialchars($rack_id)?>','<?=htmlspecialchars($bin_id)?>','<?=htmlspecialchars((string)$bin_numeric_id)?>')" title="Xóa bin"><i class="fas fa-minus-circle"></i></button>
                                                         <?php else: ?>
-                                                        <button class="btn small" style="background:#9ca3af;cursor:not-allowed" disabled title="Không thể xóa bin có sản phẩm (Qty: <?=htmlspecialchars($quantity)?>)"><i class="fas fa-trash-alt"></i></button>
+                                                        <button class="btn small" style="background:#e5e7eb;color:#9ca3af;cursor:not-allowed" disabled title="Không thể xóa bin có sản phẩm (Qty: <?=htmlspecialchars($quantity)?>)"><i class="fas fa-minus-circle"></i></button>
                                                         <?php endif; ?>
                                                     </div>
                                                         <?php else: ?>
@@ -779,7 +780,7 @@ if ($warehouseId) {
 		
 		<!-- Default dimensions and capacity for all bins -->
 		<div style="margin-bottom:16px;padding:14px;background:#f0f9ff;border:2px solid #0284c7;border-radius:10px">
-			<h4 style="margin:0 0 12px;color:#0c4a6e;font-size:15px">📐 Kích thước & Sức chứa mặc định cho tất cả Bin</h4>
+			<h4 style="margin:0 0 12px;color:#0c4a6e;font-size:15px">Kích thước & Sức chứa mặc định cho tất cả Bin</h4>
 			<div style="display:grid;grid-template-columns:repeat(3,1fr) 2fr;gap:12px;align-items:end">
 				<div>
 					<label style="font-weight:600;font-size:13px;margin-bottom:4px;display:block">Chiều rộng (cm)</label>
@@ -805,7 +806,7 @@ if ($warehouseId) {
 				</div>
 			</div>
 			<div style="margin-top:8px;font-size:12px;color:#0369a1">
-				💡 <strong>Lưu ý:</strong> Tất cả bin được tạo từ matrix sẽ có kích thước và sức chứa giống nhau theo giá trị trên.
+				<strong>Lưu ý:</strong> Tất cả bin được tạo từ matrix sẽ có kích thước và sức chứa giống nhau theo giá trị trên.
 			</div>
 		</div>
 		
@@ -822,7 +823,7 @@ if ($warehouseId) {
 		</div>
 		
 		<div style="margin:12px 0;padding:10px;background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;font-size:13px">
-			<strong>📐 Cấu trúc kho:</strong>
+			<strong>Cấu trúc kho:</strong>
 			<div style="margin-top:6px;color:#78350f">
 				• <strong>Zone:</strong> Khu vực - Tối đa 3 zones<br>
 				• <strong>Rack:</strong> Kệ - Tối đa 4 racks/zone<br>
@@ -1300,9 +1301,9 @@ if ($warehouseId) {
 
         // Recalculate bin occupancy for all bins
         async function recalculateAllBinOccupancy() {
-            if (!confirm('Tính lại % chiếm dụng cho tất cả bin dựa trên inventory thực tế?\n\nQuá trình này sẽ:\n✓ Tính toán thể tích sản phẩm trong mỗi bin\n✓ So sánh với thể tích bin\n✓ Cập nhật % chiếm dụng (0-100%)\n\nQuá trình có thể mất vài giây.')) return;
+            if (!confirm('Tính lại % chiếm dụng cho tất cả bin dựa trên inventory thực tế?\n\nQuá trình này sẽ:\n• Tính toán thể tích sản phẩm trong mỗi bin\n• So sánh với thể tích bin\n• Cập nhật % chiếm dụng (0-100%)\n\nQuá trình có thể mất vài giây.')) return;
             
-            showToast({success: true, message: '⏳ Đang tính toán capacity cho tất cả bins...'});
+            showToast({success: true, message: 'Đang tính toán capacity cho tất cả bins...'});
             
             try {
                 // Get warehouse ID from session
@@ -1327,10 +1328,10 @@ if ($warehouseId) {
                 
                 if (data && data.success) {
                     const stats = data.stats || {};
-                    const msg = `✅ Hoàn tất!\n\n` +
-                        `📊 Tổng bins: ${stats.total_bins || 0}\n` +
-                        `📦 Bins có hàng: ${stats.bins_with_inventory || 0}\n` +
-                        `🔄 Bins đã cập nhật: ${stats.updated_bins || 0}`;
+                    const msg = `Hoàn tất!\n\n` +
+                        `Tổng bins: ${stats.total_bins || 0}\n` +
+                        `Bins có hàng: ${stats.bins_with_inventory || 0}\n` +
+                        `Bins đã cập nhật: ${stats.updated_bins || 0}`;
                     
                     showToast({success: true, message: msg});
                     
@@ -1408,7 +1409,7 @@ if ($warehouseId) {
 			const configs = Array.from(document.querySelectorAll('#zoneConfigs > div'));
 			if(configs.length===0){alert('Hãy tạo cấu hình zone trước');return}
 			const preview = document.getElementById('matrixAreaPreview'); 
-			preview.innerHTML='<h4 style="margin-bottom:12px">🔍 Xem trước cấu trúc kho</h4>';
+			preview.innerHTML='<h4 style="margin-bottom:12px">Xem trước cấu trúc kho</h4>';
 			
 			configs.forEach((cfg, zi)=>{
 				const zid = cfg.querySelector('.zid').value.trim()||('Z'+(zi+1));
@@ -1424,7 +1425,7 @@ if ($warehouseId) {
 				zoneWrap.style.background='#eff6ff';
 				
 				const title = document.createElement('div'); 
-				title.innerHTML = `<strong style="color:#1e40af">📍 ${zname} (${zid})</strong> - ${nr} racks × ${nb} bins/rack = <strong>${nr*nb} bins total</strong>`;
+				title.innerHTML = `<strong style="color:#1e40af">${zname} (${zid})</strong> - ${nr} racks × ${nb} bins/rack = <strong>${nr*nb} bins total</strong>`;
 				zoneWrap.appendChild(title);
 
 				const racksContainer = document.createElement('div');
@@ -1439,7 +1440,7 @@ if ($warehouseId) {
 					rackDiv.style.padding='8px';
 					rackDiv.style.borderRadius='6px';
 					rackDiv.style.background='#d1fae5';
-					rackDiv.innerHTML = `<div style="font-weight:600;margin-bottom:6px;color:#065f46">🏢 Rack R${r+1}</div>`;
+					rackDiv.innerHTML = `<div style="font-weight:600;margin-bottom:6px;color:#065f46">Rack R${r+1}</div>`;
 					
 					const binsLine = document.createElement('div');
 					binsLine.style.display='flex';

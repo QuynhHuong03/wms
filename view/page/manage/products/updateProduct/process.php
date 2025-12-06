@@ -128,9 +128,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnUpdate"])) {
         (new clsKetNoi())->dongKetNoi($con);
     }
 
-    echo "<script>alert('Cập nhật sản phẩm thành công!'); window.location.href='../../index.php?page=products';</script>";
+    // Flash success message và chuyển hướng về trang danh sách sản phẩm
+    $_SESSION['flash_success'] = 'Cập nhật sản phẩm thành công!';
+    header("Location: ../../index.php?page=products");
     exit();
 } else {
-    echo "<script>alert('Yêu cầu không hợp lệ.'); window.location.href='../../index.php?page=products';</script>";
+    $_SESSION['flash_error'] = 'Yêu cầu không hợp lệ.';
+    header("Location: ../../index.php?page=products");
     exit();
 }

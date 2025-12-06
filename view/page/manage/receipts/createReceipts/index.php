@@ -30,20 +30,25 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Tạo phiếu nhập hàng</title>
+  <title>Tạo phiếu nhập kho</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     body { 
         background: #f9f9f9; 
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
     }
     .form-container { 
-        max-width: 1100px; 
-        margin: auto; 
+        max-width: 98%; 
+        width: 100%;
+        margin: 10px auto; 
         background: #fff; 
         padding: 20px; 
         border-radius: 10px; 
-        box-shadow: 0 2px 6px rgba(0,0,0,0.15); 
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        overflow-x: auto;
     }
     h2 { 
         text-align: center; 
@@ -63,13 +68,15 @@
     }
     table { 
         width: 100%; 
+        min-width: 1200px;
         border-collapse: collapse; 
         margin-top: 15px; 
     }
     table th, table td { 
         border: 1px solid #ccc; 
         padding: 8px; 
-        text-align: center; 
+        text-align: center;
+        white-space: nowrap;
     }
     table th { 
         background: #f4f4f4; 
@@ -189,7 +196,7 @@
 </head>
 <body>
   <div class="form-container">
-    <h2><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu nhập hàng</h2>
+    <h2><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu nhập kho</h2>
     <form id="receiptForm" method="post" action="../process.php">
       <?php
         // Thêm các trường ẩn bắt buộc
@@ -286,7 +293,7 @@
       <br>
       
       <div id="confirmSection">
-        <p><i class="fa-solid fa-circle-exclamation"></i> Bạn có chắc chắn muốn tạo phiếu nhập hàng này không?</p>
+        <p><i class="fa-solid fa-circle-exclamation"></i> Bạn có chắc chắn muốn tạo phiếu nhập kho này không?</p>
         <button type="button" class="btn btn-confirm" onclick="confirmCreate()"><i class="fa-solid fa-check"></i> Xác nhận</button>
         <button type="button" class="btn btn-cancel" onclick="cancelCreate()"><i class="fa-solid fa-times"></i> Hủy</button>
       </div>
@@ -493,6 +500,26 @@
     document.getElementById('supplier_id').addEventListener('change', function() {
       if (this.value) {
         clearError('supplier-error');
+        
+        // Xóa tất cả sản phẩm đã thêm khi đổi nhà cung cấp
+        const tbody = document.getElementById('productTable').querySelector('tbody');
+        const rows = tbody.querySelectorAll('tr');
+        if (rows.length > 0) {
+          if (confirm('⚠️ Thay đổi nhà cung cấp sẽ xóa tất cả sản phẩm đã thêm. Bạn có chắc chắn?')) {
+            tbody.innerHTML = '';
+            productMap = {};
+            rowIndex = 0;
+            showSuccess('products-error', 'ℹ️ Đã xóa danh sách sản phẩm. Vui lòng thêm sản phẩm của nhà cung cấp mới.');
+          } else {
+            // Hoàn tác việc chọn nhà cung cấp mới
+            const previousSupplier = this.getAttribute('data-previous-value');
+            if (previousSupplier) {
+              this.value = previousSupplier;
+            }
+          }
+        }
+        // Lưu giá trị hiện tại
+        this.setAttribute('data-previous-value', this.value);
       }
     });
 
@@ -580,6 +607,17 @@
         code = code.trim().replace(/\s+/g, '');
       }
 
+      // Get receipt type and selected supplier
+      const receiptType = document.getElementById('receipt_type').value;
+      const selectedSupplierId = document.getElementById('supplier_id').value || '';
+      
+      // For purchase receipts, supplier must be selected first
+      if (receiptType === 'purchase' && !selectedSupplierId) {
+        showError('products-error', '⚠️ Vui lòng chọn nhà cung cấp trước khi quét mã!');
+        document.getElementById('barcode').value = '';
+        return;
+      }
+
       // If an export is selected, prefer to validate against its batches/products
       if (currentExport) {
         // Check batch codes first (case-insensitive, normalized)
@@ -652,6 +690,26 @@
         .then(res => res.json())
         .then(data => {
           if (data.success) {
+            // Enforce supplier restriction for purchase receipts
+            if (receiptType === 'purchase') {
+              const supplierEl = document.getElementById('supplier_id');
+              const selectedText = supplierEl.options[supplierEl.selectedIndex]?.text?.trim() || '';
+              const prodSupplierId = (data.product.supplier && (data.product.supplier._id || data.product.supplier.id))
+                                    || data.product.supplier_id || '';
+              const prodSupplierName = (data.product.supplier && (data.product.supplier.name || data.product.supplier_name))
+                                       || data.product.supplier_name || '';
+
+              const idMatches = prodSupplierId && String(prodSupplierId) === String(selectedSupplierId);
+              const nameMatches = prodSupplierName && selectedText && prodSupplierName.trim().toLowerCase() === selectedText.toLowerCase();
+
+              // Block when product supplier missing OR mismatched
+              if (!idMatches && !nameMatches) {
+                const supplierName = selectedText || 'nhà cung cấp đã chọn';
+                showError('products-error', `⚠️ Sản phẩm "${data.product.name}" không thuộc nhà cung cấp "${supplierName}". Vui lòng chỉ thêm sản phẩm đúng nhà cung cấp!`);
+                document.getElementById("barcode").value = "";
+                return;
+              }
+            }
             addOrUpdateRow(data.product, data.type || 'product');
             document.getElementById("barcode").value = "";
           } else {
@@ -661,10 +719,29 @@
         })
         .catch(err => {
           showError('products-error', '⚠️ Lỗi khi tìm sản phẩm!');
+          document.getElementById("barcode").value = "";
         });
     }
 
     function addOrUpdateRow(product, type) {
+      // Final guard: if creating purchase, ensure product supplier matches selected supplier
+      const receiptType = document.getElementById('receipt_type').value;
+      const selectedSupplierId = document.getElementById('supplier_id').value || '';
+      if (receiptType === 'purchase') {
+        const supplierEl = document.getElementById('supplier_id');
+        const selectedText = supplierEl.options[supplierEl.selectedIndex]?.text?.trim() || '';
+        const prodSupplierId = (product.supplier && (product.supplier._id || product.supplier.id))
+                              || product.supplier_id || '';
+        const prodSupplierName = (product.supplier && (product.supplier.name || product.supplier_name))
+                                 || product.supplier_name || '';
+        const idMatches = prodSupplierId && String(prodSupplierId) === String(selectedSupplierId);
+        const nameMatches = prodSupplierName && selectedText && prodSupplierName.trim().toLowerCase() === selectedText.toLowerCase();
+        if (!idMatches && !nameMatches) {
+          const supplierName = selectedText || 'nhà cung cấp đã chọn';
+          showError('products-error', `⚠️ Sản phẩm "${product.name || product.product_name || ''}" không thuộc nhà cung cấp "${supplierName}".`);
+          return; // Block row addition
+        }
+      }
       clearProductError(); // Xóa lỗi khi thêm sản phẩm
       
       // Nếu quét batch, tạo unique key bằng product_id + batch_code

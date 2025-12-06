@@ -1,5 +1,6 @@
 <?php
-include("../../../../../controller/cWarehouse.php");
+header('Content-Type: application/json');
+include_once(__DIR__ . "/../../../../../controller/cWarehouse.php");
 
 if (isset($_GET['id'])) {
     $warehouseId = $_GET['id'];
@@ -8,11 +9,11 @@ if (isset($_GET['id'])) {
     $result = $cWarehouse->deleteWarehouse($warehouseId);
 
     if ($result) {
-        echo "Xóa kho thành công!";
+        echo json_encode(['success' => true, 'message' => 'Xóa kho thành công!']);
     } else {
-        echo "Xóa kho thất bại!";
+        echo json_encode(['success' => false, 'message' => 'Xóa kho thất bại!']);
     }
 } else {
-    echo "Không tìm thấy ID kho!";
+    echo json_encode(['success' => false, 'message' => 'Không tìm thấy ID kho!']);
 }
 ?>
