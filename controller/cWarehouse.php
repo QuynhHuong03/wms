@@ -28,6 +28,11 @@ class CWarehouse
     public function deleteWarehouse($warehouse_id)
     {
         $m = new MWarehouse();
+        // Kiểm tra kho còn chứa sản phẩm không
+        $productCount = $m->checkProductsInWarehouse($warehouse_id);
+        if ($productCount > 0) {
+            return 'HAS_PRODUCTS'; // Trả về mã lỗi đặc biệt
+        }
         return $m->deleteWarehouse($warehouse_id);
     }
 

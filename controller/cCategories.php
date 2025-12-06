@@ -63,6 +63,11 @@ class CCategories {
     // Xóa category
     public function deleteCategory($id) {
         try {
+            // Kiểm tra loại sản phẩm còn chứa sản phẩm không
+            $productCount = $this->mCategories->checkProductsInCategory($id);
+            if ($productCount > 0) {
+                return 'HAS_PRODUCTS'; // Trả về mã lỗi đặc biệt
+            }
             return $this->mCategories->deleteCategory($id);
         } catch (Exception $e) {
             error_log("deleteCategory error: " . $e->getMessage());

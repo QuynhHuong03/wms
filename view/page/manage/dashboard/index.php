@@ -3,6 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 include_once(__DIR__ . '/../../../../controller/cDashboard.php');
+include_once(__DIR__ . '/../../../../model/mProduct.php');
 
 // Lấy thông tin user từ session
 $user = $_SESSION['login'] ?? null;
@@ -11,6 +12,20 @@ $warehouseId = isset($user['warehouse_id']) ? $user['warehouse_id'] : null;
 
 $cDashboard = new CDashboard();
 $data = $cDashboard->getDashboardData($roleId, $warehouseId);
+
+// Helper function to resolve SKU by product ID
+function __resolve_sku_by_product_id($productId) {
+    try {
+        $mProduct = new MProduct();
+        $product = $mProduct->getProductById($productId);
+        if ($product) {
+            return $product['sku'] ?? $product['product_code'] ?? $product['code'] ?? '';
+        }
+    } catch (Exception $e) {
+        error_log("Error resolving SKU for product ID {$productId}: " . $e->getMessage());
+    }
+    return '';
+}
 ?>
 
 <!DOCTYPE html>

@@ -75,6 +75,41 @@ class MProduct {
         return false;
     }
 
+    // ⭐ Kiểm tra sản phẩm còn tồn kho
+    public function checkProductInWarehouse($sku) {
+        $p = new clsKetNoi();
+        $con = $p->moKetNoi();
+        if ($con) {
+            try {
+                // Lấy product_id từ sku
+                $prodCol = $con->selectCollection('products');
+                $product = $prodCol->findOne(['sku' => $sku]);
+                
+                if (!$product || !isset($product['_id'])) {
+                    $p->dongKetNoi($con);
+                    return 0;
+                }
+                
+                $productId = (string)$product['_id'];
+                
+                // Kiểm tra trong inventory
+                $invCol = $con->selectCollection('inventory');
+                $count = $invCol->countDocuments([
+                    'product_id' => $productId,
+                    'qty' => ['$gt' => 0]
+                ]);
+                
+                $p->dongKetNoi($con);
+                return $count;
+            } catch (\Exception $e) {
+                $p->dongKetNoi($con);
+                error_log("Lỗi checkProductInWarehouse: " . $e->getMessage());
+                return 0;
+            }
+        }
+        return 0;
+    }
+
     // ❌ Xóa sản phẩm theo SKU
     public function deleteProduct($sku) {
         $p = new clsKetNoi();

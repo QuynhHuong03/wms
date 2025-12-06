@@ -23,6 +23,11 @@ class CProduct {
     // Xóa sản phẩm
     public function deleteProduct($sku) {
         $p = new MProduct();
+        // Kiểm tra sản phẩm còn tồn kho không
+        $inventoryCount = $p->checkProductInWarehouse($sku);
+        if ($inventoryCount > 0) {
+            return 'HAS_INVENTORY'; // Trả về mã lỗi đặc biệt
+        }
         return $p->deleteProduct($sku);
     }
 

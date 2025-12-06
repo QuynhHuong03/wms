@@ -509,7 +509,8 @@ if (is_array($suppliers) && !empty($suppliers)) {
                     } else {
                         const errToast = document.createElement('div');
                         errToast.className = 'toast-notification error';
-                        errToast.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Xóa nhà cung cấp thất bại!';
+                        const errorMessage = data.message || 'Xóa nhà cung cấp thất bại!';
+                        errToast.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> ' + errorMessage;
                         document.body.appendChild(errToast);
                         setTimeout(() => { errToast.classList.add('hide'); setTimeout(() => errToast.remove(), 300); }, 3000);
                     }

@@ -645,7 +645,7 @@
       const exportId = document.getElementById("export_id") ? document.getElementById("export_id").value : '';
       const isFromExport = (type === "transfer" && exportId && product.export_unit);
       
-      if (productMap[product._id]) {
+      if (Object.prototype.hasOwnProperty.call(productMap, product._id)) {
         console.log("Sản phẩm đã tồn tại - tăng số lượng"); // ✅ Debug
         let row = document.querySelector(`#row-${productMap[product._id]}`);
         let qtyInput = row.querySelector("input[name*='[quantity]']");
@@ -664,32 +664,10 @@
         qtyInput.value = parseInt(qtyInput.value) + 1;
         calcSubtotal(qtyInput);
         updateDimensions(qtyInput);
-        // Nếu quét theo lô hàng và có batch payload, cập nhật hidden batches và hiển thị badge
+        // Nếu quét theo lô hàng và có batch payload, chỉ cập nhật số lượng —
+        // không thêm lô mới hoặc tạo badge cho các lần quét kế tiếp trên cùng 1 dòng.
         if (batch) {
-          try {
-            const hiddenBatches = row.querySelector(`input[name='products[${productMap[product._id]}][batches]']`);
-            let current = [];
-            if (hiddenBatches && hiddenBatches.value) {
-              const raw = hiddenBatches.value.replace(/&apos;/g, "'");
-              current = JSON.parse(raw || '[]');
-            }
-            const newBatch = {
-              batch_code: batch.batch_code || batch.barcode || '',
-              quantity: batch.quantity_remaining ? 1 : (batch.quantity || 1),
-              source_location: batch.source_location || batch.location || null,
-              location_text: batch.location_text || ''
-            };
-            current.push(newBatch);
-            hiddenBatches.value = JSON.stringify(current).replace(/'/g, '&apos;');
-            // append badge
-            const batchCell = row.querySelector('.batch-column');
-            if (batchCell) {
-              const span = document.createElement('span');
-              span.style.cssText = 'display:inline-block;background:#e3f2fd;padding:2px 6px;margin:2px;border-radius:4px;font-size:12px;';
-              span.innerHTML = `📦 ${newBatch.batch_code}`;
-              batchCell.appendChild(span);
-            }
-          } catch (e) { console.error('Error appending batch to existing row', e); }
+          console.log('Batch scan received for existing product; ignoring batch details and only incrementing quantity.');
         }
       } else {
         console.log("Thêm sản phẩm mới vào bảng"); // ✅ Debug

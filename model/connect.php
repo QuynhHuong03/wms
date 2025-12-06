@@ -39,7 +39,7 @@ class clsKetNoi {
 // Thêm class Database để tương thích với code mới
 class Database {
     private $uri = 'mongodb://127.0.0.1:27017';
-    private $dbName = 'wms';
+    private $dbName = 'WMS';
     private $client = null;
 
     public function __construct(string $uri = null, string $dbName = null) {

@@ -201,26 +201,57 @@ if ($isWarehouseMain && $isManager) {
                 $details = $r['details'] ?? [];
                 $destinationWarehouseId = $r['warehouse_id'] ?? '';
                 
-                // Kiểm tra Kho Tổng
+                // Tính tổng tồn kho từ Kho Tổng + TẤT CẢ Kho Chi Nhánh
+                $totalAvailableStock = [];
+                $insufficientProducts = [];
+                
                 foreach ($details as $item) {
                   $productId = $item['product_id'] ?? '';
                   $requestedQty = (int)($item['quantity'] ?? 0);
                   $conversionFactor = (int)($item['conversion_factor'] ?? 1);
-                  
-                  // Tính số lượng cần (theo đơn vị cơ bản)
                   $neededQty = $requestedQty * $conversionFactor;
                   
-                  // Lấy tồn kho trong Kho Tổng
+                  // Lấy tồn kho từ Kho Tổng
                   $sourceWarehouseId = $r['source_warehouse_id'] ?? 'KHO_TONG_01';
-                  $availableStock = $cInventory->getTotalStockByProduct($sourceWarehouseId, $productId);
+                  $mainStock = $cInventory->getTotalStockByProduct($sourceWarehouseId, $productId);
                   
-                  if ($availableStock < $neededQty) {
+                  // Lấy tồn kho từ TẤT CẢ các kho (bao gồm cả kho chi nhánh)
+                  $allWarehouseStock = $cInventory->getStockByProductAllWarehouses($productId);
+                  $totalStock = 0;
+                  
+                  // getStockByProductAllWarehouses trả về array: ['warehouse_id' => qty]
+                  foreach ($allWarehouseStock as $whId => $qty) {
+                    // Không tính kho đích (kho đang yêu cầu)
+                    if ($whId !== $destinationWarehouseId) {
+                      $totalStock += (int)$qty;
+                    }
+                  }
+                  
+                  $totalAvailableStock[$productId] = [
+                    'main' => $mainStock,
+                    'total' => $totalStock,
+                    'needed' => $neededQty
+                  ];
+                  
+                  // Kiểm tra tổng tồn kho có đủ không
+                  if ($totalStock < $neededQty) {
                     $isSufficient = false;
-                    break;
+                    $insufficientProducts[] = [
+                      'product_id' => $productId,
+                      'product_name' => $item['product_name'] ?? $productId,
+                      'needed' => $neededQty,
+                      'available' => $totalStock,
+                      'shortage' => $neededQty - $totalStock
+                    ];
                   }
                 }
                 
-                // Nếu Kho Tổng không đủ, tìm các kho chi nhánh khác có đủ
+                // Lưu thông tin thiếu hàng vào data attribute để JavaScript sử dụng
+                if (!$isSufficient && !empty($insufficientProducts)) {
+                  $r['insufficient_info'] = json_encode($insufficientProducts, JSON_UNESCAPED_UNICODE);
+                }
+                
+                // Tìm các kho chi nhánh có đủ hàng (nếu cần chỉ định)
                 if (!$isSufficient) {
                   $sufficientBranchWarehouses = $cInventory->findSufficientWarehouses($details, $destinationWarehouseId);
 
@@ -319,21 +350,25 @@ if ($isWarehouseMain && $isManager) {
                       <i class='fa-solid fa-arrow-right'></i> Tạo phiếu xuất
                     </a>
                   ";
-                } else if (!empty($sufficientBranchWarehouses)) {
-                  // Có kho chi nhánh khác có đủ hàng
-                  $warehouseCount = count($sufficientBranchWarehouses);
+                } else {
+                  // Không đủ hàng - Vẫn hiển thị nút nhưng sẽ chặn bằng JavaScript
+                  $insufficientInfo = htmlspecialchars($r['insufficient_info'] ?? '[]');
                   echo "
-                    <a href='index.php?page=goodsReceiptRequest/assign&id={$r['transaction_id']}' class='btn btn-assign' title='Có $warehouseCount kho chi nhánh có đủ hàng'>
-                      <i class='fa-solid fa-warehouse'></i> Chỉ định kho ($warehouseCount)
+                    <a href='#' class='btn btn-convert btn-insufficient-stock' 
+                       data-insufficient='$insufficientInfo'
+                       data-request-id='{$r['transaction_id']}'
+                       title='Tạo phiếu xuất kho'>
+                      <i class='fa-solid fa-arrow-right'></i> Tạo phiếu xuất
                     </a>
                   ";
-                } else {
-                  // Không có kho nào đủ hàng
-                  echo "
-                    <span class='btn' style='background:#dc3545;color:#fff;cursor:not-allowed;' title='Không có kho nào đủ hàng'>
-                      <i class='fa-solid fa-ban'></i> Không có kho
-                    </span>
-                  ";
+                  
+                  // Hiển thị thông tin thiếu hàng
+                  if (!empty($insufficientProducts)) {
+                    echo "<br><small style='color:#dc3545;font-weight:600;'>
+                      <i class='fa-solid fa-exclamation-triangle'></i> 
+                      Thiếu " . count($insufficientProducts) . " sản phẩm
+                    </small>";
+                  }
                 }
               }
 
@@ -609,15 +644,6 @@ if ($isWarehouseMain && $isManager) {
             ";
           }
 
-          // Nếu là quản lý và phiếu đã duyệt hoặc đã xác nhận đủ hàng - cho phép chuyển thành phiếu nhập
-          if (in_array($status, [3, 5]) && $isManager) {
-            echo "
-              <a href='createReceipt/process.php?action=convert&id={$r['transaction_id']}' class='btn btn-convert' onclick='return confirm(\"Bạn có chắc chắn muốn chuyển thành phiếu nhập hàng?\");'>
-                <i class=\"fa-solid fa-file-export\"></i> Tạo phiếu nhập
-              </a>
-            ";
-          }
-
           echo "</td></tr>";
           $stt++;
         }
@@ -776,6 +802,76 @@ if ($isWarehouseMain && $isManager) {
     const id = el.getAttribute('data-id');
     const href = el.getAttribute('href');
     confirmAction(action, id, href);
+  });
+
+  // ⭐ Xử lý click vào nút "Tạo phiếu xuất" khi không đủ hàng
+  document.addEventListener('click', function(e) {
+    const el = e.target.closest && e.target.closest('.btn-insufficient-stock');
+    if (!el) return;
+    e.preventDefault();
+    
+    const insufficientData = el.getAttribute('data-insufficient');
+    const requestId = el.getAttribute('data-request-id');
+    
+    try {
+      const products = JSON.parse(insufficientData);
+      
+      if (!products || products.length === 0) {
+        Swal.fire({
+          title: 'Không đủ hàng!',
+          html: 'Kho tổng và các kho chi nhánh không đủ hàng để cung ứng cho phiếu yêu cầu này.',
+          icon: 'error',
+          confirmButtonText: 'Đã hiểu',
+          confirmButtonColor: '#dc3545'
+        });
+        return;
+      }
+      
+      // Tạo bảng hiển thị chi tiết sản phẩm thiếu
+      let tableHtml = '<div style="text-align:left;"><table style="width:100%;border-collapse:collapse;margin-top:15px;">';
+      tableHtml += '<thead><tr style="background:#f8f9fa;">';
+      tableHtml += '<th style="border:1px solid #dee2e6;padding:8px;">Sản phẩm</th>';
+      tableHtml += '<th style="border:1px solid #dee2e6;padding:8px;text-align:center;">Cần</th>';
+      tableHtml += '<th style="border:1px solid #dee2e6;padding:8px;text-align:center;">Có sẵn</th>';
+      tableHtml += '<th style="border:1px solid #dee2e6;padding:8px;text-align:center;">Thiếu</th>';
+      tableHtml += '</tr></thead><tbody>';
+      
+      products.forEach(function(p) {
+        tableHtml += '<tr>';
+        tableHtml += '<td style="border:1px solid #dee2e6;padding:8px;">' + (p.product_name || p.product_id) + '</td>';
+        tableHtml += '<td style="border:1px solid #dee2e6;padding:8px;text-align:center;">' + p.needed + '</td>';
+        tableHtml += '<td style="border:1px solid #dee2e6;padding:8px;text-align:center;">' + p.available + '</td>';
+        tableHtml += '<td style="border:1px solid #dee2e6;padding:8px;text-align:center;color:#dc3545;font-weight:600;">' + p.shortage + '</td>';
+        tableHtml += '</tr>';
+      });
+      
+      tableHtml += '</tbody></table></div>';
+      
+      Swal.fire({
+        title: '⚠️ Không đủ hàng để xuất kho',
+        html: '<div style="text-align:left;margin-bottom:10px;">' +
+              '<p style="margin:10px 0;"><strong>Kho tổng và tất cả các kho chi nhánh không đủ hàng</strong> để cung ứng cho phiếu yêu cầu <strong>' + requestId + '</strong>.</p>' +
+              '<p style="margin:10px 0;color:#856404;">Chi tiết sản phẩm thiếu hàng:</p>' +
+              '</div>' + tableHtml +
+              '<div style="margin-top:15px;padding:10px;background:#fff3cd;border-radius:6px;text-align:left;">' +
+              '<small><i class="fa-solid fa-info-circle"></i> Vui lòng nhập thêm hàng hoặc chờ hàng về để có thể tạo phiếu xuất.</small>' +
+              '</div>',
+        icon: 'error',
+        confirmButtonText: 'Đã hiểu',
+        confirmButtonColor: '#dc3545',
+        width: '600px'
+      });
+      
+    } catch (err) {
+      console.error('Error parsing insufficient data:', err);
+      Swal.fire({
+        title: 'Không đủ hàng!',
+        html: 'Kho tổng và các kho chi nhánh không đủ hàng để cung ứng cho phiếu yêu cầu này.',
+        icon: 'error',
+        confirmButtonText: 'Đã hiểu',
+        confirmButtonColor: '#dc3545'
+      });
+    }
   });
 </script>
 

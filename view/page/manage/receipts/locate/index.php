@@ -55,6 +55,11 @@ $statusCls   = $statusClass[$status] ?? 'pending';
 
 $warehouseId = $receipt['warehouse_id'] ?? ($_SESSION['login']['warehouse_id'] ?? '');
 
+// Phân quyền: Kiểm tra role_id
+$userRoleId = (int)($_SESSION['login']['role_id'] ?? 0);
+$isManager = in_array($userRoleId, [1, 2, 4]); // Admin, QL_Kho_Tong, QL_Kho_CN
+$isStaff = in_array($userRoleId, [3, 5]); // NV_Kho_Tong, NV_Kho_CN
+
 // Build product name map for allocations table
 $productNameMap = [];
 if (!empty($receipt['details'])) {
@@ -651,6 +656,10 @@ if (!empty($receipt['details'])) {
 				pane.innerHTML = '<div style="padding:12px;color:#991b1b;background:#fee2e2;border:1px solid #fecaca;border-radius:10px">Lỗi tải vị trí: ' + String(err) + '</div>';
 			}
 		}
+		// Biến phân quyền
+		const isManager = <?= $isManager ? 'true' : 'false' ?>;
+		const isStaff = <?= $isStaff ? 'true' : 'false' ?>;
+		
 		document.addEventListener('DOMContentLoaded', () => {
 			loadLocations('<?= htmlspecialchars($warehouseId) ?>');
 
@@ -702,12 +711,28 @@ if (!empty($receipt['details'])) {
 			// Initial check after DOM paint
 			setTimeout(toggleCompleteButton, 0);
 			
+			// Biến phân quyền
+			const isManager = <?= $isManager ? 'true' : 'false' ?>;
+			const isStaff = <?= $isStaff ? 'true' : 'false' ?>;
+			
 			// ML Recommendations Handler - Step 1: Open unit selector
 			let currentProductContext = null;
 			
 			document.addEventListener('click', async (ev) => {
 				const btn = ev.target.closest('.btn-recommend');
 				if (!btn) return;
+				
+				// Kiểm tra quyền: Chỉ quản lý mới được xếp hàng
+				if (!isManager) {
+					alert('⚠️ Chỉ quản lý mới được xếp hàng!\n\nNhân viên chỉ có thể xác nhận hoàn tất khi quản lý đã xếp hàng xong.');
+					return;
+				}
+				
+				// Kiểm tra quyền: Chỉ quản lý mới được xếp hàng
+				if (!isManager) {
+					alert('⚠️ Chỉ quản lý mới được xếp hàng!\n\nNhân viên chỉ có thể xác nhận hoàn tất khi quản lý đã xếp hàng xong.');
+					return;
+				}
 				
 				const productId = btn.getAttribute('data-product-id');
 				const quantity = parseInt(btn.getAttribute('data-quantity') || '1', 10);
@@ -1361,6 +1386,12 @@ if (!empty($receipt['details'])) {
 					return;
 				}
 				
+				// Kiểm tra quyền: Chỉ quản lý mới được xếp hàng
+				if (!isManager) {
+					alert('⚠️ Chỉ quản lý mới được xếp hàng!\n\nNhân viên chỉ có thể xác nhận hoàn tất sau khi quản lý xếp hàng xong.');
+					return;
+				}
+				
 				const z = el.getAttribute('data-zone');
 				const r = el.getAttribute('data-rack');
 				const b = el.getAttribute('data-bin');
@@ -1656,7 +1687,11 @@ if (!empty($receipt['details'])) {
 					<div class="toolbar">
 								<a class="btn" href="index.php?page=receipts/approve"><i class="fa fa-arrow-left"></i> Quay lại danh sách</a>
 								<?php if ($status !== 3): // Chỉ hiện nút Hoàn tất khi chưa hoàn tất ?>
-								<button id="btnComplete" class="btn primary" style="display:none"><i class="fa fa-flag-checkered"></i> Hoàn tất</button>
+									<?php if ($isManager): // Quản lý: hiển nút khi xếp xong ?>
+									<button id="btnComplete" class="btn primary" style="display:none"><i class="fa fa-flag-checkered"></i> Hoàn tất</button>
+									<?php elseif ($isStaff): // Nhân viên: luôn hiện nút khi xếp xong ?>
+									<button id="btnComplete" class="btn primary" style="display:none"><i class="fa fa-check-circle"></i> Xác nhận hoàn tất</button>
+									<?php endif; ?>
 								<?php else: ?>
 								<span class="btn" style="background:#d1fae5;color:#065f46;border-color:#6ee7b7;cursor:default"><i class="fa fa-check-circle"></i> Đã hoàn tất</span>
 								<?php endif; ?>

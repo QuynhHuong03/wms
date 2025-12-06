@@ -99,6 +99,32 @@ class MSupplier {
         return false;
     }
 
+    // Kiểm tra nhà cung cấp còn sản phẩm
+    public function checkProductsBySupplier($supplierId) {
+        $p = new clsKetNoi();
+        $con = $p->moKetNoi();
+        if ($con) {
+            try {
+                $col = $con->selectCollection('products');
+                // Kiểm tra cả supplier_id và supplier.id
+                $count = $col->countDocuments([
+                    '$or' => [
+                        ['supplier_id' => (int)$supplierId],
+                        ['supplier_id' => (string)$supplierId],
+                        ['supplier.id' => (string)$supplierId],
+                        ['supplier.id' => (int)$supplierId]
+                    ]
+                ]);
+                $p->dongKetNoi($con);
+                return $count;
+            } catch (\Exception $e) {
+                $p->dongKetNoi($con);
+                die("Lỗi query MongoDB: " . $e->getMessage());
+            }
+        }
+        return 0;
+    }
+
     // Xóa nhà cung cấp
     public function deleteSupplier($supplierId) {
         $p = new clsKetNoi();

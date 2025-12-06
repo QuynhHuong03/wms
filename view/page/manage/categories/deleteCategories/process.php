@@ -6,20 +6,22 @@ $cCategories = new CCategories();
 $id = $_GET['id'] ?? null;
 if (!$id) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Missing id']);
+    echo json_encode(['success' => false, 'message' => 'Missing id']);
     exit();
 }
 
 try {
     $deleted = $cCategories->deleteCategory($id);
-    if ($deleted) {
-        echo json_encode(['success' => true]);
+    if ($deleted === 'HAS_PRODUCTS') {
+        echo json_encode(['success' => false, 'message' => 'Không thể xóa. Loại sản phẩm còn chứa sản phẩm']);
+    } elseif ($deleted) {
+        echo json_encode(['success' => true, 'message' => 'Xóa loại sản phẩm thành công']);
     } else {
         http_response_code(404);
-        echo json_encode(['success' => false, 'error' => 'Not found or could not delete']);
+        echo json_encode(['success' => false, 'message' => 'Không tìm thấy hoặc không thể xóa']);
     }
 } catch (\Throwable $e) {
     http_response_code(500);
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 ?>

@@ -101,6 +101,27 @@ class MWarehouse
         return false;
     }
 
+    // ⭐ Kiểm tra kho còn chứa sản phẩm
+    public function checkProductsInWarehouse($warehouse_id)
+    {
+        $p = new clsKetNoi();
+        $con = $p->moKetNoi();
+        if ($con) {
+            try {
+                // Kiểm tra trong inventory (tồn kho hiện tại)
+                $invCol = $con->selectCollection('inventory');
+                $count = $invCol->countDocuments(['warehouse_id' => $warehouse_id, 'qty' => ['$gt' => 0]]);
+                $p->dongKetNoi($con);
+                return $count;
+            } catch (\Exception $e) {
+                $p->dongKetNoi($con);
+                error_log("❌ Lỗi MongoDB (checkProductsInWarehouse): " . $e->getMessage());
+                return 0;
+            }
+        }
+        return 0;
+    }
+
     // 🗑️ Xóa kho
     public function deleteWarehouse($warehouse_id)
     {

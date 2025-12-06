@@ -8,7 +8,9 @@ if (isset($_GET['id'])) {
 
     $result = $cWarehouse->deleteWarehouse($warehouseId);
 
-    if ($result) {
+    if ($result === 'HAS_PRODUCTS') {
+        echo json_encode(['success' => false, 'message' => 'Không thể xóa. Kho còn chứa sản phẩm']);
+    } elseif ($result) {
         echo json_encode(['success' => true, 'message' => 'Xóa kho thành công!']);
     } else {
         echo json_encode(['success' => false, 'message' => 'Xóa kho thất bại!']);

@@ -18,6 +18,7 @@ try {
     ob_clean(); // Clean any output before JSON
     $input = json_decode(file_get_contents('php://input'), true);
     $productId = $input['product_id'] ?? '';
+    $destinationWarehouse = $input['destination_warehouse'] ?? null;
     
     if (!$productId) {
         echo json_encode(['success' => false, 'error' => 'Missing product_id']);
@@ -43,6 +44,11 @@ try {
         $warehouseId = $wh['warehouse_id'] ?? '';
         $warehouseName = $wh['warehouse_name'] ?? $warehouseId;
         $warehouseType = $wh['type'] ?? 'branch';
+        
+        // Bỏ qua kho đích (kho yêu cầu)
+        if ($destinationWarehouse && $warehouseId === $destinationWarehouse) {
+            continue;
+        }
         
         // Sum up quantity for this product in this warehouse
         $pipeline = [

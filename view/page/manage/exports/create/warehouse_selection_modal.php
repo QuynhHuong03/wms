@@ -46,6 +46,7 @@
 let currentProductId = null;
 let currentRequiredQty = 0;
 let currentBaseUnit = '';
+let currentDestinationWarehouse = null;
 let warehouseSelections = {};
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -55,32 +56,34 @@ document.addEventListener('DOMContentLoaded', function() {
         this.dataset.productId,
         this.dataset.productName,
         parseInt(this.dataset.requiredQty),
-        this.dataset.baseUnit
+        this.dataset.baseUnit,
+        this.dataset.destinationWarehouse
       );
     });
   });
 });
 
-function openWarehouseModal(productId, productName, requiredQty, baseUnit) {
+function openWarehouseModal(productId, productName, requiredQty, baseUnit, destinationWarehouse) {
   currentProductId = productId;
   currentRequiredQty = requiredQty;
   currentBaseUnit = baseUnit;
+  currentDestinationWarehouse = destinationWarehouse;
   
   document.getElementById('modalProductName').textContent = productName;
   document.getElementById('modalRequiredQty').textContent = requiredQty.toLocaleString();
   document.getElementById('modalBaseUnit').textContent = baseUnit;
   document.getElementById('warehouseModal').classList.add('active');
   
-  loadWarehouseStock(productId);
+  loadWarehouseStock(productId, destinationWarehouse);
 }
 
 function closeWarehouseModal() {
   document.getElementById('warehouseModal').classList.remove('active');
 }
 
-async function loadWarehouseStock(productId) {
+async function loadWarehouseStock(productId, destinationWarehouse) {
   try {
-    console.log('Loading stock for product:', productId);
+    console.log('Loading stock for product:', productId, 'excluding warehouse:', destinationWarehouse);
     // Build URL using first path segment (app folder) to avoid duplicate segments
     const parts = (window.location.pathname || '/').split('/');
     const appFolder = parts.length > 1 && parts[1] ? '/' + parts[1] : '';
@@ -88,7 +91,10 @@ async function loadWarehouseStock(productId) {
     const response = await fetch(url, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({product_id: productId})
+      body: JSON.stringify({
+        product_id: productId,
+        destination_warehouse: destinationWarehouse
+      })
     });
     
     const text = await response.text();
@@ -97,7 +103,11 @@ async function loadWarehouseStock(productId) {
     console.log('Parsed data:', data);
     if (!data.success) throw new Error(data.error || 'Failed to load');
     
-    renderWarehouseList(data.warehouses);
+    // Lọc bỏ kho đích (kho yêu cầu) khỏi danh sách
+    const filteredWarehouses = data.warehouses.filter(wh => wh.warehouse_id !== destinationWarehouse);
+    console.log('Filtered warehouses (excluding destination):', filteredWarehouses);
+    
+    renderWarehouseList(filteredWarehouses);
   } catch (error) {
     document.getElementById('warehouseList').innerHTML = `
       <div style="text-align:center;padding:40px;color:#dc3545;">

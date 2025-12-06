@@ -744,23 +744,76 @@
       }
       clearProductError(); // Xóa lỗi khi thêm sản phẩm
       
-      // Nếu quét batch, tạo unique key bằng product_id + batch_code
-      // Nếu quét product, dùng product_id
-      let uniqueKey = type === 'batch' ? (product._id + '_' + product.batch_code) : product._id;
+      // Tìm row đã tồn tại bằng cách duyệt qua tất cả các row và so sánh
+      const tbody = document.getElementById("productTable").querySelector("tbody");
+      const existingRows = tbody.querySelectorAll('tr');
+      let existingRow = null;
       
-      if (productMap[uniqueKey] !== undefined) {
+      const newProductId = String(product._id || '').trim();
+      const newBatchCode = String(product.batch_code || '').trim();
+      
+      console.log('🔍 [v2.0] Đang quét:', {
+        type: type,
+        productId: newProductId,
+        batchCode: newBatchCode,
+        productName: product.name || product.product_name,
+        timestamp: new Date().toISOString()
+      });
+      
+      for (let i = 0; i < existingRows.length; i++) {
+        const row = existingRows[i];
+        const rowProductId = String(row.querySelector("input[name*='[product_id]']")?.value || '').trim();
+        const batchCodeInput = row.querySelector("input[name*='[batch_code]']");
+        const rowBatchCode = batchCodeInput ? String(batchCodeInput.value || '').trim() : '';
+        
+        console.log(`  Row ${i+1}:`, {
+          rowProductId: rowProductId,
+          rowBatchCode: rowBatchCode,
+          rowText: row.cells[1]?.textContent?.trim()
+        });
+        
+        // Nếu là batch: phải khớp cả product_id VÀ batch_code
+        // Nếu là product: chỉ cần khớp product_id VÀ row đó không có batch_code
+        let isMatch = false;
+        
+        if (type === 'batch' && newBatchCode) {
+          // Quét lô: khớp product_id và batch_code (cả 2 đều phải có giá trị)
+          isMatch = (rowProductId === newProductId && rowBatchCode === newBatchCode && rowBatchCode !== '');
+          console.log(`    Kiểm tra batch: productId match=${rowProductId === newProductId}, batchCode match=${rowBatchCode === newBatchCode}, result=${isMatch}`);
+        } else if (type !== 'batch') {
+          // Quét sản phẩm: khớp product_id và row không có batch
+          isMatch = (rowProductId === newProductId && rowBatchCode === '');
+          console.log(`    Kiểm tra product: productId match=${rowProductId === newProductId}, no batch=${rowBatchCode === ''}, result=${isMatch}`);
+        }
+        
+        if (isMatch) {
+          console.log('✅ Tìm thấy row trùng khớp!');
+          existingRow = row;
+          break;
+        }
+      }
+      
+      if (!existingRow) {
+        console.log('❌ Không tìm thấy row trùng → Thêm dòng mới');
+      }
+      
+      if (existingRow) {
         // Nếu đã tồn tại, tăng số lượng
-        let row = document.querySelector(`#row-${productMap[uniqueKey]}`);
-        let qtyInput = row.querySelector("input[name*='[quantity]']");
+        let qtyInput = existingRow.querySelector("input[name*='[quantity]']");
         qtyInput.value = parseInt(qtyInput.value) + 1;
         calcSubtotal(qtyInput);
         
         // Hiển thị thông báo
-        const msg = type === 'batch' 
+        const msg = type === 'batch' && product.batch_code
           ? `✅ Đã cập nhật số lượng lô "${product.batch_code}"`
-          : `✅ Đã cập nhật số lượng sản phẩm "${product.name}"`;
+          : `✅ Đã cập nhật số lượng sản phẩm "${product.name || product.product_name}"`;
         showSuccess('products-error', msg);
       } else {
+        // Tạo unique key để lưu vào productMap (không dùng nữa nhưng giữ để tương thích)
+        const uniqueKey = (type === 'batch' && newBatchCode) 
+          ? (newProductId + '_' + newBatchCode) 
+          : newProductId;
+        
         const tbody = document.getElementById("productTable").querySelector("tbody");
         const row = tbody.insertRow();
         row.id = "row-" + rowIndex;
@@ -814,23 +867,25 @@
           </td>
           <td><input type="text" name="products[${rowIndex}][subtotal]" 
                      value="${formatNumber(product.import_price)}" readonly></td>
-          <td><button type="button" class="btn btn-danger" onclick="removeRow(this,'${uniqueKey}')">Xóa</button></td>
+          <td><button type="button" class="btn btn-danger" onclick="removeRow(this)">Xóa</button></td>
         `;
-        productMap[uniqueKey] = rowIndex;
+        
+        // Không cần productMap nữa vì đã dùng DOM để tìm row trùng
         rowIndex++;
         
         // Hiển thị thông báo thành công
         const msg = type === 'batch' 
-          ? `✅ Đã thêm lô hàng "${product.batch_code}" - ${product.name}`
-          : `✅ Đã thêm sản phẩm "${product.name}"`;
+          ? `✅ Đã thêm lô hàng "${product.batch_code}" - ${product.name || product.product_name}`
+          : `✅ Đã thêm sản phẩm "${product.name || product.product_name}"`;
         showSuccess('products-error', msg);
       }
     }
 
-    function removeRow(btn, productId) {
+    function removeRow(btn) {
       const row = btn.closest("tr");
-      row.parentNode.removeChild(row);
-      delete productMap[productId];
+      if (row) {
+        row.parentNode.removeChild(row);
+      }
     }
 
     function calcSubtotal(input) {

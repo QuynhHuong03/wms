@@ -24,6 +24,11 @@ class CSupplier {
     // Xóa nhà cung cấp
     public function deleteSupplier($supplierId) {
         $p = new MSupplier();
+        // Kiểm tra nhà cung cấp còn sản phẩm không
+        $productCount = $p->checkProductsBySupplier($supplierId);
+        if ($productCount > 0) {
+            return 'HAS_PRODUCTS'; // Trả về mã lỗi đặc biệt
+        }
         $result = $p->deleteSupplier($supplierId);
         return $result;
     }

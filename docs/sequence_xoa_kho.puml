@@ -30,24 +30,38 @@ Admin -> ListView: 3: Click "Xác nhận xóa"
 ListView -> Controller: 3.1: deleteWarehouse(warehouse_id)
 activate Controller
 
-Controller -> WarehouseDB: 3.1.1: deleteOne({warehouse_id})
+Controller -> WarehouseDB: 3.1.1: checkProductsInWarehouse(warehouse_id)
 activate WarehouseDB
 
-WarehouseDB --> Controller: 3.1.2: Delete result
+WarehouseDB --> Controller: 3.1.2: Product count
 deactivate WarehouseDB
 
-alt Xóa thành công
-    Controller --> ListView: 3.2: return true
+alt Kho còn chứa sản phẩm
+    Controller --> ListView: 3.2: return "Kho còn chứa sản phẩm"
     deactivate Controller
     
-    ListView -> ListView: 3.2.1: Hiển thị "Xóa kho thành công"
-    
-    ListView -> ListView: 3.2.2: Chuyển hướng về danh sách kho
+    ListView -> ListView: 3.2.1: Hiển thị "Không thể xóa. Kho còn chứa sản phẩm"
     deactivate ListView
-else Xóa thất bại
-    Controller --> ListView: 3.3: return false
-    deactivate Controller
-    ListView -> ListView: 3.3.1: Hiển thị "Xóa kho thất bại"
+else Kho không còn sản phẩm
+    Controller -> WarehouseDB: 3.3.1: deleteOne({warehouse_id})
+    activate WarehouseDB
+    
+    WarehouseDB --> Controller: 3.3.2: Delete result
+    deactivate WarehouseDB
+    
+    alt Xóa thành công
+        Controller --> ListView: 3.4: return true
+        deactivate Controller
+        
+        ListView -> ListView: 3.4.1: Hiển thị "Xóa kho thành công"
+        
+        ListView -> ListView: 3.4.2: Chuyển hướng về danh sách kho
+        deactivate ListView
+    else Xóa thất bại
+        Controller --> ListView: 3.5: return false
+        deactivate Controller
+        ListView -> ListView: 3.5.1: Hiển thị "Xóa kho thất bại"
+    end
 end
 
 deactivate Admin

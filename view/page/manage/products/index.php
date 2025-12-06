@@ -585,12 +585,29 @@ function formatCurrency($amount) {
   confirmDeleteBtn.addEventListener('click', () => {
     if (deleteProductId) {
       fetch(`../../../view/page/manage/products/deleteProduct/deleteProduct.php?id=${deleteProductId}`)
-        .then(res => res.text())
-        .then(() => {
+        .then(res => res.json())
+        .then((data) => {
           deleteModal.style.display = 'none';
-          window.location.reload();
+          if (data && data.success) {
+            window.location.reload();
+          } else {
+            const errToast = document.createElement('div');
+            errToast.className = 'toast-notification error';
+            const errorMessage = data.message || 'Xóa sản phẩm thất bại!';
+            errToast.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> ' + errorMessage;
+            document.body.appendChild(errToast);
+            setTimeout(() => { errToast.classList.add('hide'); setTimeout(() => errToast.remove(), 300); }, 3000);
+          }
         })
-        .catch(err => console.error('Lỗi xóa sản phẩm:', err));
+        .catch(err => {
+          deleteModal.style.display = 'none';
+          console.error('Lỗi xóa sản phẩm:', err);
+          const errToast = document.createElement('div');
+          errToast.className = 'toast-notification error';
+          errToast.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Lỗi kết nối khi xóa.';
+          document.body.appendChild(errToast);
+          setTimeout(() => { errToast.classList.add('hide'); setTimeout(() => errToast.remove(), 300); }, 3000);
+        });
     }
   });
 

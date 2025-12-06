@@ -212,6 +212,7 @@ if (basename($_SERVER['SCRIPT_NAME']) === 'index.php' && isset($_GET['page'])) {
                       data-product-name="<?= htmlspecialchars($productName) ?>"
                       data-required-qty="<?= $requiredQty ?>"
                       data-base-unit="<?= htmlspecialchars($baseUnit) ?>"
+                      data-destination-warehouse="<?= htmlspecialchars($request['warehouse_id']) ?>"
                       style="background:#007bff;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;">
                 <i class="fa-solid fa-warehouse"></i> Chọn kho
               </button>

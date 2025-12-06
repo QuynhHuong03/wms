@@ -167,6 +167,29 @@ class MCategories {
         }
     }
 
+    // Kiểm tra loại sản phẩm còn chứa sản phẩm
+    public function checkProductsInCategory($category_id) {
+        try {
+            $conn = new clsKetNoi();
+            $db = $conn->moKetNoi();
+            $productsCol = $db->selectCollection('products');
+            
+            // Kiểm tra cả category.id và category_id
+            $count = $productsCol->countDocuments([
+                '$or' => [
+                    ['category.id' => $category_id],
+                    ['category_id' => $category_id]
+                ]
+            ]);
+            
+            $conn->dongKetNoi($db);
+            return $count;
+        } catch (\Throwable $e) {
+            error_log("checkProductsInCategory error: " . $e->getMessage());
+            return 0;
+        }
+    }
+
     // Xóa category
     public function deleteCategory($id) {
         try {
