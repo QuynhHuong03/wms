@@ -66,15 +66,15 @@ function getStatusBadge($status) {
     // 0 = draft, 1 = completed (chờ duyệt), 2 = approved, 3 = rejected
     switch ((int)$status) {
         case 0:
-            return '<span class="badge badge-secondary">📝 Nháp</span>';
+            return '<span class="badge badge-secondary"> Nháp</span>';
         case 1:
-            return '<span class="badge badge-warning">⏳ Chờ duyệt</span>';
+            return '<span class="badge badge-warning"> Chờ duyệt</span>';
         case 2:
-            return '<span class="badge badge-success">✔️ Đã hoàn thành</span>';
+            return '<span class="badge badge-success"> Đã hoàn thành</span>';
         case 3:
-            return '<span class="badge badge-danger">❌ Từ chối</span>';
+            return '<span class="badge badge-danger"> Từ chối</span>';
         default:
-            return '<span class="badge badge-light">❓ Không rõ</span>';
+            return '<span class="badge badge-light"> Không rõ</span>';
     }
 }
 
@@ -401,20 +401,20 @@ function buildUrl($overrides = []) {
 
 <div class="sheets-container">
     <div class="sheets-header">
-        <h2 class="sheets-title">📋 Danh sách phiếu kiểm kê</h2>
+        <h2 class="sheets-title"> Danh sách phiếu kiểm kê</h2>
         <div>
-            <a href="index.php?page=inventory/createInventory_sheet" class="btn btn-success">➕ Tạo phiếu mới</a>
-            <a href="index.php?page=inventory" class="btn btn-secondary">⬅ Quay lại</a>
+            <a href="index.php?page=inventory/createInventory_sheet" class="btn btn-success">+ Tạo phiếu mới</a>
+            <!-- <a href="index.php?page=inventory" class="btn btn-secondary">⬅ Quay lại</a> -->
         </div>
     </div>
 
     <?php if (!$isManager) { ?>
         <div style="padding: 12px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; margin-bottom: 16px; font-size: 14px;">
-            <strong>ℹ️ Lưu ý:</strong> Bạn có thể tạo và xem phiếu kiểm kê. Chỉ <strong>Quản lý</strong> mới có quyền duyệt/từ chối phiếu.
+            <strong> Lưu ý:</strong> Bạn có thể tạo và xem phiếu kiểm kê. Chỉ <strong>Quản lý</strong> mới có quyền duyệt/từ chối phiếu.
         </div>
     <?php } else { ?>
         <div style="padding: 12px; background: #d1fae5; border-left: 4px solid #059669; border-radius: 8px; margin-bottom: 16px; font-size: 14px;">
-            <strong>✅ Vai trò:</strong> Bạn là <strong>Quản lý</strong> - Có quyền duyệt/từ chối các phiếu kiểm kê đã hoàn thành.
+            <strong> Vai trò:</strong> Bạn là <strong>Quản lý</strong> - Có quyền duyệt/từ chối các phiếu kiểm kê đã hoàn thành.
         </div>
     <?php } ?>
 
@@ -426,9 +426,9 @@ function buildUrl($overrides = []) {
             <input type="text" name="q" placeholder="Tìm kiếm (mã phiếu, ghi chú...)" value="<?= h($q) ?>" style="flex: 1; min-width: 200px;">
             <select name="status">
                 <option value="">-- Tất cả trạng thái --</option>
-                <option value="1" <?= $status === '1' ? 'selected' : '' ?>>⏳ Chờ duyệt</option>
-                <option value="2" <?= $status === '2' ? 'selected' : '' ?>>✔️ Đã hoàn thành</option>
-                <option value="3" <?= $status === '3' ? 'selected' : '' ?>>❌ Từ chối</option>
+                <option value="1" <?= $status === '1' ? 'selected' : '' ?>> Chờ duyệt</option>
+                <option value="2" <?= $status === '2' ? 'selected' : '' ?>> Đã hoàn thành</option>
+                <option value="3" <?= $status === '3' ? 'selected' : '' ?>> Từ chối</option>
             </select>
             <label>Từ: <input type="date" name="from" value="<?= h($from) ?>"></label>
             <label>Đến: <input type="date" name="to" value="<?= h($to) ?>"></label>
@@ -437,7 +437,7 @@ function buildUrl($overrides = []) {
                     <option value="<?= $opt ?>" <?= $limit == $opt ? 'selected' : '' ?>><?= $opt ?> / trang</option>
                 <?php } ?>
             </select>
-            <button type="submit" class="btn btn-primary">🔍 Lọc</button>
+            <button type="submit" class="btn btn-primary"> Lọc</button>
         </div>
     </form>
 

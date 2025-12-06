@@ -21,7 +21,7 @@ body {
 
 .category-list-container {
     max-width: 1200px;
-    margin: 30px auto;
+    margin: 0 auto;
     background: #ffffff;
     padding: 16px;
     border-radius: 12px;
@@ -82,11 +82,19 @@ body {
 .active { background:#d1fae5; color:#065f46 }
 .inactive { background:#fee2e2; color:#991b1b }
 
-.btn { border:none; padding:8px 10px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center }
+.btn { border:none; padding:8px 8px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center }
 .btn-edit { background:#3b82f6; color:#fff }
 .btn-view { background:#10b981; color:#fff }
 .btn-delete { background:#ef4444; color:#fff }
 .btn:hover { transform:translateY(-1px); box-shadow:0 4px 8px rgba(0,0,0,0.08) }
+
+/* Action buttons container */
+.category-list-container td:last-child {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+}
 
 /* Smaller action icons inside tables */
 .category-list-container td a.btn {
@@ -176,7 +184,6 @@ function formatCurrency($amount) {
         <th>Hình ảnh</th>
         <th>Tên SP</th>
         <th>SKU</th>
-        <!-- <th>Model</th> -->
         <th>Loại SP</th>
         <th>Nhà cung cấp</th>
         <th>Tồn kho tối thiểu</th>

@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $result = $cWarehouse->addBranchWarehouse($warehouse_id, $warehouse_name, $address, $status);
 
     if ($result) {
-        echo "<script>alert('Thêm kho chi nhánh thành công!');window.location='../index.php';</script>";
+        echo "<script>window.location='/KLTN/view/page/manage/index.php?page=warehouse&msg=success';</script>";
         exit;
     } else {
         echo "<script>alert('Thêm kho thất bại!');</script>";
@@ -100,19 +100,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
 
       <div class="form-group">
-        <label for="province">Tỉnh/Thành phố</label>
-        <select id="province" required>
-            <option value="">-- Chọn tỉnh/thành phố --</option>
-        </select>
-        <input type="hidden" name="province_name" id="province_name">
+        <label for="province_name">Tỉnh/Thành phố</label>
+        <input type="text" id="province_name" name="province_name" placeholder="Nhập tỉnh/thành phố..." required>
       </div>
 
       <div class="form-group">
-        <label for="ward">Phường/Xã</label>
-        <select id="ward" required disabled>
-            <option value="">-- Chọn phường/xã --</option>
-        </select>
-        <input type="hidden" name="ward_name" id="ward_name">
+        <label for="ward_name">Phường/Xã</label>
+        <input type="text" id="ward_name" name="ward_name" placeholder="Nhập phường/xã..." required>
       </div>
 
       <div class="form-group">
@@ -149,84 +143,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div>
 
   <script>
-  // Province / ward loading logic preserved from original file
-  document.addEventListener('DOMContentLoaded', () => {
-      const provinceSelect = document.getElementById('province');
-      const wardSelect     = document.getElementById('ward');
-      const provinceName   = document.getElementById('province_name');
-      const wardName       = document.getElementById('ward_name');
-
-      let wardsCache = [];
-
-      fetch('https://provinces.open-api.vn/api/v2/p/')
-          .then(res => res.json())
-          .then(data => {
-              const provinces = data.results || data;
-              provinces.forEach(p => {
-                  const opt = new Option(p.name, p.code);
-                  opt.dataset.name = p.name;
-                  provinceSelect.add(opt);
-              });
-          })
-          .catch(err => console.error('Lỗi load tỉnh/thành:', err));
-
-          provinceSelect.addEventListener('change', async function() {
-            // Clear previous wards and show loading state
-            wardSelect.innerHTML = '';
-            const loadingOpt = new Option('-- Đang tải phường/xã --', '');
-            wardSelect.add(loadingOpt);
-            wardSelect.disabled = true;
-
-            // Update hidden province name
-            provinceName.value = this.selectedOptions[0]?.dataset.name || '';
-
-            // If no province selected, reset ward select
-            if (!this.value) {
-              wardSelect.innerHTML = '';
-              wardSelect.add(new Option('-- Chọn phường/xã --', ''));
-              wardName.value = '';
-              wardSelect.disabled = true;
-              return;
-            }
-
-            try {
-              const res = await fetch(`https://provinces.open-api.vn/api/v2/p/${encodeURIComponent(this.value)}?depth=2`);
-              if (!res.ok) throw new Error('Network response was not ok: ' + res.status);
-              const province = await res.json();
-              console.log('Loaded province data:', province);
-
-              // Aggregate wards from all districts of the province
-              wardsCache = [];
-              if (province && Array.isArray(province.districts)) {
-                for (let d of province.districts) {
-                  if (Array.isArray(d.wards)) wardsCache = wardsCache.concat(d.wards);
-                }
-              }
-
-              // Populate ward select using Option constructor to ensure dataset works
-              wardSelect.innerHTML = '';
-              wardSelect.add(new Option('-- Chọn phường/xã --', ''));
-              wardsCache.forEach(w => {
-                const opt = new Option(w.name, w.code);
-                if (opt && opt.dataset) opt.dataset.name = w.name;
-                wardSelect.add(opt);
-              });
-              wardSelect.disabled = false;
-              wardName.value = '';
-            } catch (err) {
-              console.error('Lỗi load phường/xã:', err);
-              wardSelect.innerHTML = '';
-              wardSelect.add(new Option('-- Không thể tải phường/xã --', ''));
-              wardSelect.disabled = true;
-              wardName.value = '';
-            }
-          });
-
-      wardSelect.addEventListener('change', function() {
-          wardName.value = this.selectedOptions[0]?.dataset.name || '';
-      });
-  });
-
   // Modal confirm logic similar to users create page
   const confirmModal = document.getElementById('confirmModal');
   const confirmAddBtn = document.getElementById('confirmAddBtn');

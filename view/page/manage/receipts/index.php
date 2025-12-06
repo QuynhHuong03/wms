@@ -25,11 +25,11 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Tạo phiếu nhập hàng</title>
+  <title>Tạo phiếu nhập kho</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     body {font-family: "Segoe UI", Tahoma, sans-serif;background:#f3f6fa;margin:0;}
-    .form-container {max-width:1100px;margin:auto;background:#fff;padding:25px 30px;
+    .form-container {max-width:1500px;margin:auto;background:#fff;padding:25px 30px;
       border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.08);}
     h2 {text-align:center;margin-bottom:25px;color:#333;font-weight:600;}
     label {font-weight:600;margin-top:12px;display:block;color:#444;}
@@ -78,7 +78,7 @@
 </head>
 <body>
   <div class="form-container">
-    <h2><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu nhập hàng</h2>
+    <h2><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu nhập kho</h2>
     <form method="post" action="receipts/process.php" id="receiptForm">
       <input type="hidden" name="warehouse_id" value="<?= htmlspecialchars($warehouse_id) ?>">
       <input type="hidden" name="created_by" value="<?= htmlspecialchars($created_by) ?>">
@@ -93,7 +93,7 @@
 
       <div id="supplier-box" style="display:none;">
         <label>Nhà cung cấp</label>
-        <select name="supplier_id">
+        <select name="supplier_id" id="supplier_id">
           <option value="">-- Chọn nhà cung cấp --</option>
           <?php foreach ($suppliers as $s): ?>
             <option value="<?= $s['supplier_id'] ?>"><?= $s['supplier_name'] ?></option>
@@ -400,6 +400,20 @@
         exportSelect.innerHTML = '<option value="">-- Chọn phiếu xuất --</option>';
         exportProducts = {};
       }
+
+      // Khi chuyển sang chế độ purchase, gắn sự kiện đổi NCC → xoá danh sách sản phẩm để đồng bộ
+      const supplierSel = document.getElementById('supplier_id');
+      if (type === 'purchase' && supplierSel) {
+        supplierSel.onchange = function(){
+          try {
+            const tbody = document.getElementById('productTable').querySelector('tbody');
+            if (tbody) tbody.innerHTML = '';
+            productMap = {};
+            rowIndex = 0;
+            clearError('products-error');
+          } catch(e){}
+        };
+      }
     }
 
     function loadExports() {
@@ -607,32 +621,15 @@
           .catch(err => showError('products-error','⚠️ Lỗi khi tìm sản phẩm: ' + err));
       } else {
         // Nhập từ nhà cung cấp - không kiểm tra phiếu xuất
-        fetch("receipts/get_barcode_or_batch.php?barcode=" + encodeURIComponent(code))
-          .then(res => res.text())
-          .then(txt => {
-            try {
-              const data = JSON.parse(txt);
-              if (data.success) {
-                const batchData = data.batch || null;
-                let productPayload = data.product || null;
-                if (!productPayload && batchData && batchData.product_id) {
-                  productPayload = { _id: batchData.product_id, product_name: batchData.product_name || '', purchase_price: batchData.unit_price || 0, package_weight: batchData.unit_weight || 0, package_dimensions: batchData.package_dimensions || {} };
-                }
-                // Prefer batch price/weight when available
-                if (batchData && productPayload) {
-                  if (batchData.unit_price) productPayload.purchase_price = batchData.unit_price;
-                  if (batchData.unit_weight && (!productPayload.package_weight || productPayload.package_weight == 0)) productPayload.package_weight = batchData.unit_weight;
-                  if (batchData.package_dimensions && (!productPayload.package_dimensions || Object.keys(productPayload.package_dimensions).length === 0)) productPayload.package_dimensions = batchData.package_dimensions;
-                }
-                console.log("Sản phẩm nhận được:", productPayload, batchData);
-                addOrUpdateRow(productPayload, batchData);
-                document.getElementById("barcode").value = "";
-              } else {
-                showError('products-error', data.message || "⚠️ Không tìm thấy sản phẩm!");
-              }
-            } catch (err) {
-              console.error('Non-JSON response from barcode API:', txt);
-              showError('products-error', '⚠️ Lỗi server: phản hồi không hợp lệ. Kiểm tra console.');
+        fetch("receipts/process.php?barcode=" + encodeURIComponent(code))
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              console.log("Sản phẩm nhận được:", data.product);
+              addOrUpdateRow(data.product);
+              document.getElementById("barcode").value = "";
+            } else {
+              showError('products-error', data.message || "⚠️ Không tìm thấy sản phẩm!");
             }
           })
           .catch(err => showError('products-error','⚠️ Lỗi khi tìm sản phẩm: ' + err));

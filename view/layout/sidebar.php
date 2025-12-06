@@ -307,8 +307,24 @@ body {
                 </div>
             </div>
 
-            <a href="index.php?page=report" class="<?= $currentPage=='report'?'active':'' ?>"><i class="fas fa-chart-line"></i> Báo cáo thống kê</a>
-
+            <div class="submenu" id="submenu-product">
+                <a href="javascript:void(0)" class="submenu-toggle">
+                    <span><i class="fas fa-chart-line"></i> Báo cáo thống kê</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </a>
+                <div class="submenu-items">
+                    <a href="index.php?page=report/InboundStatistics" class="<?= $currentPage=='categories'?'active':'' ?>">
+                        <i class="fas fa-tags"></i> Thống kê phiếu nhập
+                    </a>
+                    <a href="index.php?page=report/OutboundStatistics" class="<?= $currentPage=='products'?'active':'' ?>">
+                        <i class="fas fa-box"></i> Thống kê phiếu xuất
+                    </a>
+                    <a href="index.php?page=report/InventoryStatistics" class="<?= $currentPage=='products'?'active':'' ?>">
+                        <i class="fas fa-box"></i> Thống kê tồn kho
+                    </a>
+                </div>
+            </div>
+            
         <?php elseif ($roleId == 2): ?>
             <a href="index.php?page=supplier" class="<?= $currentPage=='supplier'?'active':'' ?>"><i class="fas fa-truck"></i> Nhà cung cấp</a>
             
@@ -385,7 +401,17 @@ body {
                     <a href="index.php?page=exports" class="<?= $currentPage=='exports'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu xuất kho</a>
                 </div>
             </div>
-            <a href="index.php?page=inventory" class="<?= $currentPage=='inventory'?'active':'' ?>"><i class="fas fa-boxes"></i> Xem tồn kho tổng</a>
+            <div class="submenu" id="submenu-inventory-sheets-t">
+                <a href="javascript:void(0)" class="submenu-toggle">
+                    <span><i class="fas fa-clipboard-list"></i> Quản lý kiểm kê</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </a>
+                <div class="submenu-items">
+                    <a href="index.php?page=inventory/createInventory_sheet" class="<?= $currentPage=='inventory/createInventory_sheet'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu kiểm kê</a>
+                    <a href="index.php?page=inventory/inventory_sheets" class="<?= $currentPage=='inventory/inventory_sheets'?'active':'' ?>"><i class="fa-solid fa-clipboard-check"></i> Quản lý phiếu</a>
+                </div>
+            </div>
+            <a href="index.php?page=inventory" class="<?= $currentPage=='inventory'?'active':'' ?>"><i class="fas fa-boxes"></i> Xem tồn kho</a>
             <a href="index.php?page=report" class="<?= $currentPage=='report'?'active':'' ?>"><i class="fas fa-chart-line"></i> Báo cáo tổng</a>
 
         <?php elseif ($roleId == 4): ?>

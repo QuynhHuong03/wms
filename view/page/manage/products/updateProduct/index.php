@@ -88,6 +88,16 @@ if (!$product) {
       gap: 15px;
       margin-top: 15px;
     }
+    /* Modal styles (reused pattern from updateUsers) */
+    .modal { display:none; position:fixed; z-index:10000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5); }
+    .modal-content { background:#fff; max-width:450px; margin:15vh auto; padding:30px; border-radius:12px; text-align:center; box-shadow:0 10px 25px rgba(0,0,0,0.15); }
+    .modal-content h3 { margin-top:0; font-size:1.4rem; }
+    .modal-actions { display:flex; justify-content:center; gap:12px; margin-top:20px; }
+    .modal-actions button { padding:10px 20px; border-radius:8px; font-weight:600; cursor:pointer; border:none; }
+    .btn-secondary-modal { background:#e5e7eb; color:#374151; }
+    .btn-secondary-modal:hover { background:#d1d5db; }
+    .btn-success-modal { background:#10b981; color:#fff; }
+    .btn-success-modal:hover { background:#059669; }
   </style>
 </head>
 <body>
@@ -302,11 +312,29 @@ if (!$product) {
     </form>
   </div>
 
+    <!-- Modal xác nhận cập nhật sản phẩm -->
+    <div id="confirmModal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="confirmModalTitle">
+      <div class="modal-content">
+        <h3 id="confirmModalTitle">Xác nhận cập nhật</h3>
+        <p>Bạn có chắc chắn muốn cập nhật thông tin sản phẩm này không?</p>
+        <div class="modal-actions">
+          <button type="button" id="cancelModalBtn" class="btn-secondary-modal">Hủy</button>
+          <button type="button" id="confirmUpdateBtn" class="btn-success-modal">Xác nhận</button>
+        </div>
+      </div>
+    </div>
+
   <script>
     const addBtn = document.getElementById('addConversionBtn');
     const container = document.getElementById('conversion-container');
     const baseUnitSelect = document.getElementById('base_unit');
     const baseUnitLabel = document.getElementById('baseUnitLabel');
+    const form = document.querySelector('form');
+    const confirmModal = document.getElementById('confirmModal');
+    const confirmBtn = document.getElementById('confirmUpdateBtn');
+    const cancelBtn = document.getElementById('cancelModalBtn');
+    const submitBtn = document.querySelector("button[name='btnUpdate']");
+    let isConfirmed = false;
 
     // Cập nhật label đơn vị chính
     baseUnitSelect.addEventListener('change', function() {
@@ -407,6 +435,44 @@ if (!$product) {
     document.addEventListener('click', e => {
       if (e.target.closest('.removeConversion')) {
         e.target.closest('.conversion-item').remove();
+      }
+    });
+
+    // Modal logic giống trang user update
+    form.addEventListener('submit', function(e) {
+      if (!isConfirmed) {
+        e.preventDefault();
+        confirmModal.style.display = 'block';
+        confirmModal.setAttribute('aria-hidden','false');
+      }
+    });
+
+    confirmBtn.addEventListener('click', () => {
+      isConfirmed = true;
+      confirmModal.style.display = 'none';
+      confirmModal.setAttribute('aria-hidden','true');
+      submitBtn.click();
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      isConfirmed = false;
+      confirmModal.style.display = 'none';
+      confirmModal.setAttribute('aria-hidden','true');
+    });
+
+    window.addEventListener('click', (ev) => {
+      if (ev.target === confirmModal) {
+        isConfirmed = false;
+        confirmModal.style.display = 'none';
+        confirmModal.setAttribute('aria-hidden','true');
+      }
+    });
+
+    window.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape' && confirmModal.style.display === 'block') {
+        isConfirmed = false;
+        confirmModal.style.display = 'none';
+        confirmModal.setAttribute('aria-hidden','true');
       }
     });
   </script>

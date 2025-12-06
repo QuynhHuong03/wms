@@ -11,49 +11,6 @@ $warehouseId = isset($user['warehouse_id']) ? $user['warehouse_id'] : null;
 
 $cDashboard = new CDashboard();
 $data = $cDashboard->getDashboardData($roleId, $warehouseId);
-// Build warehouse options used by selects.
-// If user is Admin (roleId == 1) prefer the already computed summary (which may include per-warehouse totals).
-// For Managers/Staff prefer the full raw list so they can select other branches.
-$warehouseOptions = [];
-// Helper: fetch and normalize raw warehouses
-function __load_raw_warehouses_options() {
-  $opts = [];
-  if (file_exists(__DIR__ . '/../../../../model/mWarehouse.php')) {
-    include_once(__DIR__ . '/../../../../model/mWarehouse.php');
-    try {
-      $mw = new MWarehouse();
-      $raw = $mw->getAllWarehouses();
-      if (is_array($raw)) {
-        foreach ($raw as $w) {
-          $wid = null;
-          if (isset($w['warehouse_id'])) $wid = $w['warehouse_id'];
-          elseif (isset($w['warehouseId'])) $wid = $w['warehouseId'];
-          elseif (isset($w['id'])) $wid = $w['id'];
-          elseif (isset($w['_id'])) {
-            if (is_array($w['_id']) && isset($w['_id']['$oid'])) $wid = $w['_id']['$oid'];
-            else $wid = (string)$w['_id'];
-          }
-          if (!$wid) continue;
-          // include all warehouses; mark inactive ones visibly
-          $name = isset($w['warehouse_name']) ? $w['warehouse_name'] : (isset($w['name']) ? $w['name'] : (isset($w['warehouseName']) ? $w['warehouseName'] : $wid));
-          if (isset($w['status']) && intval($w['status']) !== 1) {
-            $name .= ' (Không hoạt động)';
-          }
-          $opts[] = ['warehouse_id' => $wid, 'name' => $name];
-        }
-      }
-    } catch (Exception $e) {
-      // ignore
-    }
-  }
-  return $opts;
-}
-
-if ($roleId == 1 && !empty($data['warehousesSummary']) && is_array($data['warehousesSummary'])) {
-  $warehouseOptions = $data['warehousesSummary'];
-} else {
-  $warehouseOptions = __load_raw_warehouses_options();
-}
 ?>
 
 <!DOCTYPE html>
@@ -65,83 +22,96 @@ if ($roleId == 1 && !empty($data['warehousesSummary']) && is_array($data['wareho
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
-      /* Lighter, high-contrast palette for readability */
-      --bg: #f6f8fb;
-      --card: #ffffff;
-      --border: rgba(15, 23, 42, 0.06);
-      --text: #0f172a;
-      --muted: #6b7280;
-      --accent: #2563eb;
-      --success: #16a34a;
+      --bg: #0e1422;
+      --card: rgba(255, 255, 255, 0.04);
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #e6eef8;
+      --muted: #94a3b8;
+      --accent: #1e90ff;
+      --success: #22c55e;
       --warning: #f59e0b;
-      --danger: #dc2626;
-      --glass: rgba(0,0,0,0.04);
+      --danger: #ef4444;
+      --glass: rgba(255,255,255,0.08);
     }
 
-    * { box-sizing: border-box; }
+    * { 
+      box-sizing: border-box; 
+      margin: 0;
+      padding: 0;
+    }
+    
     body {
       font-family: 'Inter', system-ui, Segoe UI, Roboto, Arial;
-      background: var(--bg);
+      /* background: linear-gradient(180deg, #08111f 0%, #0a1427 100%); */
       color: var(--text);
       margin: 0;
-      line-height: 1.45;
+      line-height: 1.0;
       overflow-x: hidden;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
     }
 
     .container {
       max-width: 1250px;
-      margin: 30px auto;
-      padding: 0 18px;
+      /* margin: 30px auto; */
+      /* padding: 0 16px; */
     }
 
-    header {
+    /* header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 24px;
-      animation: fadeIn 0.6s ease;
-    }
+      margin-bottom: 25px;
+      padding: 24px 32px;
+      background: linear-gradient(90deg, var(--bg-grad-start), var(--bg-grad-end));
+      box-shadow: var(--shadow-lg);
+      animation: slideDown 0.5s ease;
+      color: #fff;
+    } */
 
     h1 {
       margin: 0;
-      font-size: 22px;
+      font-size: 26px;
       font-weight: 700;
-      color: #fff;
+      letter-spacing: -0.5px;
     }
 
-    .muted { color: var(--muted); font-size: 13px; }
+    .muted { 
+      color: var(--text-light); 
+      font-size: 13px;
+      font-weight: 500;
+      margin-top: 6px;
+    }
 
     .controls {
       display: flex;
-      gap: 10px;
+      gap: 12px;
       align-items: center;
     }
 
     .btn {
-      background: var(--glass);
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 8px 14px;
-      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      border: none;
+      color: #ffffff;
+      padding: 10px 20px;
+      border-radius: 12px;
       cursor: pointer;
       font-size: 14px;
-      backdrop-filter: blur(8px);
-      transition: all 0.25s ease;
+      font-weight: 600;
+      box-shadow: var(--shadow);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .btn:hover {
-      background: var(--accent);
-      border-color: var(--accent);
-      transform: translateY(-2px);
-      box-shadow: 0 0 12px rgba(30,144,255,0.4);
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: var(--shadow-xl);
+    }
+    .btn:active {
+      transform: translateY(0) scale(0.98);
     }
 
     .kpis {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 14px;
-      margin-bottom: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 30px;
+      margin-bottom: 32px;
       animation: fadeUp 0.6s ease;
     }
     
@@ -150,10 +120,6 @@ if ($roleId == 1 && !empty($data['warehousesSummary']) && is_array($data['wareho
         grid-template-columns: repeat(4, 1fr);
       }
     }
-
-    /* Filters: apply / clear
-       (moved to script block to avoid JS inside <style> which breaks layout)
-    */
     
     @media (max-width: 1100px) {
       .kpis {
@@ -177,51 +143,50 @@ if ($roleId == 1 && !empty($data['warehousesSummary']) && is_array($data['wareho
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 16px 18px;
-      box-shadow: 0 6px 18px rgba(16,24,40,0.06);
-      transition: box-shadow 0.18s ease, transform 0.12s ease;
-      position: relative;
-      z-index: 1;
+      padding: 16px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      backdrop-filter: blur(10px);
+      transition: all 0.25s ease;
       min-height: 90px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
     }
-    .card:hover { box-shadow: 0 10px 30px rgba(16,24,40,0.08); transform: translateY(-4px); }
+    .card:hover { transform: translateY(-2px); }
 
     .kpi-title {
       font-size: 13px;
       color: var(--muted);
       margin-bottom: 8px;
-      font-weight: 600;
+      font-weight: 500;
     }
 
     .kpi-value {
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 700;
       margin: 6px 0;
-      line-height: 1.05;
-      color: var(--text);
+      line-height: 1.1;
     }
     
     .kpi-desc {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--muted);
-      margin-top: 8px;
-      line-height: 1.25;
+      margin-top: 6px;
+      line-height: 1.3;
     }
 
     .grid-2 {
       display: grid;
       grid-template-columns: 2fr 1fr;
-      gap: 16px;
+      gap: 24px;
+      margin-bottom: 24px;
     }
 
     .charts {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 14px;
-      min-height: 260px;
+      min-height: 250px;
     }
 
     canvas {
@@ -243,17 +208,27 @@ if ($roleId == 1 && !empty($data['warehousesSummary']) && is_array($data['wareho
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 13px;
-      margin-top: 8px;
+      font-size: 14px;
+      margin-top: 12px;
     }
     th, td {
-      padding: 8px;
-      border-bottom: 1px dashed var(--border);
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
     }
     th {
-      color: var(--muted);
-      text-align: left;
+      color: var(--text-light);
       font-weight: 600;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      background: var(--bg-secondary);
+    }
+    tbody tr {
+      transition: all 0.2s ease;
+    }
+    tbody tr:hover {
+      background: var(--bg-secondary);
     }
 
     .map {
@@ -278,13 +253,13 @@ if ($roleId == 1 && !empty($data['warehousesSummary']) && is_array($data['wareho
     .bin:hover { transform: scale(1.05); }
 
     footer {
-      margin-top: 20px;
+      margin-top: 40px;
       display: flex;
       justify-content: space-between;
+      align-items: center;
       font-size: 13px;
-      color: var(--muted);
-      border-top: 1px solid var(--border);
-      padding-top: 12px;
+      color: var(--text-light);
+      padding: 12px 4px;
     }
 
     @media (max-width: 980px) {
@@ -293,81 +268,155 @@ if ($roleId == 1 && !empty($data['warehousesSummary']) && is_array($data['wareho
       h1 { font-size: 18px; }
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
+    @keyframes slideDown {
+      from { 
+        opacity: 0; 
+        transform: translateY(-30px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateY(0); 
+      }
     }
 
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { 
+        opacity: 0; 
+        transform: translateY(20px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateY(0); 
+      }
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
     }
     
     /* Quick Actions for Admin */
     .quick-actions {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 12px;
-      margin-bottom: 20px;
-      animation: fadeUp 0.6s ease 0.2s both;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+      animation: fadeUp 0.6s ease 0.15s both;
     }
     
     .action-btn {
-      background: linear-gradient(135deg, var(--accent), #1565c0);
+      background: linear-gradient(135deg, var(--accent), var(--accent-light));
       border: none;
-      color: #fff;
-      padding: 14px 18px;
-      border-radius: 12px;
+      color: #ffffff;
+      padding: 16px 24px;
+      border-radius: 14px;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 12px rgba(30, 144, 255, 0.3);
+      gap: 10px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .action-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s ease;
+    }
+    
+    .action-btn:hover::before {
+      left: 100%;
     }
     
     .action-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 6px 20px rgba(30, 144, 255, 0.5);
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: var(--shadow-xl);
+    }
+    
+    .action-btn:active {
+      transform: translateY(-2px) scale(0.98);
     }
     
     .action-btn.success {
-      background: linear-gradient(135deg, var(--success), #16a34a);
-      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+      background: linear-gradient(135deg, var(--success), var(--success-light));
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
     }
     
     .action-btn.success:hover {
-      box-shadow: 0 6px 20px rgba(34, 197, 94, 0.5);
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.6);
     }
     
     .action-btn.warning {
-      background: linear-gradient(135deg, var(--warning), #d97706);
-      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+      background: linear-gradient(135deg, var(--warning), var(--warning-light));
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
     }
     
     .action-btn.warning:hover {
-      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5);
+      box-shadow: 0 8px 24px rgba(245, 158, 11, 0.6);
     }
     
     .action-btn.purple {
-      background: linear-gradient(135deg, #a855f7, #7c3aed);
-      box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+      background: linear-gradient(135deg, var(--purple), var(--purple-light));
+      box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
     }
     
     .action-btn.purple:hover {
-      box-shadow: 0 6px 20px rgba(168, 85, 247, 0.5);
+      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.6);
     }
     
     .action-btn .badge {
-      background: rgba(255, 255, 255, 0.3);
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 11px;
+      background: rgba(255, 255, 255, 0.95);
+      color: var(--text);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
       font-weight: 700;
+      box-shadow: var(--shadow-sm);
     }
+
+    /* Progress bars */
+    .progress {
+      width: 100%;
+      height: 8px;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+      margin-top: 6px;
+      border: 1px solid var(--border);
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--purple));
+      transition: width 0.5s ease;
+    }
+    .progress-bar.warn { background: linear-gradient(90deg, var(--warning), #f97316); }
+    .progress-bar.danger { background: linear-gradient(90deg, var(--danger), #dc2626); }
+
+    /* KPI color accents */
+    .kpi-accent { background: var(--accent-light); }
+    .kpi-success { background: var(--success-light); }
+    .kpi-warning { background: var(--warning-light); }
+    .kpi-danger { background: var(--danger-light); }
+    .kpi-accent .kpi-value { color: var(--accent); }
+    .kpi-success .kpi-value { color: var(--success); }
+    .kpi-warning .kpi-value { color: var(--warning); }
+    .kpi-danger .kpi-value { color: var(--danger); }
   </style>
 </head>
 <body>
@@ -378,8 +427,6 @@ if ($roleId == 1 && !empty($data['warehousesSummary']) && is_array($data['wareho
         <div class="muted">Tổng quan nhanh về tồn kho, nhập/xuất và cảnh báo</div>
       </div>
     </header>
-
-    <!-- Filters removed per user request -->
 
     <?php if ($roleId == 1): // Chỉ Admin mới thấy Quick Actions ?>
     <!-- Quick Actions for Admin -->
@@ -408,84 +455,44 @@ if ($roleId == 1 && !empty($data['warehousesSummary']) && is_array($data['wareho
     </section>
     <?php endif; ?>
 
-    <?php if ($roleId == 1 || $roleId == 2): // Admin hoặc Quản lý kho thấy tổng quan theo kho ?>
-    <!-- Per-warehouse summary -->
-    <section style="margin-top:18px;">
-      <h3 style="margin-bottom:10px;">Tổng quan theo kho</h3>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;">
-        <?php if (isset($data['warehousesSummary']) && !empty($data['warehousesSummary'])): ?>
-          <?php foreach ($data['warehousesSummary'] as $ws): ?>
-            <div class="card">
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <div>
-                  <div style="font-size:13px;color:var(--muted);">Kho</div>
-                  <div style="font-weight:700;font-size:16px;margin-top:6px;"><?= htmlspecialchars($ws['name']) ?></div>
-                </div>
-                <div style="text-align:right;">
-                  <div style="font-size:12px;color:var(--muted);">Sử dụng</div>
-                  <div style="font-weight:700;color: <?= $ws['utilization'] > 80 ? 'var(--warning)' : 'var(--accent)' ?>;"><?= number_format($ws['utilization'],1) ?>%</div>
-                </div>
-              </div>
-              <hr style="border:none;border-top:1px dashed var(--border);margin:10px 0;">
-              <div style="display:flex;gap:12px;flex-wrap:wrap;">
-                <div style="flex:1;min-width:110px">
-                  <div style="font-size:12px;color:var(--muted)">Tổng SKU</div>
-                  <div style="font-weight:700;margin-top:6px;"><?= number_format($ws['total_sku']) ?></div>
-                </div>
-                <div style="flex:1;min-width:110px">
-                  <div style="font-size:12px;color:var(--muted)">Tổng số lượng</div>
-                  <div style="font-weight:700;margin-top:6px;"><?= number_format($ws['total_qty']) ?></div>
-                </div>
-                <div style="flex:1;min-width:140px">
-                  <div style="font-size:12px;color:var(--muted)">Tổng giá trị</div>
-                  <div style="font-weight:700;margin-top:6px;"><?= number_format($ws['total_value'],0,',','.') ?> ₫</div>
-                </div>
-                <div style="flex:1;min-width:110px">
-                  <div style="font-size:12px;color:var(--muted)">Sắp hết</div>
-                  <div style="font-weight:700;margin-top:6px;color:var(--warning)"><?= number_format($ws['low_stock_count']) ?></div>
-                </div>
-              </div>
-            </div>
-          <?php endforeach; ?>
-        <?php else: ?>
-          <div class="card">Chưa có thông tin kho</div>
-        <?php endif; ?>
-      </div>
-    </section>
-    <?php endif; ?>
-
     <!-- KPI Cards -->
     <section class="kpis">
       <div class="card">
         <div class="kpi-title">Tổng SKU</div>
         <div class="kpi-value"><?= number_format($data['totalSKU'] ?? 0) ?></div>
-        <div class="kpi-desc">Mã sản phẩm</div>
+        <div class="kpi-desc">Mã sản phẩm đang quản lý</div>
       </div>
       <div class="card">
         <div class="kpi-title">Tổng số lượng</div>
         <div class="kpi-value"><?= number_format($data['totalQty'] ?? 0) ?></div>
-        <div class="kpi-desc">Đơn vị tồn kho</div>
+        <div class="kpi-desc">Tổng đơn vị tồn kho</div>
       </div>
-      <div class="card">
+      <!-- <div class="card kpi-purple">
         <div class="kpi-title">Tổng giá trị kho</div>
-        <div class="kpi-value" style="font-size: 16px;"><?= number_format($data['totalValue'] ?? 0, 0, ',', '.') ?> ₫</div>
-        <div class="kpi-desc">Ước tính toàn kho</div>
-      </div>
+        <div class="kpi-value" style="font-size: 20px; color: var(--purple)"><?= number_format($data['totalValue'] ?? 0, 0, ',', '.') ?> ₫</div>
+        <div class="kpi-desc">Ước tính toàn bộ hàng hóa</div>
+      </div> -->
       <div class="card">
         <div class="kpi-title">Sắp hết hàng</div>
         <div class="kpi-value" style="color: var(--warning)"><?= number_format($data['lowStockCount'] ?? 0) ?></div>
-        <div class="kpi-desc">SKU < min_stock</div>
+        <div class="kpi-desc">SKU dưới ngưỡng an toàn</div>
       </div>
       <div class="card">
         <div class="kpi-title">Số kho</div>
         <div class="kpi-value" style="color: var(--success)"><?= number_format($data['totalWarehouses'] ?? 0) ?></div>
-        <div class="kpi-desc">Đang hoạt động</div>
+        <div class="kpi-desc">Kho hoạt động</div>
       </div>
-      <div class="card">
+      <!-- <div class="card kpi-<?= ($data['warehouseUtilization'] ?? 0) > 80 ? 'warning' : 'accent' ?>">
         <div class="kpi-title">Công suất kho</div>
-        <div class="kpi-value" style="color: <?= ($data['warehouseUtilization'] ?? 0) > 80 ? 'var(--warning)' : 'var(--accent)' ?>"><?= number_format($data['warehouseUtilization'] ?? 0, 1) ?>%</div>
+        <div class="kpi-value" style="color: <?= ($data['warehouseUtilization'] ?? 0) > 90 ? 'var(--danger)' : (($data['warehouseUtilization'] ?? 0) > 80 ? 'var(--warning)' : 'var(--accent)') ?>;">
+          <?= number_format($data['warehouseUtilization'] ?? 0, 1) ?>%
+        </div>
+        <div class="progress" aria-label="Tỷ lệ sử dụng">
+          <?php $util = floatval($data['warehouseUtilization'] ?? 0); $utilClass = $util > 90 ? 'danger' : ($util > 80 ? 'warn' : ''); ?>
+          <div class="progress-bar <?= $utilClass ?>" style="width: <?= min(max($util,0),100) ?>%"></div>
+        </div>
         <div class="kpi-desc">Tỷ lệ sử dụng</div>
-      </div>
+      </div> -->
       <div class="card">
         <div class="kpi-title">Nhập hôm nay</div>
         <div class="kpi-value" style="color: var(--success)"><?= number_format($data['receiptsToday'] ?? 0) ?></div>
@@ -510,155 +517,120 @@ if ($roleId == 1 && !empty($data['warehousesSummary']) && is_array($data['wareho
 
     <!-- Main Charts -->
     <section class="grid-2">
-      <div style="display:flex;flex-direction:column;gap:14px;">
-        <div class="card" style="padding: 20px;">
-          <h3 style="margin-top:0; margin-bottom: 6px;">Thống kê nhập - xuất</h3>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;flex-wrap:wrap;">
-            <div class="muted">Tần suất nhập và xuất</div>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <!-- InOut chart filters -->
-              <?php $inout_period = $_GET['inout_period'] ?? ($_GET['period'] ?? '7d'); ?>
-              <?php $inout_wh = $_GET['inout_warehouse'] ?? ''; ?>
-              <select id="inout_period" onchange="onChartFilterChange('inout')" style="padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text)">
-                <option value="7d" <?= $inout_period === '7d' ? 'selected' : '' ?>>7 ngày</option>
-                <option value="week" <?= $inout_period === 'week' ? 'selected' : '' ?>>Tuần</option>
-                <option value="month" <?= $inout_period === 'month' ? 'selected' : '' ?>>Tháng</option>
-                <option value="quarter" <?= $inout_period === 'quarter' ? 'selected' : '' ?>>Quý</option>
-                <option value="year" <?= $inout_period === 'year' ? 'selected' : '' ?>>Năm</option>
-              </select>
-              <select id="inout_warehouse" onchange="onChartFilterChange('inout')" style="padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text)">
-                <option value="">Tất cả kho</option>
-                <?php foreach ($warehouseOptions as $wsOpt): ?>
-                  <option value="<?= htmlspecialchars($wsOpt['warehouse_id']) ?>" <?= $inout_wh == $wsOpt['warehouse_id'] ? 'selected' : '' ?>><?= htmlspecialchars($wsOpt['name']) ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-          </div>
-          <div style="width:100%">
-            <canvas id="chartInOut"></canvas>
-          </div>
-        </div>
-
-        <div class="card" style="padding: 20px;">
-          <h3 style="margin-top:0; margin-bottom:6px;">Phân loại sản phẩm</h3>
-          <div style="width:100%;display:flex;justify-content:flex-end;margin-bottom:8px;">
-            <?php $cat_wh = $_GET['category_warehouse'] ?? ''; ?>
-              <select id="category_warehouse" onchange="onChartFilterChange('category')" style="padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text)">
-                <option value="">Tất cả kho</option>
-                <?php foreach ($warehouseOptions as $wsOpt): ?>
-                  <option value="<?= htmlspecialchars($wsOpt['warehouse_id']) ?>" <?= $cat_wh == $wsOpt['warehouse_id'] ? 'selected' : '' ?>><?= htmlspecialchars($wsOpt['name']) ?></option>
-                <?php endforeach; ?>
-              </select>
-          </div>
-          <div style="width:100%;display:flex;justify-content:center;">
-            <canvas id="chartGroups"></canvas>
-          </div>
+      <div class="card" style="padding: 20px;">
+        <h3 style="margin-top:0; margin-bottom: 16px;">Thống kê nhập - xuất</h3>
+        <div class="charts">
+          <canvas id="chartInOut"></canvas>
+          <canvas id="chartGroups"></canvas>
         </div>
       </div>
-      <div class="card" style="padding: 12px; justify-content: flex-start; align-items: flex-start;">
-        <h3 style="margin-top:0; margin-bottom:6px;">Cảnh báo & Hoạt động gần đây</h3>
-        <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
-          <div style="flex:1;min-width:220px;">
-            <div class="muted" style="margin-bottom:6px;">Cảnh báo</div>
-            <ul id="alerts" style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px;">
-              <?php if (isset($data['alerts']) && !empty($data['alerts'])): ?>
-                <?php foreach ($data['alerts'] as $alert): ?>
-                  <li style="display:flex;align-items:center;gap:8px;padding:6px;border-radius:8px;background:rgba(0,0,0,0.02);">
-                    <div style="width:10px;height:10px;border-radius:50%;background: <?= $alert['type'] == 'danger' ? 'var(--danger)' : ($alert['type'] == 'warning' ? 'var(--warning)' : ($alert['type'] == 'info' ? 'var(--accent)' : 'var(--success)')) ?>;"></div>
-                    <div style="font-size:13px;color:var(--muted);flex:1;"><?= htmlspecialchars($alert['message']) ?></div>
-                    <?php if ($roleId == 1): // Admin quick actions ?>
-                      <?php if ($alert['type'] == 'danger' && strpos($alert['message'], 'URGENT') !== false): ?>
-                        <button onclick="window.location='index.php?page=goodsReceiptRequest'" style="font-size:11px;padding:6px 8px;border-radius:6px;background:var(--danger);color:#fff;border:none;cursor:pointer;">Xử lý</button>
-                      <?php elseif ($alert['type'] == 'warning' && strpos($alert['message'], 'sắp hết') !== false): ?>
-                        <button onclick="window.location='index.php?page=products'" style="font-size:11px;padding:6px 8px;border-radius:6px;background:var(--warning);color:#fff;border:none;cursor:pointer;">Chi tiết</button>
-                      <?php endif; ?>
-                    <?php endif; ?>
-                  </li>
-                <?php endforeach; ?>
-              <?php else: ?>
-                <li style="color:var(--muted);padding:8px;">Không có cảnh báo</li>
-              <?php endif; ?>
-            </ul>
-          </div>
-
-          <div style="flex:2;min-width:320px;">
-            <div class="muted" style="margin-bottom:6px;">Phiếu gần nhất</div>
-            <div class="recent-table-wrapper" style="border-radius:8px;border:1px solid var(--border);background:var(--card);padding:6px;width:100%;">
-              <table style="width:100%;border-collapse:collapse;font-size:13px;">
-                <thead>
-                  <tr>
-                    <th style="text-align:left;padding:6px;color:var(--muted);">Mã</th>
-                    <th style="text-align:left;padding:6px;color:var(--muted);">Loại</th>
-                    <th style="text-align:left;padding:6px;color:var(--muted);">Ngày</th>
-                    <th style="text-align:left;padding:6px;color:var(--muted);">Người tạo</th>
-                    <?php if ($roleId == 1): ?><th style="text-align:left;padding:6px;color:var(--muted);">Thao tác</th><?php endif; ?>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php if (isset($data['recentTransactions']) && !empty($data['recentTransactions'])): ?>
-                    <?php foreach (array_slice($data['recentTransactions'], 0, 8) as $trans): ?>
-                      <tr style="border-top:1px dashed var(--border);">
-                        <td style="padding:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;"><a href="index.php?page=receipts/detail&id=<?= urlencode($trans['transaction_id']) ?>" style="color: var(--accent); text-decoration: none;"><?= htmlspecialchars($trans['transaction_id']) ?></a></td>
-                        <td style="padding:8px;">
-                          <?php 
-                            $typeText = 'Nhập';
-                            $typeColor = 'var(--success)';
-                            if ($trans['type'] == 'export') {
-                              $typeText = 'Xuất';
-                              $typeColor = 'var(--accent)';
-                            }
-                          ?>
-                          <span style="color: <?= $typeColor ?>"><?= $typeText ?></span>
-                        </td>
-                        <td style="padding:8px;">
-                          <?php
-                            if (isset($trans['created_at'])) {
-                              if ($trans['created_at'] instanceof MongoDB\BSON\UTCDateTime) {
-                                echo date('d/m H:i', $trans['created_at']->toDateTime()->getTimestamp());
-                              } else {
-                                echo date('d/m H:i', strtotime($trans['created_at']));
-                              }
-                            } else {
-                              echo '-';
-                            }
-                          ?>
-                        </td>
-                        <td style="padding:8px;"><?= htmlspecialchars($trans['created_by']) ?></td>
-                        <?php if ($roleId == 1): // Admin quick approve ?>
-                          <td style="padding:8px;">
-                            <?php if (isset($trans['status']) && $trans['status'] == 1): ?>
-                              <button onclick="approveTransaction('<?= $trans['transaction_id'] ?>')" style="font-size:11px;padding:6px 8px;border-radius:6px;background:var(--success);color:#fff;border:none;cursor:pointer;">✓ Duyệt</button>
-                            <?php else: ?>
-                              <span style="color:var(--muted);font-size:12px;">-</span>
-                            <?php endif; ?>
-                          </td>
-                        <?php endif; ?>
-                      </tr>
-                    <?php endforeach; ?>
-                  <?php else: ?>
-                    <tr><td colspan="<?= $roleId == 1 ? 5 : 4 ?>" style="text-align:center;color:var(--muted);padding:12px;">Chưa có giao dịch</td></tr>
+      <div class="card" style="padding: 20px;">
+        <h3 style="margin-top:0">Cảnh báo & Hoạt động gần đây</h3>
+        <ul id="alerts" style="padding-left:18px;margin:6px 0;">
+          <?php if (isset($data['alerts']) && !empty($data['alerts'])): ?>
+            <?php foreach ($data['alerts'] as $alert): ?>
+              <li style="color: <?= $alert['type'] == 'danger' ? 'var(--danger)' : ($alert['type'] == 'warning' ? 'var(--warning)' : ($alert['type'] == 'info' ? 'var(--accent)' : 'var(--success)')) ?>; margin-bottom: 10px; cursor: pointer;">
+                <?= $alert['icon'] ?> <?= htmlspecialchars($alert['message']) ?>
+                <?php if ($roleId == 1): // Admin có nút xử lý nhanh ?>
+                  <?php if ($alert['type'] == 'danger' && strpos($alert['message'], 'URGENT') !== false): ?>
+                    <button onclick="window.location='index.php?page=goodsReceiptRequest'" style="margin-left: 10px; font-size: 10px; padding: 3px 8px; background: var(--danger); color: white; border: none; border-radius: 4px; cursor: pointer;">Xử lý ngay</button>
+                  <?php elseif ($alert['type'] == 'warning' && strpos($alert['message'], 'sắp hết') !== false): ?>
+                    <button onclick="window.location='index.php?page=products'" style="margin-left: 10px; font-size: 10px; padding: 3px 8px; background: var(--warning); color: white; border: none; border-radius: 4px; cursor: pointer;">Xem chi tiết</button>
                   <?php endif; ?>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+                <?php endif; ?>
+              </li>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <li>Không có cảnh báo</li>
+          <?php endif; ?>
+        </ul>
+        <hr style="border:none;border-top:1px dashed var(--border)">
+        <div class="muted" style="margin-bottom: 8px;">Phiếu gần nhất</div>
+        <table>
+          <thead><tr><th>Mã</th><th>Loại</th><th>Ngày</th><th>Người tạo</th><?php if ($roleId == 1): ?><th>Thao tác</th><?php endif; ?></tr></thead>
+          <tbody>
+            <?php if (isset($data['recentTransactions']) && !empty($data['recentTransactions'])): ?>
+              <?php foreach (array_slice($data['recentTransactions'], 0, 5) as $trans): ?>
+                <tr>
+                  <td><a href="index.php?page=receipts/detail&id=<?= urlencode($trans['transaction_id']) ?>" style="color: var(--accent); text-decoration: none;"><?= htmlspecialchars($trans['transaction_id']) ?></a></td>
+                  <td>
+                    <?php 
+                      $typeText = 'Nhập';
+                      $typeColor = 'var(--success)';
+                      if ($trans['type'] == 'export') {
+                        $typeText = 'Xuất';
+                        $typeColor = 'var(--accent)';
+                      }
+                    ?>
+                    <span style="color: <?= $typeColor ?>"><?= $typeText ?></span>
+                  </td>
+                  <td>
+                    <?php
+                      if (isset($trans['created_at'])) {
+                        if ($trans['created_at'] instanceof MongoDB\BSON\UTCDateTime) {
+                          echo date('d/m H:i', $trans['created_at']->toDateTime()->getTimestamp());
+                        } else {
+                          echo date('d/m H:i', strtotime($trans['created_at']));
+                        }
+                      } else {
+                        echo '-';
+                      }
+                    ?>
+                  </td>
+                  <td><?= htmlspecialchars($trans['created_by']) ?></td>
+                  <?php if ($roleId == 1): // Admin có thể quick approve ?>
+                    <td>
+                      <?php if (isset($trans['status']) && $trans['status'] == 1): ?>
+                        <button onclick="approveTransaction('<?= $trans['transaction_id'] ?>')" style="font-size: 11px; padding: 4px 8px; background: var(--success); color: white; border: none; border-radius: 4px; cursor: pointer;">✓ Duyệt</button>
+                      <?php else: ?>
+                        <span style="color: var(--muted); font-size: 11px;">-</span>
+                      <?php endif; ?>
+                    </td>
+                  <?php endif; ?>
+                </tr>
+              <?php endforeach; ?>
+            <?php else: ?>
+              <tr><td colspan="<?= $roleId == 1 ? 5 : 4 ?>" style="text-align:center;color:var(--muted)">Chưa có giao dịch</td></tr>
+            <?php endif; ?>
+          </tbody>
+        </table>
       </div>
     </section>
 
     <!-- Bottom sections -->
-    <section style="margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
-      <div class="card" style="padding: 20px;">
-        <h3 style="margin-top:0; margin-bottom: 12px;">🔥 Top sản phẩm xuất nhiều</h3>
+    <section style="margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:24px">
+      <div class="card" style="padding: 24px;">
+        <h3 style="margin-top:0; margin-bottom: 16px;font-size:18px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:10px;">
+          <span style="font-size:24px;">🔥</span>
+          <span>Top sản phẩm xuất nhiều</span>
+        </h3>
         <table>
           <thead><tr><th>SKU</th><th>Tên sản phẩm</th><th>Số lượng</th></tr></thead>
           <tbody>
             <?php if (isset($data['topProducts']) && !empty($data['topProducts'])): ?>
               <?php foreach ($data['topProducts'] as $productId => $product): ?>
+                <?php 
+                  $sku = '';
+                  if (!empty($product['sku'])) {
+                    $sku = $product['sku'];
+                  } elseif (!empty($product['product_code'])) {
+                    $sku = $product['product_code'];
+                  } elseif (!empty($product['code'])) {
+                    $sku = $product['code'];
+                  } else {
+                    $sku = __resolve_sku_by_product_id($productId);
+                    if ($sku === '' && is_scalar($productId)) {
+                      // Fallback last resort, but avoid showing raw ID if we can resolve
+                      $sku = (string)$productId;
+                    }
+                  }
+                ?>
                 <tr>
-                  <td><?= htmlspecialchars($product['sku']) ?></td>
-                  <td><?= htmlspecialchars($product['name']) ?></td>
-                  <td style="color: var(--success); font-weight: 600;"><?= number_format($product['qty']) ?></td>
+                  <td><?= htmlspecialchars($sku) ?></td>
+                  <td><?= htmlspecialchars($product['name'] ?? '') ?></td>
+                  <td style="color: var(--success); font-weight: 600;">
+                    <?= number_format($product['qty'] ?? 0) ?>
+                  </td>
                 </tr>
               <?php endforeach; ?>
             <?php else: ?>
@@ -667,8 +639,11 @@ if ($roleId == 1 && !empty($data['warehousesSummary']) && is_array($data['wareho
           </tbody>
         </table>
       </div>
-      <div class="card" style="padding: 20px;">
-        <h3 style="margin-top:0; margin-bottom: 12px;">⚠️ Sản phẩm sắp hết hàng</h3>
+      <div class="card" style="padding: 24px;">
+        <h3 style="margin-top:0; margin-bottom: 16px;font-size:18px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:10px;">
+          <span style="font-size:24px;">⚠️</span>
+          <span>Sản phẩm sắp hết hàng</span>
+        </h3>
         <table>
           <thead><tr><th>SKU</th><th>Tên</th><th>Tồn kho</th><th>Min</th></tr></thead>
           <tbody>
@@ -684,7 +659,7 @@ if ($roleId == 1 && !empty($data['warehousesSummary']) && is_array($data['wareho
                 </tr>
               <?php endforeach; ?>
             <?php else: ?>
-              <tr><td colspan="4" style="text-align:center;color:var(--success)">✅ Tất cả sản phẩm đều đủ hàng</td></tr>
+              <tr><td colspan="4" style="text-align:center;color:var(--success)"> Tất cả sản phẩm đều đủ hàng</td></tr>
             <?php endif; ?>
           </tbody>
         </table>

@@ -1,0 +1,15 @@
+_id,category_id,category_code,category_name,description,status,create_at,updated_at
+68c6de9a66c6861a067dc3de,DM002,DT,Điện thoại,Các dòng điện thoại thông minh,1,2025-01-05T09:30:00.000+00:00,2025-09-21T10:47:14.063+00:00
+68c6de9a66c6861a067dc3df,DM003,TAP,Máy tính bảng,Các loại tablet phục vụ công việc và giải trí,1,2025-01-10T14:45:00.000+00:00,2025-09-21T10:47:25.351+00:00
+68c6de9a66c6861a067dc3e0,DM004,PK,Phụ kiện máy tính,"Chuột, bàn phím, tai nghe, sạc, dây cáp...",1,2025-01-15T14:45:00.000+00:00,
+68c6de9a66c6861a067dc3e1,DM005,LK,Linh kiện máy tính,"RAM, ổ cứng, mainboard, CPU, GPU",1,2025-01-20T16:00:00.000+00:00,
+68c6de9a66c6861a067dc3e2,DM006,MH,Màn hình máy tính,"Màn hình máy tính, màn hình gaming",1,2025-01-25T13:20:00.000+00:00,
+68ffe2020000000000000001,DM007,LP,Laptop,"Các dòng laptop văn phòng và gaming",1,2025-02-01T09:00:00.000+00:00,2025-09-21T11:00:00.000+00:00
+68ffe2020000000000000002,DM008,DTB,Máy tính để bàn,Desktop cho văn phòng và gaming,1,2025-02-05T10:00:00.000+00:00,2025-09-21T11:05:00.000+00:00
+68ffe2020000000000000003,DM009,DHTM,Đồng hồ thông minh,Smartwatch và vòng đeo tay,1,2025-02-10T08:30:00.000+00:00,2025-09-21T11:10:00.000+00:00
+68ffe2020000000000000004,DM010,TBN,Thiết bị mạng,"Router, switch, modem, mesh Wi-Fi",1,2025-02-12T14:00:00.000+00:00,2025-09-21T11:15:00.000+00:00
+68ffe2020000000000000005,DM011,TBI,Thiết bị in,"Printer, mực in, máy scan",1,2025-02-15T15:45:00.000+00:00,2025-09-21T11:20:00.000+00:00
+68ffe2020000000000000006,DM012,LTN,Lưu trữ ngoài,"Ổ cứng di động, USB, thẻ nhớ",1,2025-02-18T09:15:00.000+00:00,2025-09-21T11:25:00.000+00:00
+68ffe2020000000000000007,DM013,CAM,Camera và an ninh,"Camera IP, webcam, thiết bị giám sát",1,2025-02-20T13:30:00.000+00:00,2025-09-21T11:30:00.000+00:00
+68ffe2020000000000000008,DM014,AT,Âm thanh,"Tai nghe, loa, soundbar, mic",1,2025-02-22T16:00:00.000+00:00,2025-09-21T11:35:00.000+00:00
+68ffe2020000000000000009,DM015,TBCG,Thiết bị chơi game,"Tay cầm, console, phụ kiện gaming",1,2025-02-25T10:10:00.000+00:00,2025-09-21T11:40:00.000+00:00

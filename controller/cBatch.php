@@ -225,7 +225,22 @@ class CBatch {
     // Lấy tất cả lô hàng
     public function getAllBatches() {
         $data = $this->mBatch->getAllBatches();
-        return iterator_to_array($data);
+        $batches = iterator_to_array($data);
+        
+        // Enrich với SKU từ products
+        include_once(__DIR__ . "/../model/mProduct.php");
+        $mProduct = new MProduct();
+        
+        foreach ($batches as &$batch) {
+            if (isset($batch['product_id'])) {
+                $product = $mProduct->getProductById($batch['product_id']);
+                if ($product && isset($product['sku'])) {
+                    $batch['product_sku'] = $product['sku'];
+                }
+            }
+        }
+        
+        return $batches;
     }
 
     // Lấy lô theo sản phẩm

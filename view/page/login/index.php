@@ -32,18 +32,14 @@ if (isset($_POST["btDangnhap"])) {
     box-sizing: border-box;
 }
 body {
-    /* Đổi font sang một font hiện đại hơn, ví dụ: Inter, hoặc giữ lại Segoe UI */
     font-family: 'Inter', "Segoe UI", Arial, sans-serif;
     height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    /* Nền màu trắng nhẹ hoặc gradient tinh tế */
     background: linear-gradient(135deg, #f0f4f8 0%, #e0e7ee 100%);
-    color: #1f2937; /* Màu chữ cơ bản */
+    color: #1f2937;
 }
-
-/* --- Container Chính --- */
 .container {
     display: flex;
     width: 90%;
@@ -51,12 +47,10 @@ body {
     height: 80vh;
     min-height: 550px;
     border-radius: 20px;
-    overflow: hidden; /* Cần thiết cho việc bo góc */
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15); /* Bóng đổ lớn hơn, ấn tượng hơn */
-    background-color: #ffffff; /* Đảm bảo nền là màu trắng */
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    background-color: #ffffff;
 }
-
-/* --- Phần Đăng Nhập (Left) --- */
 .left {
     flex: 1;
     display: flex;
@@ -67,20 +61,18 @@ body {
 }
 
 .card {
-    /* Loại bỏ box-shadow ở đây vì đã có ở .container */
     background: transparent;
     padding: 0;
     border-radius: 0;
     width: 100%;
-    max-width: 380px; /* Giảm max-width để form trông gọn gàng hơn */
+    max-width: 380px;
     text-align: center;
 }
 
 .logo {
-    width: 80px; /* Nhỏ lại một chút */
-    height: 80px;
+    width: 125px;
+    height: 150px;
     object-fit: contain;
-    margin-bottom: 20px;
 }
 
 h2 {
@@ -91,14 +83,14 @@ h2 {
 }
 
 h3 {
-    font-size: 1rem; /* Nhỏ hơn, dùng làm phụ đề */
+    font-size: 1rem;
     font-weight: 400;
     margin-bottom: 30px;
     color: #6b7280;
 }
 
 .error-message {
-    color: #ef4444; /* Màu đỏ nổi bật hơn */
+    color: #ef4444;
     background-color: #fee2e2;
     padding: 10px;
     border-radius: 8px;
@@ -109,29 +101,28 @@ h3 {
 .error-field {
     color: #ef4444;
     font-size: 0.8rem;
-    margin: 4px 0 12px 0; /* Căn lề trái */
+    margin: 4px 0 12px 0;
     text-align: left;
 }
 
-/* --- Nhóm Input --- */
 .input-group {
     display: flex;
     align-items: center;
-    border: 2px solid #e5e7eb; /* Độ dày border */
-    border-radius: 12px; /* Bo góc nhiều hơn */
-    padding: 12px 15px; /* Tăng padding */
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px 15px;
     margin-bottom: 15px;
     background: #ffffff;
     transition: border-color 0.3s, box-shadow 0.3s;
 }
 
 .input-group:focus-within {
-    border-color: #3b82f6; /* Màu xanh khi focus */
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); /* Hiệu ứng focus ring */
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 .input-group i {
-    color: #9ca3af; /* Màu icon xám nhạt */
+    color: #9ca3af;
     margin-right: 12px;
     font-size: 1.1rem;
 }
@@ -145,11 +136,10 @@ h3 {
     color: #1f2937;
 }
 
-/* --- Nút Đăng Nhập --- */
 .button {
     width: 100%;
-    padding: 14px; /* Tăng padding cho nút */
-    border-radius: 12px; /* Bo góc nhiều hơn */
+    padding: 14px;
+    border-radius: 12px;
     color: white;
     background: linear-gradient(135deg, #2563eb, #3b82f6);
     border: none;
@@ -183,13 +173,11 @@ h3 {
     color: #1d4ed8;
 }
 
-/* --- Phần Hình Ảnh (Right) --- */
 .right {
-    flex: 1.5; /* Làm phần hình ảnh lớn hơn */
+    flex: 1.5;
     background-image: url('../../../img/wms1.png');
     background-size: cover;
     background-position: center;
-    /* Thêm lớp overlay màu nhẹ để hình ảnh trông hài hòa hơn */
     position: relative;
 }
 .right::before {
@@ -199,14 +187,13 @@ h3 {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(30, 64, 175, 0.1); /* Overlay màu xanh dương nhẹ */
+    background: rgba(30, 64, 175, 0.1);
     border-radius: 0 20px 20px 0;
 }
 
-/* --- Responsive design cho màn hình nhỏ hơn --- */
 @media (max-width: 900px) {
     .right {
-        display: none; /* Ẩn phần hình ảnh trên màn hình nhỏ */
+      display: none;
     }
     .container {
         width: 90%;
@@ -242,14 +229,12 @@ h3 {
       <?php endif; ?>
 
       <form method="POST" action="" id="loginForm">
-        <!-- Email -->
         <div class="input-group">
           <i class="fas fa-envelope"></i>
           <input type="text" id="email" name="email" placeholder="Email">
         </div>
         <div id="errorEmail" class="error-field"></div>
 
-        <!-- Password -->
         <div class="input-group">
           <i class="fas fa-lock"></i>
           <input type="password" id="password" name="password" placeholder="Mật khẩu">
@@ -266,7 +251,6 @@ h3 {
     </div>
   </div>
 
-  <!-- Bên phải: hình -->
   <div class="right"></div>
 </div>
 
@@ -307,7 +291,6 @@ document.getElementById("loginForm").addEventListener("submit", function(e) {
   }
 });
 
-// Toggle password eye
 const togglePassword = document.getElementById("togglePassword");
 const passwordInput = document.getElementById("password");
 

@@ -66,12 +66,15 @@ class CInventorySheet {
                 $lastUpdate = $latestSheet['count_date'];
             }
             
+            // Lấy SKU thực tế từ product info, không phải từ inventory
+            $realSku = $productInfo['sku'] ?? $productSku;
             $productName = $productInfo['product_name'] ?? '';
             $unit = $productInfo['unit'] ?? 'cái';
             
             $stockList[] = [
                 'product_id' => $productId,
-                'product_sku' => $productSku,
+                'sku' => $realSku,
+                'product_sku' => $productSku,  // Keep for backward compatibility
                 'product_name' => $productName,
                 'unit' => $unit,
                 'system_qty' => $totalQty,

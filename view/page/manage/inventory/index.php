@@ -240,7 +240,8 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
 								$product = $cProduct->getProductById($pidStr);
 								if ($product) {
 									$items[$idx]['product_name'] = $product['product_name'] ?? ($items[$idx]['product_name'] ?? '');
-									$items[$idx]['product_sku'] = $product['product_sku'] ?? ($items[$idx]['product_sku'] ?? '');
+									// Ưu tiên lấy 'sku' field, sau đó mới 'product_sku'
+									$items[$idx]['product_sku'] = $product['sku'] ?? ($product['product_sku'] ?? ($items[$idx]['product_sku'] ?? ''));
 								}
 							} catch (Throwable $e) {
 								// Continue if product not found
@@ -279,41 +280,66 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
 ?>
 
 <style>
+  /* MODERN ADMIN DASHBOARD STYLES */
+  :root {
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --muted: #64748b;
+    --primary: #3b82f6;
+    --primary-dark: #2563eb;
+    --accent: #10b981;
+    --accent-dark: #059669;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --border: #e2e8f0;
+    --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  }
+
+  * { box-sizing: border-box; }
+
   body {
-    font-family: 'Segoe UI', Roboto, sans-serif;
-    background: #f3f4f6;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg);
+    color: #1e293b;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
   }
 
   .inv-container {
-    max-width: 1300px;
-    margin: 20px auto;
-    background: #ffffff;
-    padding: 28px;
+    background: var(--card);
     border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
-    transition: 0.3s ease;
+    padding: 28px;
+    box-shadow: var(--shadow);
+    max-width: 1400px;
+    margin: 24px auto;
+    border: 1px solid var(--border);
   }
 
   .inv-header {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--border);
   }
 
   .inv-title {
-    font-size: 1.6rem;
+    font-size: 28px;
     font-weight: 700;
-    color: #1e293b;
+    color: #0f172a;
     margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    letter-spacing: -0.5px;
   }
 
   /* Bộ lọc */
+  .inv-filters {
+    width: 100%;
+  }
+
   .inv-filters form {
     display: flex;
     flex-wrap: wrap;
@@ -323,80 +349,126 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
 
   .inv-filters input,
   .inv-filters select {
-    padding: 8px 12px;
-    border: 1px solid #d1d5db;
+    padding: 10px 12px;
+    border: 2px solid var(--border);
     border-radius: 8px;
     font-size: 14px;
     background: #fff;
-    transition: 0.2s;
+    transition: all 0.2s ease;
+    font-family: inherit;
   }
+  
   .inv-filters input:focus,
   .inv-filters select:focus {
     outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .inv-filters label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    font-size: 14px;
+    color: #334155;
   }
 
   /* Nút */
   .inv-btn {
-    background: #2563eb;
+    background: var(--primary);
     color: #fff;
-    padding: 8px 14px;
+    padding: 10px 18px;
     border: none;
     border-radius: 8px;
     cursor: pointer;
     text-decoration: none;
     font-size: 14px;
-    font-weight: 500;
-    transition: 0.2s ease;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
+  
   .inv-btn:hover {
-    background: #1d4ed8;
+    background: var(--primary-dark);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
     transform: translateY(-1px);
   }
+  
   .inv-btn.secondary {
     background: #6b7280;
+    box-shadow: 0 2px 4px rgba(107, 114, 128, 0.2);
   }
+  
   .inv-btn.secondary:hover {
     background: #4b5563;
+    box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
   }
+  
   .inv-btn.ghost {
-    background: #f9fafb;
-    color: #2563eb;
-    border: 1px solid #c7d2fe;
+    background: transparent;
+    color: var(--primary);
+    box-shadow: none;
+    border: 1.5px solid var(--primary);
+    padding: 6px 12px;
   }
+  
   .inv-btn.ghost:hover {
     background: #eff6ff;
+    transform: translateY(-1px);
   }
 
   /* Bảng */
   .inv-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 12px;
-    border-radius: 10px;
+    margin-top: 20px;
+    border-radius: 12px;
     overflow: hidden;
+    box-shadow: var(--shadow);
   }
 
-  .inv-table th, .inv-table td {
-    padding: 10px 14px;
-    border-bottom: 1px solid #e5e7eb;
+  .inv-table th, 
+  .inv-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
     text-align: center;
     font-size: 14px;
   }
 
   .inv-table th {
-    background: #f1f5f9;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     font-weight: 600;
-    color: #374151;
+    color: #1e293b;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--border);
   }
 
-  .inv-table tr:hover {
-    background: #f9fafb;
+  .inv-table tbody tr {
+    transition: all 0.2s ease;
   }
 
-  .qty-pos { color: #059669; font-weight: 600; }
-  .qty-neg { color: #dc2626; font-weight: 600; }
+  .inv-table tbody tr:hover {
+    background: #f8fafc;
+    transform: scale(1.001);
+  }
+
+  .qty-pos { 
+    color: var(--accent); 
+    font-weight: 700;
+    font-size: 15px;
+  }
+  
+  .qty-neg { 
+    color: var(--danger); 
+    font-weight: 700;
+    font-size: 15px;
+  }
 
   /* Modal */
   .inv-modal {
@@ -404,15 +476,17 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
     position: fixed;
     inset: 0;
     z-index: 1000;
-    backdrop-filter: blur(3px);
+    backdrop-filter: blur(4px);
     overflow-y: auto;
+    background: rgba(0, 0, 0, 0.5);
   }
+  
   .inv-modal .overlay {
     position: absolute;
     inset: 0;
-    background: rgba(0,0,0,0.6);
     animation: fadeIn 0.3s ease;
   }
+  
   .inv-modal .content {
     position: relative;
     z-index: 1001;
@@ -420,18 +494,21 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
     margin: 60px auto;
     background: #fff;
     border-radius: 16px;
-    padding: 24px 28px;
+    padding: 28px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     animation: modalSlideIn 0.3s ease;
+    border: 1px solid var(--border);
   }
+  
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
   }
+  
   @keyframes modalSlideIn {
     from { 
       opacity: 0; 
-      transform: translateY(-20px) scale(0.95); 
+      transform: translateY(-30px) scale(0.95); 
     }
     to { 
       opacity: 1; 
@@ -443,22 +520,26 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
     width: 100%;
     border-collapse: collapse;
     margin-top: 16px;
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: var(--shadow);
   }
-  .inv-modal th, .inv-modal td {
+  
+  .inv-modal th, 
+  .inv-modal td {
     padding: 12px 14px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     text-align: center;
     font-size: 14px;
   }
+  
   .inv-modal th {
-    background: #f8fafc;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     font-weight: 600;
-    color: #475569;
-    border-bottom: 2px solid #cbd5e1;
+    color: #1e293b;
+    border-bottom: 2px solid var(--border);
   }
+  
   .inv-modal tbody tr:hover {
     background: #f8fafc;
   }
@@ -466,47 +547,76 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
   /* Phân trang */
   .inv-pagination {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     justify-content: flex-end;
     align-items: center;
-    margin-top: 18px;
+    margin-top: 24px;
     flex-wrap: wrap;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
   }
 
   .inv-pagination span {
     font-size: 14px;
-    color: #374151;
+    color: #475569;
+    font-weight: 500;
   }
 
   .inv-page-link {
-    padding: 6px 10px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
+    padding: 8px 12px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
     text-decoration: none;
-    color: #111827;
-    transition: 0.2s;
+    color: #334155;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    min-width: 40px;
+    text-align: center;
   }
+  
   .inv-page-link:hover {
-    background: #f3f4f6;
+    background: #f1f5f9;
+    border-color: var(--primary);
+    transform: translateY(-1px);
   }
+  
   .inv-page-link.active {
-    background: #2563eb;
+    background: var(--primary);
     color: #fff;
-    border-color: #2563eb;
+    border-color: var(--primary);
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
   }
 
   /* Responsive */
   @media (max-width: 768px) {
+    .inv-container {
+      padding: 16px;
+      margin: 12px;
+    }
+    
+    .inv-header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
     .inv-filters form {
       flex-direction: column;
       align-items: stretch;
     }
-    .inv-table th, .inv-table td {
-      font-size: 13px;
-      padding: 8px;
+    
+    .inv-filters input,
+    .inv-filters select {
+      width: 100%;
     }
-    .inv-container {
-      padding: 16px;
+    
+    .inv-table th, 
+    .inv-table td {
+      font-size: 13px;
+      padding: 10px 8px;
+    }
+    
+    .inv-title {
+      font-size: 24px;
     }
   }
 </style>
@@ -514,7 +624,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
 
 <div class="inv-container">
 	<div class="inv-header">
-		<h2 class="inv-title">📦 Lịch sử tồn kho (Inventory)</h2>
+		<h2 class="inv-title"><i class="fas fa-boxes"></i>  Tồn kho</h2>
 		<div class="inv-filters">
 			<form method="get" action="index.php" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
 						<input type="hidden" name="page" value="inventory" />
@@ -554,7 +664,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
 							<option value="list" <?=$view==='list'?'selected':''?>>Theo giao dịch</option>
 						</select>
 				<button class="inv-btn" type="submit">Lọc</button>
-				<a class="inv-btn secondary" href="index.php?page=manage"> Quay lại</a>
+				<!-- <a class="inv-btn secondary" href="index.php?page=manage"> Quay lại</a> -->
 			</form>
 		</div>
 	</div>
@@ -575,11 +685,14 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
 					</thead>
 					<tbody>
 					<?php if (!empty($items)) { foreach ($items as $g) {
-					$sku = $g['product_sku'] ?? '';
 					$pid = $g['product_id'] ?? '';
 					$pidStr = id_str($pid);
 						$pinfo = null;
 						if (!empty($pid)) { $pinfo = $cProduct->getProductById($pid); }
+						
+						// Ưu tiên lấy SKU từ thông tin sản phẩm, sau đó mới từ dữ liệu inventory
+						$sku = ($pinfo['sku'] ?? ($pinfo['product_sku'] ?? ($g['product_sku'] ?? '')));
+						
 						if (!$pinfo && !empty($sku)) {
 							// best-effort: search by SKU from all products list (optional)
 						}

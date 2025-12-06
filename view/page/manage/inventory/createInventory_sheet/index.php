@@ -76,7 +76,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 <div class="container">
         <div class="header">
             <h2><i class="fa-solid fa-clipboard-list"></i> Tạo phiếu kiểm kê hàng tồn kho</h2>
-            <a href="index.php?page=inventory" class="btn btn-secondary">← Quay lại</a>
+            <!-- <a href="index.php?page=inventory" class="btn btn-secondary">← Quay lại</a> -->
         </div>
 
         <div id="alertBox"></div>
@@ -268,7 +268,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
             let html = '';
             allProducts.forEach(product => {
                 const productId = product.product_id || product.id;
-                const productSku = product.product_sku || product.sku || productId;
+                const productSku = product.sku || product.product_sku || productId;
                 const productName = product.product_name || product.name || 'N/A';
                 const systemQty = product.system_qty || product.quantity || 0;
                 const isChecked = selectedProductIds.has(productId) ? 'checked' : '';
@@ -436,7 +436,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
             tbody.innerHTML = stockData.map((item, index) => `
                 <tr>
                     <td>${index + 1}</td>
-                    <td>${escapeHtml(item.product_sku || '')}</td>
+                    <td>${escapeHtml(item.sku || item.product_sku || '')}</td>
                     <td>${escapeHtml(item.product_name || '')}</td>
                     <td>${escapeHtml(item.unit || 'cái')}</td>
                     <td style="text-align: center; font-weight: 600;">${formatNumber(item.system_qty)}</td>
