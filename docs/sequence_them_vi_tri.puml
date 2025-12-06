@@ -1,0 +1,78 @@
+@startuml
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor "QL Kho" as User
+boundary "GD_Chinh" as GUI_Main
+boundary "GD_QuanLyViTri" as View
+control "Ctrl_Location" as Controller
+entity "DB_Locations" as LocationDB
+
+title Thêm vị trí kho (Zone)
+
+User -> GUI_Main: 1: Chọn "Quản lý vị trí"
+activate User
+activate GUI_Main
+
+GUI_Main -> View: 1.1: Mở trang quản lý vị trí
+activate View
+deactivate GUI_Main
+
+View -> Controller: 1.2: listLocations()
+activate Controller
+
+Controller -> LocationDB: 1.2.1: getLocationByWarehouseId(warehouseId)
+activate LocationDB
+
+LocationDB --> Controller: 1.2.2: return zones[]
+deactivate LocationDB
+
+Controller --> View: 1.2.3: return zones list
+deactivate Controller
+
+View -> View: 1.3: Hiển thị danh sách zones với racks và bins
+
+View -> View: 1.4: Hiển thị Matrix Editor (nếu chưa có zones)
+
+User -> View: 2: Nhập cấu hình (số Zone, Rack, Bin)
+
+User -> View: 2.1: Nhập kích thước bin mặc định (width, depth, height)
+
+View -> View: 2.2: Validate (Max: 3 zones, 4 racks, 10 bins)
+
+User -> View: 3: Click "Lưu tất cả"
+
+View -> View: 3.1: Validate dữ liệu
+
+alt Dữ liệu hợp lệ
+    View -> Controller: 3.2: saveLocationForWarehouse(zones[], warehouseId)
+    activate Controller
+    
+    Controller -> Controller: 3.2.1: Kiểm tra số lượng zones ≤ 3
+    
+    Controller -> Controller: 3.2.2: Kiểm tra tên zone không trùng
+    
+    Controller -> LocationDB: 3.2.3: setZonesForWarehouse(warehouseId, zones[])
+    activate LocationDB
+    
+    LocationDB --> Controller: 3.2.4: Success
+    deactivate LocationDB
+    
+    Controller --> View: 3.2.5: return {success: true}
+    deactivate Controller
+    
+    View -> View: 3.3: Hiển thị toast thông báo
+    
+    View -> View: 3.4: Reload trang
+    
+    View -> View: 3.5: Hiển thị danh sách zones đã tạo
+    
+else Dữ liệu không hợp lệ
+    View -> View: 3.6: Hiển thị lỗi validation
+end
+
+deactivate View
+deactivate User
+
+@enduml

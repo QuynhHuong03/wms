@@ -1,0 +1,141 @@
+@startuml Them_Bin_Vao_Rack
+
+' Cấu hình giao diện
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+' Định nghĩa các đối tượng tham gia
+actor "Quản lý kho" as Manager
+boundary "GD_Chinh" as GUI_Main
+boundary "GD_QuanLyViTri" as GUI_Location
+boundary "GD_ThemBin" as GUI_AddBin
+control "Ctrl_Location" as LocationController
+entity "DB_Warehouse_Structure" as WarehouseDB
+
+title Sequence: Thêm Bin vào Rack
+
+Manager -> GUI_Main: 1: Chọn "Quản lý vị trí"
+activate Manager
+activate GUI_Main
+
+GUI_Main -> GUI_Location: 1.1: Mở quản lý vị trí
+activate GUI_Location
+deactivate GUI_Main
+
+Manager -> GUI_Location: 2: Click "Thêm Bin" tại R1
+
+GUI_Location -> GUI_AddBin: 1.1: Mở modal thêm bin
+activate GUI_AddBin
+
+' === Lấy kích thước mặc định ===
+
+GUI_AddBin -> GUI_AddBin: 1.2: Count bins hiện tại trong rack
+
+
+
+GUI_AddBin -> GUI_AddBin: 1.3: Lấy dimensions từ bin đầu tiên trong zone
+
+
+
+GUI_AddBin -> GUI_AddBin: 1.4: Generate tên bin auto\n(Zone/Rack/BinID)
+
+GUI_AddBin -> GUI_AddBin: 1.5: Hiển thị form
+deactivate GUI_AddBin
+
+
+
+Manager -> GUI_AddBin: 2: Điều chỉnh thông tin và click "Thêm"
+activate GUI_AddBin
+
+GUI_AddBin -> LocationController: 2.1: addBin(zone_id, rack_id, bin_data)
+activate LocationController
+
+
+
+' === Kiểm tra và tạo rack nếu cần ===
+
+LocationController -> WarehouseDB: 2.2: Check rack exists in warehouse
+activate WarehouseDB
+
+
+
+WarehouseDB --> LocationController: 2.3: Rack data hoặc null
+deactivate WarehouseDB
+
+alt
+
+    LocationController -> WarehouseDB: 2.4: addRackToWarehouse(warehouse_id, zone_id, rack_id, rack_name)
+    activate WarehouseDB
+    
+
+    
+    WarehouseDB --> LocationController: 2.5: Rack created
+    deactivate WarehouseDB
+    
+end
+
+' === Tính bin_id tiếp theo ===
+
+LocationController -> WarehouseDB: 2.6: Query existing bins in rack
+activate WarehouseDB
+
+WarehouseDB --> LocationController: 2.7: Current bins array
+deactivate WarehouseDB
+
+LocationController -> LocationController: 2.8: Parse bin_id numbers (B1, B2, ...)\nTính max + 1
+
+
+LocationController -> LocationController: 2.9: Generate code = zone_id-rack_id-bin_id
+
+' === Kiểm tra giới hạn ===
+
+LocationController -> LocationController: 2.10: Validate bin count <= MAX_BINS_PER_RACK (10)
+
+alt
+
+    LocationController --> GUI_AddBin: 2.11: Error "Đã đạt số bin tối đa (10)"
+    deactivate LocationController
+    
+    GUI_AddBin -> GUI_AddBin: 2.12: Hiển thị thông báo lỗi
+    deactivate GUI_AddBin
+
+else Chưa đạt giới hạn
+
+    ' === Thêm bin vào warehouse ===
+    
+    LocationController -> WarehouseDB: 3: Push bin vào zones.$[].racks.$[].bins
+    activate WarehouseDB
+    
+
+    
+    WarehouseDB --> LocationController: 3.1: Modified count = 1
+    deactivate WarehouseDB
+    
+    alt Push thành công
+    
+        LocationController -> WarehouseDB: 3.2: Query bin vừa tạo để lấy ID
+        activate WarehouseDB
+        
+        WarehouseDB --> LocationController: 3.3: Bin document với ID
+        deactivate WarehouseDB
+        
+        LocationController --> GUI_AddBin: 4: Success "Thêm thành công B6"
+        deactivate LocationController
+        
+        GUI_AddBin -> GUI_AddBin: 4.1: Hiển thị toast thông báo và reload page
+        deactivate GUI_AddBin
+    
+    else Push thất bại
+    
+        LocationController --> GUI_AddBin: 4.2: Error "Thêm thất bại"
+        deactivate LocationController
+        
+        GUI_AddBin -> GUI_AddBin: 4.3: Hiển thị thông báo lỗi
+        deactivate GUI_AddBin
+    
+    end
+
+end
+
+@enduml

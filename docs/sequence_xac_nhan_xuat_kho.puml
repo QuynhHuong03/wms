@@ -1,0 +1,264 @@
+@startuml Xac_Nhan_Xuat_Kho
+
+' Cấu hình giao diện
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+' Định nghĩa các đối tượng tham gia
+actor "Quản lý kho" as Manager
+boundary "GD_Chinh" as GUI_Main
+boundary "GD_DanhSachPhieuXuat" as GUI_List
+control "Ctrl_Export" as ExportController
+control "Ctrl_Batch" as BatchController
+control "Ctrl_BatchLocation" as BatchLocationController
+control "Ctrl_InventoryMovement" as MovementController
+entity "DB_Transactions" as TransactionDB
+entity "DB_Batches" as BatchDB
+entity "DB_Batch_Locations" as BatchLocationDB
+entity "DB_Inventory_Movements" as MovementDB
+entity "DB_Inventory" as InventoryDB
+
+
+' === Xem danh sách phiếu xuất chờ xác nhận ===
+
+Manager -> GUI_Main: 1: Chọn "Xác nhận xuất kho"
+activate Manager
+activate GUI_Main
+
+GUI_Main -> GUI_List: 1.1: Mở danh sách phiếu xuất
+activate GUI_List
+deactivate GUI_Main
+
+GUI_List -> TransactionDB: 1.1: Query exports WHERE status=0 AND inventory_deducted=false
+activate TransactionDB
+
+note right of TransactionDB
+  Lấy phiếu xuất đã tạo
+  nhưng chưa xác nhận (chưa trừ kho)
+end note
+
+TransactionDB --> GUI_List: 1.2: Danh sách phiếu chờ xác nhận
+deactivate TransactionDB
+
+GUI_List -> GUI_List: 1.3: Hiển thị phiếu với nút "Xác nhận"
+deactivate GUI_List
+
+' === Click xác nhận ===
+
+Manager -> GUI_List: 2: Click "Xác nhận" phiếu EX0001
+activate GUI_List
+
+GUI_List -> ExportController: 2.1: confirmExport(export_id)
+activate ExportController
+
+ExportController -> TransactionDB: 2.2: Get export details
+activate TransactionDB
+
+TransactionDB --> ExportController: 2.3: Export document với details[]
+deactivate TransactionDB
+
+ExportController -> ExportController: 2.4: Validate inventory_deducted = false
+
+alt
+    ExportController --> GUI_List: 2.5: Error "Phiếu đã được xác nhận"
+    GUI_List -> GUI_List: 2.6: Hiển thị thông báo lỗi
+    deactivate GUI_List
+    deactivate ExportController
+else Chưa xác nhận - Tiếp tục
+end
+
+' === Xử lý từng sản phẩm theo FIFO ===
+
+loop
+
+    ExportController -> ExportController: 3: Tính totalQty = quantity × conversion_factor
+    
+    ExportController -> BatchController: 3.1: exportProductFIFO(product_id, totalQty, warehouse_id)
+    activate BatchController
+    
+    ' === Lấy danh sách batches theo FIFO ===
+    
+    BatchController -> BatchDB: 3.1.1: Query batches WHERE product_id, warehouse_id\nSort: import_date ASC (FIFO)
+    activate BatchDB
+
+    BatchDB --> BatchController: 3.1.2: Danh sách batches (sorted)
+    deactivate BatchDB
+    
+    ' === Trừ từng batch theo FIFO ===
+    
+    loop
+        
+        BatchController -> BatchLocationController: 3.2: getLocationsByBatch(batch_code)
+        activate BatchLocationController
+        
+        BatchLocationController -> BatchLocationDB: 3.2.1: Query locations\nWHERE batch_code, zone_id != 'PENDING'
+        activate BatchLocationDB
+        
+
+        
+        BatchLocationDB --> BatchLocationController: 3.2.2: Danh sách locations
+        deactivate BatchLocationDB
+        
+        BatchLocationController --> BatchController: 3.3: Locations của batch
+        deactivate BatchLocationController
+        
+        ' === Xử lý từng location ===
+        
+        loop
+            
+            BatchController -> BatchController: 3.4: Tính qtyFromLocation\n= min(remainingQty, locationQty)
+            
+
+            ' === Ghi log inventory_movements ===
+            
+            BatchController -> MovementController: 3.5: insertMovement(movement_data)
+            activate MovementController
+            
+
+            
+            MovementController -> MovementDB: 3.5.1: insertOne(movement)
+            activate MovementDB
+            
+            MovementDB --> MovementController: 3.5.2: inserted_id
+            deactivate MovementDB
+            
+            MovementController --> BatchController: 3.6: Success
+            deactivate MovementController
+            
+            ' === Giảm số lượng tại batch_locations ===
+            
+            BatchController -> BatchLocationController: 3.7: reduceBatchLocation(batch_code, location, qtyFromLocation)
+            activate BatchLocationController
+            
+            BatchLocationController -> BatchLocationDB: 3.7.1: Update quantity -= qtyFromLocation
+            activate BatchLocationDB
+            
+ 
+            
+            BatchLocationDB --> BatchLocationController: 3.7.2: Updated/Deleted
+            deactivate BatchLocationDB
+            
+            BatchLocationController --> BatchController: 3.8: Success
+            deactivate BatchLocationController
+            
+            ' === Giảm quantity_remaining trong batches ===
+            
+            BatchController -> BatchDB: 3.9: reduceBatchQuantity(batch_code, qtyFromLocation)
+            activate BatchDB
+            
+            BatchDB -> BatchDB: 3.9.1: Update quantity_remaining -= qtyFromLocation
+            
+
+            
+            BatchDB --> BatchController: 3.9.2: Updated
+            deactivate BatchDB
+            
+            ' === Lưu thông tin batch đã xuất ===
+            
+            BatchController -> BatchController: 3.10: Lưu exported_batches[]\n- batch_code\n- location\n- quantity\n- unit_price\n- import_date
+            
+            BatchController -> BatchController: 3.11: Cập nhật remainingQty -= qtyFromLocation
+            
+            alt remainingQty = 0
+                note right of BatchController
+                  Đã đủ số lượng
+                  → Dừng loop location
+                end note
+            end
+            
+        end
+        
+        alt remainingQty = 0
+            note right of BatchController
+              Đã đủ số lượng
+              → Dừng loop batch
+            end note
+        end
+        
+    end
+    
+    ' === Trừ tồn kho (inventory collection) ===
+    
+    BatchController -> InventoryDB: 3.12: Query tồn kho\nWHERE product_id, warehouse_id, qty > 0\nSort: received_at ASC (FIFO)
+    activate InventoryDB
+    
+    InventoryDB --> BatchController: 3.13: Danh sách tồn kho
+    deactivate InventoryDB
+    
+    loop
+        
+        BatchController -> InventoryDB: 3.14: Update qty hoặc set qty = 0
+        activate InventoryDB
+        
+
+        
+        InventoryDB --> BatchController: 3.15: Updated
+        deactivate InventoryDB
+        
+    end
+    
+    ' === Kết quả xuất thành công ===
+    
+    BatchController --> ExportController: 3.16: Success với exported_batches[]
+    
+
+    
+    deactivate BatchController
+    
+    ' === Lưu thông tin batches vào phiếu xuất ===
+    
+    ExportController -> TransactionDB: 4: Update details.batches = exported_batches[]
+    activate TransactionDB
+    
+    note right of TransactionDB
+      Lưu chi tiết batch đã xuất:
+      - batch_code: Mã lô
+      - quantity: Số lượng từ lô này
+      - unit_price: Giá từ batch (FIFO)
+      - import_date: Ngày nhập lô
+      - source_location: Vị trí cũ tại kho nguồn
+    end note
+    
+    TransactionDB --> ExportController: 4.1: Updated
+    deactivate TransactionDB
+    
+end
+
+' === Cập nhật status phiếu xuất ===
+
+ExportController -> TransactionDB: 5: Update export status
+activate TransactionDB
+
+note right of TransactionDB
+  Cập nhật:
+  - status: 1 (Đã xuất kho)
+  - inventory_deducted: true
+  - confirmed_by: manager_id
+  - confirmed_at: timestamp
+end note
+
+TransactionDB --> ExportController: 5.1: Updated
+deactivate TransactionDB
+
+' === Cập nhật status phiếu yêu cầu ===
+
+ExportController -> TransactionDB: 6: Update request status = 6
+activate TransactionDB
+
+note right of TransactionDB
+  Cập nhật phiếu yêu cầu gốc:
+  - status: 6 (Đã xuất kho, chờ nhận hàng)
+  - updated_at: timestamp
+end note
+
+TransactionDB --> ExportController: 6.1: Updated
+deactivate TransactionDB
+
+ExportController --> GUI_List: 7: Success "Đã xác nhận xuất kho\nĐã trừ X sản phẩm theo FIFO"
+deactivate ExportController
+
+GUI_List -> GUI_List: 8: Hiển thị thông báo thành công và reload
+deactivate GUI_List
+
+@enduml

@@ -1,0 +1,84 @@
+@startuml Đăng Nhập Hệ Thống
+
+' Cấu hình giao diện
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+title Đăng Nhập Hệ Thống WMS
+
+actor "Người dùng" as User
+boundary "GD_DangNhap" as LoginGUI
+control "Ctrl_Users" as UserCtrl
+entity "DB_Users" as UserDB
+
+User -> LoginGUI: 1: Truy cập trang đăng nhập
+activate User
+activate LoginGUI
+
+LoginGUI -> LoginGUI: 1.1: Hiển thị form đăng nhập (email, mật khẩu)
+
+User -> LoginGUI: 2: Nhập email và mật khẩu
+
+User -> LoginGUI: 3: Click "Đăng nhập"
+
+LoginGUI -> LoginGUI: 3.1: Validate dữ liệu
+
+alt Dữ liệu không hợp lệ
+    alt Email rỗng
+        LoginGUI -> LoginGUI: 3.1.1: Hiển thị "Vui lòng nhập email"
+    else Email không hợp lệ
+        LoginGUI -> LoginGUI: 3.1.2: Hiển thị "Vui lòng nhập email hợp lệ"
+    else Password rỗng
+        LoginGUI -> LoginGUI: 3.1.3: Hiển thị "Vui lòng nhập mật khẩu"
+    else Password < 6 ký tự
+        LoginGUI -> LoginGUI: 3.1.4: Hiển thị "Mật khẩu phải có ít nhất 6 ký tự"
+    end
+else Dữ liệu hợp lệ
+    LoginGUI -> UserCtrl: 3.2: login(email, password)
+    activate UserCtrl
+    
+    UserCtrl -> UserDB: 3.2.1: findUserByEmail(email) + verify password
+    activate UserDB
+    
+    note right of UserDB
+      Query: { email: email }
+      Kiểm tra email và password_verify() cùng lúc
+      Return: user document (nếu email và password đúng) hoặc null
+    end note
+    
+    UserDB --> UserCtrl: 3.2.2: User data / null
+    deactivate UserDB
+    
+    alt Email hoặc Password không đúng
+        UserCtrl --> LoginGUI: 3.3: return false
+        deactivate UserCtrl
+        LoginGUI -> LoginGUI: 3.3.1: Hiển thị "Email hoặc mật khẩu không đúng"
+    else Email và Password đúng
+        UserCtrl -> UserCtrl: 3.3: Kiểm tra status
+        
+        alt Status = 0 (Tài khoản bị khóa)
+            UserCtrl --> LoginGUI: 3.4: return false
+            deactivate UserCtrl
+            LoginGUI -> LoginGUI: 3.4.1: Hiển thị "Email hoặc mật khẩu không đúng, hoặc tài khoản bị khóa"
+        else Status = 1 (Tài khoản hoạt động)
+            UserCtrl -> UserCtrl: 3.4: Lưu thông tin user vào $_SESSION['login']
+            
+            note right of UserCtrl
+              Session lưu: user_id, name, 
+              email, role_id, warehouse_id
+            end note
+            
+            UserCtrl --> LoginGUI: 3.5: return true + redirect URL
+            deactivate UserCtrl
+            
+            LoginGUI -> LoginGUI: 3.5.1: Hiển thị "Đăng nhập thành công"
+            LoginGUI -> LoginGUI: 3.5.2: Chuyển hướng tới Dashboard
+        end
+    end
+end
+
+deactivate LoginGUI
+deactivate User
+
+@enduml

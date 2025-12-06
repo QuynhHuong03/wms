@@ -1,0 +1,54 @@
+@startuml Duyệt phiếu kiểm kê
+
+skinparam swimlane {
+    BorderColor black
+    BorderThickness 2
+    TitleFontSize 14
+}
+skinparam PartitionBorderColor black
+skinparam PartitionBorderThickness 2
+skinparam ActivityBackgroundColor white
+skinparam ActivityBorderColor black
+skinparam DiamondBackgroundColor white
+skinparam DiamondBorderColor black
+skinparam Padding 2
+skinparam BoxPadding 10
+
+|Quản lý|
+start
+:Chọn phiếu kiểm kê
+cần duyệt;
+
+|Hệ thống|
+:Hiển thị chi tiết phiếu:
+- Danh sách sản phẩm
+- Số lượng thực tế
+- Chênh lệch;
+
+|Quản lý|
+:Xem xét phiếu kiểm kê;
+
+if (Quyết định?) then (Duyệt)
+  :Nhập ghi chú và
+  chọn vị trí chênh lệch;
+  
+  |Hệ thống|
+  :Cập nhật inventory;
+  :Tạo phiếu bù chênh lệch;
+  :Cập nhật trạng thái
+  = "Đã duyệt";
+  
+else (Từ chối)
+  |Quản lý|
+  :Nhập lý do từ chối;
+  |Hệ thống|
+  :Cập nhật trạng thái
+  = "Từ chối";
+endif
+
+|Quản lý|
+:Nhận thông báo kết quả;
+
+stop
+
+@enduml

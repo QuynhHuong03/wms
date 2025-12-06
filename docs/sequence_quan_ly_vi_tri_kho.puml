@@ -1,0 +1,108 @@
+@startuml Quan_Ly_Vi_Tri_Kho
+
+' Cấu hình giao diện
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+' Định nghĩa các đối tượng tham gia
+actor "QL Kho" as Manager
+boundary "GD_Chinh" as GUI_Main
+boundary "GD_QuanLyViTri" as GUI_Location
+control "Ctrl_Location" as LocationController
+entity "DB_Warehouse_Structure" as WarehouseDB
+entity "DB_Inventory" as InventoryDB
+
+title Sequence: Quản Lý Vị Trí Kho (Zone/Rack/Bin)
+
+' === Xem cấu trúc kho ===
+
+Manager -> GUI_Main: 1: Chọn "Quản lý vị trí kho"
+activate Manager
+activate GUI_Main
+
+GUI_Main -> GUI_Location: 1.1: Mở trang quản lý vị trí
+activate GUI_Location
+deactivate GUI_Main
+
+GUI_Location -> LocationController: 1.2: listLocations()
+activate LocationController
+
+LocationController -> WarehouseDB: 1.2.1: Query warehouse_structure\nWHERE warehouse_id
+activate WarehouseDB
+
+
+
+WarehouseDB --> LocationController: 1.2.2: Zones với Racks và Bins
+deactivate WarehouseDB
+
+' === Lấy tồn kho cho từng bin ===
+
+LocationController -> InventoryDB: 1.3: getInventoryByWarehouse(warehouse_id)
+activate InventoryDB
+
+InventoryDB --> LocationController: 1.4: Inventory data (zone_id, rack_id, bin_id, qty)
+deactivate InventoryDB
+
+LocationController -> LocationController: 1.5: Map inventory to bins\nTính % chiếm dụng
+
+
+LocationController --> GUI_Location: 1.6: Locations với inventory và status
+deactivate LocationController
+
+GUI_Location -> GUI_Location: 1.7: Hiển thị cấu trúc kho\n(Zones → Racks → Bins)
+deactivate GUI_Location
+
+' === Tạo cấu trúc kho mới (Matrix) ===
+
+Manager -> GUI_Location: 2: Nhập cấu hình matrix\n(số zones, racks, bins)
+activate GUI_Location
+
+Manager -> GUI_Location: 2.1: Nhập kích thước và sức chứa mặc định
+Manager -> GUI_Location: 2.2: Click "Tạo cấu hình"
+
+GUI_Location -> GUI_Location: 2.3: Generate matrix preview
+
+GUI_Location -> GUI_Location: 2.4: Hiển thị xem trước cấu trúc
+deactivate GUI_Location
+
+Manager -> GUI_Location: 3: Click "Lưu tất cả"
+activate GUI_Location
+
+GUI_Location -> LocationController: 3.1: saveLocationForWarehouse(zones[])
+activate LocationController
+
+
+
+loop
+
+    loop
+        
+        loop
+            
+            LocationController -> LocationController: 3.2: Tạo bin document
+            
+            
+        end
+        
+        LocationController -> LocationController: 3.3: Tạo rack với bins[]
+        
+    end
+    
+    LocationController -> WarehouseDB: 3.4: insertOne(zone)
+    activate WarehouseDB
+    
+    WarehouseDB --> LocationController: 3.5: inserted_id
+    deactivate WarehouseDB
+    
+end
+
+LocationController --> GUI_Location: 4: Success "Đã lưu X zones"
+deactivate LocationController
+
+GUI_Location -> GUI_Location: 4.1: Hiển thị thông báo và reload
+deactivate GUI_Location
+
+
+
+@enduml

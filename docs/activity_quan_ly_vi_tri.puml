@@ -1,0 +1,51 @@
+@startuml Quản lý vị trí kho
+
+skinparam swimlane {
+    BorderColor black
+    BorderThickness 2
+    TitleFontSize 14
+}
+skinparam PartitionBorderColor black
+skinparam PartitionBorderThickness 2
+skinparam ActivityBackgroundColor white
+skinparam ActivityBorderColor black
+skinparam DiamondBackgroundColor white
+skinparam DiamondBorderColor black
+skinparam Padding 2
+skinparam BoxPadding 10
+
+|Người dùng|
+start
+:Chọn chức năng
+"Quản lý vị trí";
+
+|Hệ thống|
+:Hiển thị danh sách
+Zone/Rack/Bin hiện có;
+
+|Người dùng|
+:Chọn thao tác:
+Thêm/Sửa/Xóa
+Zone/Rack/Bin;
+
+|Hệ thống|
+:Kiểm tra điều kiện:
+- Giới hạn số lượng
+- Tồn tại sản phẩm
+- Tồn tại Zone/Rack;
+
+if (Hợp lệ?) then (Đúng)
+  :Thực hiện thao tác;
+  :Cập nhật cơ sở dữ liệu;
+else (Sai)
+  :Thông báo lỗi;
+endif
+
+:Cập nhật giao diện;
+
+|Người dùng|
+:Nhận kết quả;
+
+stop
+
+@enduml

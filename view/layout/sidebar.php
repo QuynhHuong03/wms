@@ -275,9 +275,7 @@ body {
     </div>
 
     <div class="menu-links">
-        <a href="index.php?page=dashboard" class="<?= $currentPage=='dashboard'?'active':'' ?>">
-            <i class="fas fa-home"></i> Dashboard
-        </a>
+
 
         <?php if ($roleId == 1): ?>
             <div class="submenu" id="submenu-user">

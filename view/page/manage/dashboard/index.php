@@ -11,6 +11,49 @@ $warehouseId = isset($user['warehouse_id']) ? $user['warehouse_id'] : null;
 
 $cDashboard = new CDashboard();
 $data = $cDashboard->getDashboardData($roleId, $warehouseId);
+// Build warehouse options used by selects.
+// If user is Admin (roleId == 1) prefer the already computed summary (which may include per-warehouse totals).
+// For Managers/Staff prefer the full raw list so they can select other branches.
+$warehouseOptions = [];
+// Helper: fetch and normalize raw warehouses
+function __load_raw_warehouses_options() {
+  $opts = [];
+  if (file_exists(__DIR__ . '/../../../../model/mWarehouse.php')) {
+    include_once(__DIR__ . '/../../../../model/mWarehouse.php');
+    try {
+      $mw = new MWarehouse();
+      $raw = $mw->getAllWarehouses();
+      if (is_array($raw)) {
+        foreach ($raw as $w) {
+          $wid = null;
+          if (isset($w['warehouse_id'])) $wid = $w['warehouse_id'];
+          elseif (isset($w['warehouseId'])) $wid = $w['warehouseId'];
+          elseif (isset($w['id'])) $wid = $w['id'];
+          elseif (isset($w['_id'])) {
+            if (is_array($w['_id']) && isset($w['_id']['$oid'])) $wid = $w['_id']['$oid'];
+            else $wid = (string)$w['_id'];
+          }
+          if (!$wid) continue;
+          // include all warehouses; mark inactive ones visibly
+          $name = isset($w['warehouse_name']) ? $w['warehouse_name'] : (isset($w['name']) ? $w['name'] : (isset($w['warehouseName']) ? $w['warehouseName'] : $wid));
+          if (isset($w['status']) && intval($w['status']) !== 1) {
+            $name .= ' (Không hoạt động)';
+          }
+          $opts[] = ['warehouse_id' => $wid, 'name' => $name];
+        }
+      }
+    } catch (Exception $e) {
+      // ignore
+    }
+  }
+  return $opts;
+}
+
+if ($roleId == 1 && !empty($data['warehousesSummary']) && is_array($data['warehousesSummary'])) {
+  $warehouseOptions = $data['warehousesSummary'];
+} else {
+  $warehouseOptions = __load_raw_warehouses_options();
+}
 ?>
 
 <!DOCTYPE html>
@@ -22,32 +65,35 @@ $data = $cDashboard->getDashboardData($roleId, $warehouseId);
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
-      --bg: #0e1422;
-      --card: rgba(255, 255, 255, 0.04);
-      --border: rgba(255, 255, 255, 0.08);
-      --text: #e6eef8;
-      --muted: #94a3b8;
-      --accent: #1e90ff;
-      --success: #22c55e;
+      /* Lighter, high-contrast palette for readability */
+      --bg: #f6f8fb;
+      --card: #ffffff;
+      --border: rgba(15, 23, 42, 0.06);
+      --text: #0f172a;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --success: #16a34a;
       --warning: #f59e0b;
-      --danger: #ef4444;
-      --glass: rgba(255,255,255,0.08);
+      --danger: #dc2626;
+      --glass: rgba(0,0,0,0.04);
     }
 
     * { box-sizing: border-box; }
     body {
       font-family: 'Inter', system-ui, Segoe UI, Roboto, Arial;
-      /* background: linear-gradient(180deg, #08111f 0%, #0a1427 100%); */
+      background: var(--bg);
       color: var(--text);
       margin: 0;
-      line-height: 1.0;
+      line-height: 1.45;
       overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     .container {
       max-width: 1250px;
-      /* margin: 30px auto; */
-      /* padding: 0 16px; */
+      margin: 30px auto;
+      padding: 0 18px;
     }
 
     header {
@@ -104,6 +150,10 @@ $data = $cDashboard->getDashboardData($roleId, $warehouseId);
         grid-template-columns: repeat(4, 1fr);
       }
     }
+
+    /* Filters: apply / clear
+       (moved to script block to avoid JS inside <style> which breaks layout)
+    */
     
     @media (max-width: 1100px) {
       .kpis {
@@ -127,36 +177,38 @@ $data = $cDashboard->getDashboardData($roleId, $warehouseId);
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 16px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-      backdrop-filter: blur(10px);
-      transition: all 0.25s ease;
+      padding: 16px 18px;
+      box-shadow: 0 6px 18px rgba(16,24,40,0.06);
+      transition: box-shadow 0.18s ease, transform 0.12s ease;
+      position: relative;
+      z-index: 1;
       min-height: 90px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
     }
-    .card:hover { transform: translateY(-2px); }
+    .card:hover { box-shadow: 0 10px 30px rgba(16,24,40,0.08); transform: translateY(-4px); }
 
     .kpi-title {
       font-size: 13px;
       color: var(--muted);
       margin-bottom: 8px;
-      font-weight: 500;
+      font-weight: 600;
     }
 
     .kpi-value {
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 700;
       margin: 6px 0;
-      line-height: 1.1;
+      line-height: 1.05;
+      color: var(--text);
     }
     
     .kpi-desc {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--muted);
-      margin-top: 6px;
-      line-height: 1.3;
+      margin-top: 8px;
+      line-height: 1.25;
     }
 
     .grid-2 {
@@ -169,14 +221,24 @@ $data = $cDashboard->getDashboardData($roleId, $warehouseId);
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 14px;
-      min-height: 250px;
+      min-height: 260px;
     }
 
     canvas {
       border-radius: 10px;
       background: rgba(255, 255, 255, 0.02);
-      max-height: 250px;
+      width: 100% !important;
+      height: auto !important;
+      min-height: 220px;
+      position: relative;
+      z-index: 1;
+      display: block;
     }
+
+    /* Ensure chart container stays above other floating elements */
+    .grid-2 > .card { z-index: 3; }
+    /* Make the doughnut chart a bit larger and centered */
+    #chartGroups { max-width: 420px; margin: 6px auto; min-height: 260px; }
 
     table {
       width: 100%;
@@ -317,6 +379,8 @@ $data = $cDashboard->getDashboardData($roleId, $warehouseId);
       </div>
     </header>
 
+    <!-- Filters removed per user request -->
+
     <?php if ($roleId == 1): // Chỉ Admin mới thấy Quick Actions ?>
     <!-- Quick Actions for Admin -->
     <section class="quick-actions">
@@ -341,6 +405,52 @@ $data = $cDashboard->getDashboardData($roleId, $warehouseId);
       <button class="action-btn success" onclick="window.location='index.php?page=products'">
         <span>📦</span> Quản lý SP
       </button>
+    </section>
+    <?php endif; ?>
+
+    <?php if ($roleId == 1 || $roleId == 2): // Admin hoặc Quản lý kho thấy tổng quan theo kho ?>
+    <!-- Per-warehouse summary -->
+    <section style="margin-top:18px;">
+      <h3 style="margin-bottom:10px;">Tổng quan theo kho</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;">
+        <?php if (isset($data['warehousesSummary']) && !empty($data['warehousesSummary'])): ?>
+          <?php foreach ($data['warehousesSummary'] as $ws): ?>
+            <div class="card">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-size:13px;color:var(--muted);">Kho</div>
+                  <div style="font-weight:700;font-size:16px;margin-top:6px;"><?= htmlspecialchars($ws['name']) ?></div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:12px;color:var(--muted);">Sử dụng</div>
+                  <div style="font-weight:700;color: <?= $ws['utilization'] > 80 ? 'var(--warning)' : 'var(--accent)' ?>;"><?= number_format($ws['utilization'],1) ?>%</div>
+                </div>
+              </div>
+              <hr style="border:none;border-top:1px dashed var(--border);margin:10px 0;">
+              <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                <div style="flex:1;min-width:110px">
+                  <div style="font-size:12px;color:var(--muted)">Tổng SKU</div>
+                  <div style="font-weight:700;margin-top:6px;"><?= number_format($ws['total_sku']) ?></div>
+                </div>
+                <div style="flex:1;min-width:110px">
+                  <div style="font-size:12px;color:var(--muted)">Tổng số lượng</div>
+                  <div style="font-weight:700;margin-top:6px;"><?= number_format($ws['total_qty']) ?></div>
+                </div>
+                <div style="flex:1;min-width:140px">
+                  <div style="font-size:12px;color:var(--muted)">Tổng giá trị</div>
+                  <div style="font-weight:700;margin-top:6px;"><?= number_format($ws['total_value'],0,',','.') ?> ₫</div>
+                </div>
+                <div style="flex:1;min-width:110px">
+                  <div style="font-size:12px;color:var(--muted)">Sắp hết</div>
+                  <div style="font-weight:700;margin-top:6px;color:var(--warning)"><?= number_format($ws['low_stock_count']) ?></div>
+                </div>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <div class="card">Chưa có thông tin kho</div>
+        <?php endif; ?>
+      </div>
     </section>
     <?php endif; ?>
 
@@ -400,83 +510,139 @@ $data = $cDashboard->getDashboardData($roleId, $warehouseId);
 
     <!-- Main Charts -->
     <section class="grid-2">
-      <div class="card" style="padding: 20px;">
-        <h3 style="margin-top:0; margin-bottom: 16px;">Thống kê nhập - xuất</h3>
-        <div class="charts">
-          <canvas id="chartInOut"></canvas>
-          <canvas id="chartGroups"></canvas>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="card" style="padding: 20px;">
+          <h3 style="margin-top:0; margin-bottom: 6px;">Thống kê nhập - xuất</h3>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;flex-wrap:wrap;">
+            <div class="muted">Tần suất nhập và xuất</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <!-- InOut chart filters -->
+              <?php $inout_period = $_GET['inout_period'] ?? ($_GET['period'] ?? '7d'); ?>
+              <?php $inout_wh = $_GET['inout_warehouse'] ?? ''; ?>
+              <select id="inout_period" onchange="onChartFilterChange('inout')" style="padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text)">
+                <option value="7d" <?= $inout_period === '7d' ? 'selected' : '' ?>>7 ngày</option>
+                <option value="week" <?= $inout_period === 'week' ? 'selected' : '' ?>>Tuần</option>
+                <option value="month" <?= $inout_period === 'month' ? 'selected' : '' ?>>Tháng</option>
+                <option value="quarter" <?= $inout_period === 'quarter' ? 'selected' : '' ?>>Quý</option>
+                <option value="year" <?= $inout_period === 'year' ? 'selected' : '' ?>>Năm</option>
+              </select>
+              <select id="inout_warehouse" onchange="onChartFilterChange('inout')" style="padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text)">
+                <option value="">Tất cả kho</option>
+                <?php foreach ($warehouseOptions as $wsOpt): ?>
+                  <option value="<?= htmlspecialchars($wsOpt['warehouse_id']) ?>" <?= $inout_wh == $wsOpt['warehouse_id'] ? 'selected' : '' ?>><?= htmlspecialchars($wsOpt['name']) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+          </div>
+          <div style="width:100%">
+            <canvas id="chartInOut"></canvas>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 20px;">
+          <h3 style="margin-top:0; margin-bottom:6px;">Phân loại sản phẩm</h3>
+          <div style="width:100%;display:flex;justify-content:flex-end;margin-bottom:8px;">
+            <?php $cat_wh = $_GET['category_warehouse'] ?? ''; ?>
+              <select id="category_warehouse" onchange="onChartFilterChange('category')" style="padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text)">
+                <option value="">Tất cả kho</option>
+                <?php foreach ($warehouseOptions as $wsOpt): ?>
+                  <option value="<?= htmlspecialchars($wsOpt['warehouse_id']) ?>" <?= $cat_wh == $wsOpt['warehouse_id'] ? 'selected' : '' ?>><?= htmlspecialchars($wsOpt['name']) ?></option>
+                <?php endforeach; ?>
+              </select>
+          </div>
+          <div style="width:100%;display:flex;justify-content:center;">
+            <canvas id="chartGroups"></canvas>
+          </div>
         </div>
       </div>
-      <div class="card" style="padding: 20px;">
-        <h3 style="margin-top:0">Cảnh báo & Hoạt động gần đây</h3>
-        <ul id="alerts" style="padding-left:18px;margin:6px 0;">
-          <?php if (isset($data['alerts']) && !empty($data['alerts'])): ?>
-            <?php foreach ($data['alerts'] as $alert): ?>
-              <li style="color: <?= $alert['type'] == 'danger' ? 'var(--danger)' : ($alert['type'] == 'warning' ? 'var(--warning)' : ($alert['type'] == 'info' ? 'var(--accent)' : 'var(--success)')) ?>; margin-bottom: 10px; cursor: pointer;">
-                <?= $alert['icon'] ?> <?= htmlspecialchars($alert['message']) ?>
-                <?php if ($roleId == 1): // Admin có nút xử lý nhanh ?>
-                  <?php if ($alert['type'] == 'danger' && strpos($alert['message'], 'URGENT') !== false): ?>
-                    <button onclick="window.location='index.php?page=goodsReceiptRequest'" style="margin-left: 10px; font-size: 10px; padding: 3px 8px; background: var(--danger); color: white; border: none; border-radius: 4px; cursor: pointer;">Xử lý ngay</button>
-                  <?php elseif ($alert['type'] == 'warning' && strpos($alert['message'], 'sắp hết') !== false): ?>
-                    <button onclick="window.location='index.php?page=products'" style="margin-left: 10px; font-size: 10px; padding: 3px 8px; background: var(--warning); color: white; border: none; border-radius: 4px; cursor: pointer;">Xem chi tiết</button>
-                  <?php endif; ?>
-                <?php endif; ?>
-              </li>
-            <?php endforeach; ?>
-          <?php else: ?>
-            <li>Không có cảnh báo</li>
-          <?php endif; ?>
-        </ul>
-        <hr style="border:none;border-top:1px dashed var(--border)">
-        <div class="muted" style="margin-bottom: 8px;">Phiếu gần nhất</div>
-        <table>
-          <thead><tr><th>Mã</th><th>Loại</th><th>Ngày</th><th>Người tạo</th><?php if ($roleId == 1): ?><th>Thao tác</th><?php endif; ?></tr></thead>
-          <tbody>
-            <?php if (isset($data['recentTransactions']) && !empty($data['recentTransactions'])): ?>
-              <?php foreach (array_slice($data['recentTransactions'], 0, 5) as $trans): ?>
-                <tr>
-                  <td><a href="index.php?page=receipts/detail&id=<?= urlencode($trans['transaction_id']) ?>" style="color: var(--accent); text-decoration: none;"><?= htmlspecialchars($trans['transaction_id']) ?></a></td>
-                  <td>
-                    <?php 
-                      $typeText = 'Nhập';
-                      $typeColor = 'var(--success)';
-                      if ($trans['type'] == 'export') {
-                        $typeText = 'Xuất';
-                        $typeColor = 'var(--accent)';
-                      }
-                    ?>
-                    <span style="color: <?= $typeColor ?>"><?= $typeText ?></span>
-                  </td>
-                  <td>
-                    <?php
-                      if (isset($trans['created_at'])) {
-                        if ($trans['created_at'] instanceof MongoDB\BSON\UTCDateTime) {
-                          echo date('d/m H:i', $trans['created_at']->toDateTime()->getTimestamp());
-                        } else {
-                          echo date('d/m H:i', strtotime($trans['created_at']));
-                        }
-                      } else {
-                        echo '-';
-                      }
-                    ?>
-                  </td>
-                  <td><?= htmlspecialchars($trans['created_by']) ?></td>
-                  <?php if ($roleId == 1): // Admin có thể quick approve ?>
-                    <td>
-                      <?php if (isset($trans['status']) && $trans['status'] == 1): ?>
-                        <button onclick="approveTransaction('<?= $trans['transaction_id'] ?>')" style="font-size: 11px; padding: 4px 8px; background: var(--success); color: white; border: none; border-radius: 4px; cursor: pointer;">✓ Duyệt</button>
-                      <?php else: ?>
-                        <span style="color: var(--muted); font-size: 11px;">-</span>
+      <div class="card" style="padding: 12px; justify-content: flex-start; align-items: flex-start;">
+        <h3 style="margin-top:0; margin-bottom:6px;">Cảnh báo & Hoạt động gần đây</h3>
+        <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+          <div style="flex:1;min-width:220px;">
+            <div class="muted" style="margin-bottom:6px;">Cảnh báo</div>
+            <ul id="alerts" style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px;">
+              <?php if (isset($data['alerts']) && !empty($data['alerts'])): ?>
+                <?php foreach ($data['alerts'] as $alert): ?>
+                  <li style="display:flex;align-items:center;gap:8px;padding:6px;border-radius:8px;background:rgba(0,0,0,0.02);">
+                    <div style="width:10px;height:10px;border-radius:50%;background: <?= $alert['type'] == 'danger' ? 'var(--danger)' : ($alert['type'] == 'warning' ? 'var(--warning)' : ($alert['type'] == 'info' ? 'var(--accent)' : 'var(--success)')) ?>;"></div>
+                    <div style="font-size:13px;color:var(--muted);flex:1;"><?= htmlspecialchars($alert['message']) ?></div>
+                    <?php if ($roleId == 1): // Admin quick actions ?>
+                      <?php if ($alert['type'] == 'danger' && strpos($alert['message'], 'URGENT') !== false): ?>
+                        <button onclick="window.location='index.php?page=goodsReceiptRequest'" style="font-size:11px;padding:6px 8px;border-radius:6px;background:var(--danger);color:#fff;border:none;cursor:pointer;">Xử lý</button>
+                      <?php elseif ($alert['type'] == 'warning' && strpos($alert['message'], 'sắp hết') !== false): ?>
+                        <button onclick="window.location='index.php?page=products'" style="font-size:11px;padding:6px 8px;border-radius:6px;background:var(--warning);color:#fff;border:none;cursor:pointer;">Chi tiết</button>
                       <?php endif; ?>
-                    </td>
+                    <?php endif; ?>
+                  </li>
+                <?php endforeach; ?>
+              <?php else: ?>
+                <li style="color:var(--muted);padding:8px;">Không có cảnh báo</li>
+              <?php endif; ?>
+            </ul>
+          </div>
+
+          <div style="flex:2;min-width:320px;">
+            <div class="muted" style="margin-bottom:6px;">Phiếu gần nhất</div>
+            <div class="recent-table-wrapper" style="border-radius:8px;border:1px solid var(--border);background:var(--card);padding:6px;width:100%;">
+              <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead>
+                  <tr>
+                    <th style="text-align:left;padding:6px;color:var(--muted);">Mã</th>
+                    <th style="text-align:left;padding:6px;color:var(--muted);">Loại</th>
+                    <th style="text-align:left;padding:6px;color:var(--muted);">Ngày</th>
+                    <th style="text-align:left;padding:6px;color:var(--muted);">Người tạo</th>
+                    <?php if ($roleId == 1): ?><th style="text-align:left;padding:6px;color:var(--muted);">Thao tác</th><?php endif; ?>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php if (isset($data['recentTransactions']) && !empty($data['recentTransactions'])): ?>
+                    <?php foreach (array_slice($data['recentTransactions'], 0, 8) as $trans): ?>
+                      <tr style="border-top:1px dashed var(--border);">
+                        <td style="padding:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;"><a href="index.php?page=receipts/detail&id=<?= urlencode($trans['transaction_id']) ?>" style="color: var(--accent); text-decoration: none;"><?= htmlspecialchars($trans['transaction_id']) ?></a></td>
+                        <td style="padding:8px;">
+                          <?php 
+                            $typeText = 'Nhập';
+                            $typeColor = 'var(--success)';
+                            if ($trans['type'] == 'export') {
+                              $typeText = 'Xuất';
+                              $typeColor = 'var(--accent)';
+                            }
+                          ?>
+                          <span style="color: <?= $typeColor ?>"><?= $typeText ?></span>
+                        </td>
+                        <td style="padding:8px;">
+                          <?php
+                            if (isset($trans['created_at'])) {
+                              if ($trans['created_at'] instanceof MongoDB\BSON\UTCDateTime) {
+                                echo date('d/m H:i', $trans['created_at']->toDateTime()->getTimestamp());
+                              } else {
+                                echo date('d/m H:i', strtotime($trans['created_at']));
+                              }
+                            } else {
+                              echo '-';
+                            }
+                          ?>
+                        </td>
+                        <td style="padding:8px;"><?= htmlspecialchars($trans['created_by']) ?></td>
+                        <?php if ($roleId == 1): // Admin quick approve ?>
+                          <td style="padding:8px;">
+                            <?php if (isset($trans['status']) && $trans['status'] == 1): ?>
+                              <button onclick="approveTransaction('<?= $trans['transaction_id'] ?>')" style="font-size:11px;padding:6px 8px;border-radius:6px;background:var(--success);color:#fff;border:none;cursor:pointer;">✓ Duyệt</button>
+                            <?php else: ?>
+                              <span style="color:var(--muted);font-size:12px;">-</span>
+                            <?php endif; ?>
+                          </td>
+                        <?php endif; ?>
+                      </tr>
+                    <?php endforeach; ?>
+                  <?php else: ?>
+                    <tr><td colspan="<?= $roleId == 1 ? 5 : 4 ?>" style="text-align:center;color:var(--muted);padding:12px;">Chưa có giao dịch</td></tr>
                   <?php endif; ?>
-                </tr>
-              <?php endforeach; ?>
-            <?php else: ?>
-              <tr><td colspan="<?= $roleId == 1 ? 5 : 4 ?>" style="text-align:center;color:var(--muted)">Chưa có giao dịch</td></tr>
-            <?php endif; ?>
-          </tbody>
-        </table>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -534,13 +700,130 @@ $data = $cDashboard->getDashboardData($roleId, $warehouseId);
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
+    // Handler for period filter: preserve other filters (from/to/warehouse/category/page)
+    function onPeriodChange(selectEl) {
+      const sp = new URLSearchParams(window.location.search);
+      const page = sp.get('page');
+      // clear existing params but keep page
+      sp.forEach((v, k) => sp.delete(k));
+      if (page) sp.set('page', page);
+      const fromEl = document.getElementById('filter_from');
+      const toEl = document.getElementById('filter_to');
+      const whEl = document.getElementById('filter_warehouse');
+      const catEl = document.getElementById('filter_category');
+      if (fromEl && fromEl.value) sp.set('from', fromEl.value);
+      if (toEl && toEl.value) sp.set('to', toEl.value);
+      if (whEl && whEl.value) sp.set('warehouse', whEl.value);
+      if (catEl && catEl.value) sp.set('category', catEl.value);
+      if (selectEl && selectEl.value) sp.set('period', selectEl.value);
+      const target = window.location.pathname + (sp.toString() ? '?' + sp.toString() : '');
+      redirectOnce(target);
+    }
+
+    // Per-chart filter change handler. chartKey: 'inout' | 'category' | 'stock'
+    function onChartFilterChange(chartKey) {
+      const sp = new URLSearchParams(window.location.search);
+      const page = sp.get('page');
+      // Keep other params but update chart-specific ones
+      if (chartKey === 'inout') {
+        const period = document.getElementById('inout_period').value;
+        const wh = document.getElementById('inout_warehouse').value;
+        if (period) sp.set('inout_period', period); else sp.delete('inout_period');
+        if (wh) sp.set('inout_warehouse', wh); else sp.delete('inout_warehouse');
+      } else if (chartKey === 'category') {
+        const wh = document.getElementById('category_warehouse').value;
+        if (wh) sp.set('category_warehouse', wh); else sp.delete('category_warehouse');
+      } else if (chartKey === 'stock') {
+        const wh = document.getElementById('stock_warehouse').value;
+        if (wh) sp.set('stock_warehouse', wh); else sp.delete('stock_warehouse');
+      }
+      // keep page param if existed
+      sp.delete('page');
+      if (page) sp.set('page', page);
+      const target = window.location.pathname + (sp.toString() ? '?' + sp.toString() : '');
+      redirectOnce(target);
+    }
+
+    // Redirect helper: prevent rapid repeated redirects (throttle by 2s)
+    function redirectOnce(url) {
+      console.log('[dashboard] redirectOnce called', new Date().toISOString(), url);
+      try {
+        const key = 'dashboard_last_redirect';
+        const last = parseInt(sessionStorage.getItem(key) || '0', 10);
+        const now = Date.now();
+        if (last && now - last < 2000) {
+          console.warn('[dashboard] Redirect suppressed to avoid loop:', url, 'last:', new Date(last).toISOString());
+          return;
+        }
+        sessionStorage.setItem(key, String(now));
+        console.log('[dashboard] performing redirect to', url);
+        window.location.href = url;
+      } catch (e) {
+        // Fallback to direct redirect if sessionStorage unavailable
+        console.error('[dashboard] redirectOnce error, fallback to direct redirect', e);
+        window.location.href = url;
+      }
+    }
+    // Initialize filter inputs and wire apply/clear buttons
+    (function(){
+      const params = new URLSearchParams(window.location.search);
+      const from = params.get('from') || '';
+      const to = params.get('to') || '';
+      const wh = params.get('warehouse') || '';
+      const cat = params.get('category') || '';
+      const elFrom = document.getElementById('filter_from');
+      const elTo = document.getElementById('filter_to');
+      const elWh = document.getElementById('filter_warehouse');
+      const elCat = document.getElementById('filter_category');
+      if (elFrom) elFrom.value = from;
+      if (elTo) elTo.value = to;
+      if (elWh) elWh.value = wh;
+      if (elCat) elCat.value = cat;
+
+      const applyBtn = document.getElementById('applyFilters');
+      const clearBtn = document.getElementById('clearFilters');
+      function buildAndRedirect() {
+        const sp = new URLSearchParams(window.location.search);
+        // preserve page param
+        const page = sp.get('page');
+        sp.forEach((v,k)=>sp.delete(k));
+        if (page) sp.set('page', page);
+        if (elFrom && elFrom.value) sp.set('from', elFrom.value);
+        if (elTo && elTo.value) sp.set('to', elTo.value);
+        if (elWh && elWh.value) sp.set('warehouse', elWh.value);
+        if (elCat && elCat.value) sp.set('category', elCat.value);
+        const target = window.location.pathname + (sp.toString() ? '?' + sp.toString() : '');
+        redirectOnce(target);
+      }
+      if (applyBtn) applyBtn.addEventListener('click', buildAndRedirect);
+      if (clearBtn) clearBtn.addEventListener('click', function(){
+        const sp = new URLSearchParams();
+        const page = (new URLSearchParams(window.location.search)).get('page');
+        if (page) sp.set('page', page);
+        redirectOnce(window.location.pathname + (sp.toString() ? '?' + sp.toString() : ''));
+      });
+    })();
+
+    // Small runtime logs to help debug continuous reload/scroll issues
+    window.addEventListener('load', function(){
+      try { console.log('[dashboard] page loaded', new Date().toISOString(), 'href=', window.location.href); } catch(e){}
+    });
+    document.addEventListener('visibilitychange', function(){
+      try { console.log('[dashboard] visibilitychange', document.visibilityState, new Date().toISOString()); } catch(e){}
+    });
+    
+  </script>
+  <script>
     // Dữ liệu từ PHP
     const receiptExportData = <?= json_encode($data['receiptExportChart'] ?? ['labels' => [], 'receipts' => [], 'exports' => []]) ?>;
     const categoryData = <?= json_encode($data['categoryDistribution'] ?? ['labels' => [], 'values' => []]) ?>;
     const stockStatusData = <?= json_encode($data['stockStatusChart'] ?? ['labels' => [], 'values' => []]) ?>;
 
-    // Biểu đồ Nhập - Xuất (7 ngày)
-    const ctx1 = document.getElementById('chartInOut').getContext('2d');
+    // Biểu đồ Nhập - Xuất (7 ngày) - bar chart
+    const canvasInOut = document.getElementById('chartInOut');
+    // Explicitly fix canvas size to avoid Chart.js responsive resize loops
+    try { canvasInOut.style.height = '320px'; canvasInOut.style.width = '100%'; canvasInOut.height = 320; } catch(e){}
+    const ctx1 = canvasInOut.getContext('2d');
     new Chart(ctx1, {
       type: 'bar',
       data: {
@@ -563,31 +846,41 @@ $data = $cDashboard->getDashboardData($roleId, $warehouseId);
         ]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        aspectRatio: 2,
+        // Disable Chart.js automatic responsiveness to prevent repeated layout/resizing loops
+        responsive: false,
+        maintainAspectRatio: false,
         plugins: {
           legend: {
             position: 'bottom',
             labels: { 
-              color: '#e6eef8', 
+              color: '#0f172a', 
               font: { size: 11 },
               padding: 10
             }
+          },
+          tooltip: {
+            backgroundColor: '#ffffff',
+            borderColor: 'rgba(15,23,42,0.08)',
+            borderWidth: 1,
+            titleColor: '#0f172a',
+            bodyColor: '#0f172a',
+            titleFont: { weight: '600' },
+            bodyFont: { weight: '400' },
+            padding: 8
           }
         },
         scales: {
           y: {
             beginAtZero: true,
             ticks: { 
-              color: '#94a3b8', 
+              color: '#6b7280', 
               font: { size: 10 },
               stepSize: 1
             },
-            grid: { color: 'rgba(255,255,255,0.05)' }
+            grid: { color: 'rgba(15,23,42,0.04)' }
           },
           x: {
-            ticks: { color: '#94a3b8', font: { size: 10 } },
+            ticks: { color: '#6b7280', font: { size: 10 } },
             grid: { display: false }
           }
         }
@@ -595,7 +888,9 @@ $data = $cDashboard->getDashboardData($roleId, $warehouseId);
     });
 
     // Biểu đồ phân bố danh mục
-    const ctx2 = document.getElementById('chartGroups').getContext('2d');
+    const canvasGroups = document.getElementById('chartGroups');
+    try { canvasGroups.style.height = '320px'; canvasGroups.style.width = '100%'; canvasGroups.height = 320; } catch(e){}
+    const ctx2 = canvasGroups.getContext('2d');
     new Chart(ctx2, {
       type: 'doughnut',
       data: {
@@ -614,22 +909,34 @@ $data = $cDashboard->getDashboardData($roleId, $warehouseId);
         }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        aspectRatio: 1.5,
+        responsive: false,
+        maintainAspectRatio: false,
+        // let the donut resize inside its card
         plugins: {
           legend: {
             position: 'right',
             labels: { 
-              color: '#e6eef8', 
+              color: '#0f172a', 
               font: { size: 10 },
               padding: 8,
               boxWidth: 12
             }
+          },
+          tooltip: {
+            backgroundColor: '#ffffff',
+            borderColor: 'rgba(15,23,42,0.08)',
+            borderWidth: 1,
+            titleColor: '#0f172a',
+            bodyColor: '#0f172a',
+            titleFont: { weight: '600' },
+            bodyFont: { weight: '400' },
+            padding: 8
           }
         }
       }
     });
+
+    
 
     // Biểu đồ tình trạng tồn kho (tùy chọn - có thể thêm vào phần charts)
     // Nếu muốn hiển thị thêm biểu đồ này, có thể thêm canvas mới

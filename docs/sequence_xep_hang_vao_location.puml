@@ -1,0 +1,166 @@
+  @startuml
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor "QL Kho" as Staff
+boundary "GD_Chinh" as GUI_Main
+boundary "GD_DanhSachPN" as GUI_List
+boundary "GD_XepHang" as GUI_Locate
+boundary "GD_ChonBin" as GUI_BinModal
+control "Ctrl_Receipt" as ReceiptController
+control "Ctrl_Location" as LocationController
+entity "DB_Receipts" as TransactionDB
+entity "DB_Locations" as LocationDB
+entity "DB_Batches" as BatchDB
+entity "DB_Inventory" as InventoryDB
+
+Staff -> GUI_Main: 1: Chọn "Duyệt phiếu nhập"
+activate Staff
+activate GUI_Main
+
+GUI_Main -> GUI_List: 1.1: Mở danh sách phiếu
+activate GUI_List
+deactivate GUI_Main
+
+GUI_List -> GUI_List: 1.2: Hiển thị danh sách phiếu đã duyệt
+
+Staff -> GUI_List: 2: Click "Xếp hàng" trên phiếu đã duyệt
+
+GUI_List -> GUI_Locate: 2.1: Mở trang xếp hàng
+activate GUI_Locate
+
+GUI_Locate -> ReceiptController: 2.2: getReceiptById(receipt_id)
+activate ReceiptController
+
+ReceiptController -> TransactionDB: 2.2.1: findOne({transaction_id})
+activate TransactionDB
+
+TransactionDB --> ReceiptController: 2.2.2: Receipt data với allocations
+deactivate TransactionDB
+
+ReceiptController --> GUI_Locate: 2.2.3: return receipt
+deactivate ReceiptController
+
+GUI_Locate -> LocationController: 2.3: loadLocations(warehouse_id)
+activate LocationController
+
+LocationController -> LocationDB: 2.3.1: find({warehouse_id})
+activate LocationDB
+
+LocationDB --> LocationController: 2.3.2: Cấu trúc kho (zones, racks, bins)
+deactivate LocationDB
+
+LocationController --> GUI_Locate: 2.3.3: return locations
+deactivate LocationController
+
+GUI_Locate -> GUI_Locate: 2.4: Hiển thị thông tin phiếu + Sơ đồ kho
+
+Staff -> GUI_Locate: 3: Click vào bin để xếp hàng
+
+GUI_Locate -> GUI_BinModal: 3.1: Mở modal chọn sản phẩm
+activate GUI_BinModal
+
+GUI_BinModal -> GUI_BinModal: 3.2: Hiển thị form (chọn sản phẩm, đơn vị, số lượng)
+
+Staff -> GUI_BinModal: 4: Chọn sản phẩm và nhập số lượng
+
+GUI_BinModal -> GUI_BinModal: 4.1: Validate số lượng và kích thước
+
+Staff -> GUI_BinModal: 5: Click "Lưu"
+
+GUI_BinModal -> ReceiptController: 5.1: allocate_to_bin(data)
+activate ReceiptController
+
+note right of ReceiptController
+data = {
+    receipt_id,
+    product_id,
+    zone_id, rack_id, bin_id,
+    qty, input_unit
+}
+end note
+
+ReceiptController -> ReceiptController: 5.1.1: Quy đổi về đơn vị cơ bản
+
+ReceiptController -> TransactionDB: 5.1.2: Thêm vào allocations[]
+activate TransactionDB
+
+TransactionDB --> ReceiptController: 5.1.3: Allocation saved
+deactivate TransactionDB
+
+ReceiptController -> LocationDB: 5.1.4: Cập nhật bin (quantity, status)
+activate LocationDB
+
+LocationDB --> ReceiptController: 5.1.5: Bin updated
+deactivate LocationDB
+
+ReceiptController --> GUI_BinModal: 5.1.6: return success
+deactivate ReceiptController
+
+GUI_BinModal --> GUI_Locate: 5.2: Đóng modal
+deactivate GUI_BinModal
+
+GUI_Locate -> GUI_Locate: 5.3: Cập nhật UI (số lượng còn lại)
+deactivate GUI_Locate
+
+loop Xếp các sản phẩm khác
+    Staff -> GUI_Locate: 6: Tiếp tục xếp sản phẩm
+    activate GUI_Locate
+    note right: Lặp lại bước 3-5
+    deactivate GUI_Locate
+end
+
+Staff -> GUI_Locate: 7: Click "Hoàn tất"
+activate GUI_Locate
+
+GUI_Locate -> GUI_Locate: 7.1: Kiểm tra đã xếp hết chưa
+
+Staff -> GUI_Locate: 7.2: Xác nhận hoàn tất
+
+GUI_Locate -> ReceiptController: 7.3: complete_receipt(receipt_id)
+activate ReceiptController
+
+ReceiptController -> TransactionDB: 7.3.1: Lấy allocations
+activate TransactionDB
+
+TransactionDB --> ReceiptController: 7.3.2: return allocations
+deactivate TransactionDB
+
+loop Từng allocation
+    ReceiptController -> BatchDB: 7.3.3: Tạo batch
+    activate BatchDB
+    
+    note right of BatchDB
+    Tạo batch_code:
+    - Purchase: B-{warehouse}-{product}-{date}
+    - Transfer: Giữ batch_code từ kho nguồn
+    end note
+    
+    BatchDB --> ReceiptController: 7.3.4: Batch created
+    deactivate BatchDB
+    
+    ReceiptController -> InventoryDB: 7.3.5: Tạo inventory
+    activate InventoryDB
+    
+    InventoryDB --> ReceiptController: 7.3.6: Inventory created
+    deactivate InventoryDB
+end
+
+ReceiptController -> TransactionDB: 7.3.7: updateOne({status: 3})
+activate TransactionDB
+
+TransactionDB --> ReceiptController: 7.3.8: Status updated
+deactivate TransactionDB
+
+ReceiptController --> GUI_Locate: 7.3.9: return success
+deactivate ReceiptController
+
+GUI_Locate -> GUI_Locate: 7.4: Hiển thị "Hoàn tất thành công"
+
+GUI_Locate -> GUI_List: 7.5: Chuyển hướng về danh sách
+deactivate GUI_Locate
+
+deactivate GUI_List
+
+@enduml

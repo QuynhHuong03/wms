@@ -1,0 +1,169 @@
+@startuml
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor "Qly Kho tổng" as Staff
+boundary "GD_DanhSachPhieuYeuCau" as GUI_List
+boundary "GD_TaoPhieuXuat" as GUI_Create
+boundary "GD_ChonKhoVaLo" as GUI_SelectWarehouse
+control "Ctrl_Request" as RequestController
+control "Ctrl_Inventory" as InventoryController
+control "Ctrl_Export" as ExportController
+entity "DB_Transactions" as TransactionDB
+entity "DB_Inventory" as InventoryDB
+
+Staff -> GUI_List: 1: Truy cập Quản lý phiếu yêu cầu
+activate Staff
+activate GUI_List
+
+GUI_List -> RequestController: 1.1: getRequestsBySourceWarehouse(warehouse_id, [1,3,4,5,6,7])
+activate RequestController
+
+RequestController -> TransactionDB: 1.1.1: find({source_warehouse_id, status in [1,3,4,5,6,7]})
+activate TransactionDB
+
+TransactionDB --> RequestController: 1.1.2: return requests
+deactivate TransactionDB
+
+RequestController --> GUI_List: 1.1.3: return requests
+deactivate RequestController
+
+GUI_List -> GUI_List: 1.2: Hiển thị danh sách phiếu yêu cầu
+
+note right of GUI_List
+Với mỗi phiếu status = 3 (Đủ hàng):
+- Hiển thị nút "Tạo phiếu xuất"
+end note
+
+Staff -> GUI_List: 2: Click nút "Tạo phiếu xuất"\ntrên phiếu yêu cầu
+
+GUI_List -> GUI_Create: 2.1: Chuyển đến exports/create/index.php?request_id=xxx
+activate GUI_Create
+deactivate GUI_List
+
+GUI_Create -> RequestController: 2.2: getRequestById(request_id)
+activate RequestController
+
+RequestController -> TransactionDB: 2.2.1: findOne({transaction_id: request_id, status: 3})
+activate TransactionDB
+
+note right of TransactionDB
+Chỉ lấy phiếu có status = 3 (Đủ hàng)
+vì chỉ phiếu này mới hiển thị nút
+"Tạo phiếu xuất"
+end note
+
+TransactionDB --> RequestController: 2.2.2: return request
+deactivate TransactionDB
+
+RequestController --> GUI_Create: 2.2.3: return request
+deactivate RequestController
+
+GUI_Create -> InventoryController: 2.3: getTotalStockByProduct(source_warehouse, products)
+activate InventoryController
+
+loop Mỗi sản phẩm
+    InventoryController -> InventoryDB: 2.3.1: aggregate stock
+    activate InventoryDB
+    
+    InventoryDB --> InventoryController: 2.3.2: return stock
+    deactivate InventoryDB
+end
+
+InventoryController --> GUI_Create: 2.3.3: return stocks
+deactivate InventoryController
+
+GUI_Create -> GUI_Create: 2.4: Hiển thị form tạo phiếu xuất:\n- Thông tin kho xuất/nhận\n- Danh sách sản phẩm\n- Tồn kho hiện tại (đủ hàng)\n- Nút "Chọn kho" cho mỗi SP
+
+Staff -> GUI_Create: 3: Click nút "Chọn kho" cho sản phẩm
+
+GUI_Create -> GUI_SelectWarehouse: 3.1: Mở modal chọn kho và lô
+activate GUI_SelectWarehouse
+
+GUI_SelectWarehouse -> InventoryController: 3.1.1: getWarehousesAndBatches(product_id, required_qty)
+activate InventoryController
+
+InventoryController -> InventoryDB: 3.1.1.1: find({product_id, quantity > 0})
+activate InventoryDB
+
+InventoryDB --> InventoryController: 3.1.1.2: return inventory with batches
+deactivate InventoryDB
+
+InventoryController --> GUI_SelectWarehouse: 3.1.2: return warehouses and batches
+deactivate InventoryController
+
+GUI_SelectWarehouse -> GUI_SelectWarehouse: 3.2: Hiển thị modal danh sách kho\nvà lô với số lượng tồn (đủ hàng)
+
+Staff -> GUI_SelectWarehouse: 4: Chọn kho và nhập số lượng xuất
+
+Staff -> GUI_SelectWarehouse: 5: Click "Xác nhận"
+
+GUI_SelectWarehouse -> GUI_Create: 5.1: return selected_data\n(warehouse_id, batch_id, quantity)
+deactivate GUI_SelectWarehouse
+
+GUI_Create -> GUI_Create: 5.2: Cập nhật form:\n- Lưu lựa chọn kho và lô\n- Hiển thị "Đã chọn"
+
+note right of Staff
+Lặp lại bước 3-5 cho
+các sản phẩm khác nếu cần
+end note
+
+Staff -> GUI_Create: 6: Nhập ghi chú (tùy chọn)
+
+Staff -> GUI_Create: 7: Click "Tạo phiếu xuất"
+
+GUI_Create -> GUI_Create: 7.1: Validate tất cả sản phẩm\nđã chọn kho và lô
+
+GUI_Create -> ExportController: 7.2: createExportReceipt(request_id, warehouse_selections, note)
+activate ExportController
+
+ExportController -> ExportController: 7.2.1: generateExportId()
+
+ExportController -> ExportController: 7.2.2: Chuẩn bị export document
+
+ExportController -> TransactionDB: 7.2.3: insertOne(export_document)
+activate TransactionDB
+
+note right of TransactionDB
+export_document = {
+    transaction_type: "export",
+    request_id: request_id,
+    source_warehouse_id: xxx,
+    destination_warehouse_id: xxx,
+    details: [{
+        product_id,
+        quantity,
+        warehouse_id,
+        batch_id
+    }],
+    status: 0 (Chờ duyệt)
+}
+end note
+
+TransactionDB --> ExportController: 7.2.4: Insert success
+deactivate TransactionDB
+
+ExportController -> TransactionDB: 7.2.5: updateOne({transaction_id: request_id}, {$set: {status: 5}})
+activate TransactionDB
+
+note right of TransactionDB
+Cập nhật request:
+status = 5: Đã tạo phiếu xuất
+(Chờ duyệt xuất kho)
+end note
+
+TransactionDB --> ExportController: 7.2.6: Update success
+deactivate TransactionDB
+
+ExportController --> GUI_Create: 7.2.7: return [true, export_id]
+deactivate ExportController
+
+GUI_Create -> GUI_Create: 7.3: Hiển thị thông báo\n"Tạo phiếu xuất thành công"
+
+GUI_Create -> GUI_List: 7.4: Chuyển hướng về danh sách
+deactivate GUI_Create
+
+deactivate Staff
+
+@enduml

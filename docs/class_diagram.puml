@@ -1,0 +1,459 @@
+@startuml Class Diagram - WMS (Warehouse Management System)
+
+' ============================
+' CẤUMỸ HÌA
+' ============================
+skinparam linetype ortho
+top to bottom direction
+skinparam nodesep 80
+skinparam ranksep 100
+
+skinparam class {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor Black
+    FontSize 11
+}
+
+skinparam packageStyle rectangle
+
+' ============================
+' MODELS - DOMAIN ENTITIES
+' ============================
+
+package "User Management" {
+    class User {
+        - _id: ObjectId
+        - user_id: string
+        - name: string
+        - email: string
+        - password: string
+        - gender: string
+        - phone: string
+        - role_id: int
+        - warehouse_id: int
+        - status: int
+        - first_login: bool
+        - created_at: UTCDateTime
+        - updated_at: UTCDateTime
+        __
+        + login(): mixed
+        + updateProfile(): bool
+        + changePassword(): string
+    }
+
+    class Role {
+        - _id: ObjectId
+        - role_id: int
+        - role_name: string
+        - description: string
+        __
+        + getPermissions(): array
+    }
+}
+
+package "Warehouse Management" {
+    class Warehouse {
+        - _id: ObjectId
+        - warehouse_id: string
+        - warehouse_name: string
+        - warehouse_type_id: int
+        - status: int
+        - created_at: string
+        - updated_at: string
+        __
+        + activate(): bool
+        + deactivate(): bool
+    }
+
+    class WarehouseType {
+        - _id: ObjectId
+        - type_id: int
+        - type_name: string
+        - description: string
+    }
+
+    class Address {
+        - _id: ObjectId
+        - warehouse_id: string
+        - street: string
+        - city: string
+        - province: string
+        - postal_code: string
+        - country: string
+    }
+}
+
+package "Location Structure" {
+    class Location {
+        - _id: string
+        - warehouse_id: string
+        - name: string
+        - description: string
+        - created_at: string
+        - updated_at: string
+        __
+        + addZone(): bool
+        + addRack(): bool
+        + addBin(): bool
+    }
+
+    class Zone {
+        - _id: ObjectId
+        - zone_id: string
+        - name: string
+        - level: int
+        - warehouse_id: string
+        - location_id: string
+        - description: string
+        - created_at: string
+        - updated_at: string
+    }
+
+    class Rack {
+        - _id: ObjectId
+        - rack_id: string
+        - name: string
+        - zone_id: string
+        - level: int
+        - created_at: string
+        - updated_at: string
+    }
+
+    class Bin {
+        - _id: ObjectId
+        - id: int
+        - bin_id: string
+        - code: string
+        - rack_id: string
+        - length: float
+        - width: float
+        - height: float
+        - capacity: int
+        - quantity: int
+        - current_capacity: float
+        - status: string
+        - product_id: string
+        - created_at: string
+        - updated_at: string
+    }
+}
+
+package "Product Management" {
+    class Category {
+        - _id: ObjectId
+        - category_id: string
+        - category_name: string
+        - category_code: string
+        - description: string
+        - status: int
+        - created_at: UTCDateTime
+        - updated_at: UTCDateTime
+        __
+        + getProducts(): array
+    }
+
+    class Supplier {
+        - _id: ObjectId
+        - supplier_id: string
+        - supplier_name: string
+        - contact: string
+        - email: string
+        - phone: string
+        - address: string
+        - status: int
+        - created_at: string
+        - updated_at: string
+        __
+        + getProducts(): array
+    }
+}
+
+package "Product Details" {
+    class Product {
+        - _id: ObjectId
+        - sku: string
+        - product_name: string
+        - barcode: string
+        - category_id: string
+        - supplier_id: string
+        - baseUnit: string
+        - conversionUnits: array
+        - package_dimensions: object
+        - package_weight: float
+        - volume_per_unit: float
+        - stackable: bool
+        - max_stack_height: int
+        - min_stock: int
+        - purchase_price: float
+        - status: int
+        - image: string
+        - created_at: string
+        - updated_at: string
+        __
+        + convertUnit(): float
+        + calculateVolume(): float
+        + checkMinStock(): bool
+    }
+
+    class ConversionUnit {
+        - _id: ObjectId
+        - product_id: string
+        - unit_name: string
+        - conversion_rate: float
+        - is_base: bool
+        __
+        + convert(): float
+    }
+
+    class PackageDimension {
+        - product_id: string
+        - length: float
+        - width: float
+        - height: float
+        - unit: string
+        __
+        + calculateVolume(): float
+    }
+}
+
+package "Inventory Management" {
+    class Inventory {
+        - _id: ObjectId
+        - warehouse_id: string
+        - product_id: string
+        - product_sku: string
+        - product_name: string
+        - qty: float
+        - zone_id: string
+        - rack_id: string
+        - bin_id: string
+        - receipt_id: string
+        - received_at: UTCDateTime
+        __
+        + addQuantity(): bool
+        + deductQuantity(): bool
+        + move(): bool
+    }
+
+    class InventoryMovement {
+        - _id: ObjectId
+        - warehouse_id: string
+        - product_id: string
+        - transaction_id: string
+        - movement_type: string
+        - qty: float
+        - created_by: string
+        - created_at: UTCDateTime
+    }
+}
+
+package "Batch Management" {
+    class Batch {
+        - _id: ObjectId
+        - batch_code: string
+        - product_id: string
+        - product_sku: string
+        - quantity_imported: float
+        - quantity_remaining: float
+        - warehouse_id: string
+        - import_date: UTCDateTime
+        - unit_price: float
+        - receipt_id: string
+        - transaction_id: string
+        - status: string
+        - barcode: string
+        __
+        + reduceBatchQuantity(): bool
+        + isExpired(): bool
+    }
+
+    class BatchLocation {
+        - _id: ObjectId
+        - batch_code: string
+        - product_id: string
+        - warehouse_id: string
+        - zone_id: string
+        - rack_id: string
+        - bin_id: string
+        - quantity: float
+        - import_date: UTCDateTime
+        - created_at: UTCDateTime
+        __
+        + updateQuantity(): bool
+        + move(): bool
+    }
+}
+
+package "Transaction Management" {
+    class Transaction {
+        - _id: ObjectId
+        - transaction_id: string
+        - type: string
+        - transaction_type: string
+        - warehouse_id: string
+        - source_warehouse_id: string
+        - export_id: ObjectId
+        - supplier_id: string
+        - status: int
+        - created_by: string
+        - created_at: UTCDateTime
+        - approved_by: string
+        - approved_at: UTCDateTime
+        - note: string
+        - total_amount: float
+        __
+        + approve(): bool
+        + reject(): bool
+        + calculateTotal(): float
+    }
+
+    class TransactionDetail {
+        - _id: ObjectId
+        - transaction_id: string
+        - product_id: string
+        - product_name: string
+        - quantity: float
+        - unit: string
+        - unit_price: float
+        - total_price: float
+        - batch_code: string
+        - zone_id: string
+        - rack_id: string
+        - bin_id: string
+    }
+
+    class Allocation {
+        - _id: ObjectId
+        - transaction_id: string
+        - source_warehouse_id: string
+        - product_id: string
+        - allocated_quantity: float
+        - status: string
+        - created_at: UTCDateTime
+    }
+
+    class Request {
+        - _id: ObjectId
+        - transaction_id: string
+        - transaction_type: "goods_request"
+        - warehouse_id: string
+        - status: int
+        - created_by: string
+        - created_at: UTCDateTime
+        - approved_by: string
+        - approved_at: UTCDateTime
+        __
+        + approve(): bool
+        + reject(): bool
+        + findSufficientWarehouses(): array
+    }
+
+    class RequestDetail {
+        - _id: ObjectId
+        - transaction_id: string
+        - product_id: string
+        - product_name: string
+        - requested_quantity: float
+        - unit: string
+        - approved_quantity: float
+    }
+}
+
+package "Inventory Sheet" {
+    class InventorySheet {
+        - _id: ObjectId
+        - sheet_code: string
+        - warehouse_id: string
+        - created_by: string
+        - created_at: UTCDateTime
+        - status: int
+        - count_date: UTCDateTime
+        - approved_by: string
+        - approved_at: UTCDateTime
+        __
+        + approve(): bool
+        + reject(): bool
+        + calculateDifferences(): array
+    }
+
+    class InventorySheetItem {
+        - _id: ObjectId
+        - sheet_code: string
+        - product_id: string
+        - product_name: string
+        - system_quantity: float
+        - actual_quantity: float
+        - difference: float
+        - zone_id: string
+        - rack_id: string
+        - bin_id: string
+        - note: string
+    }
+
+    class SheetLocation {
+        - _id: ObjectId
+        - sheet_code: string
+        - zone_id: string
+        - rack_id: string
+        - bin_id: string
+        - is_checked: bool
+    }
+}
+
+' ============================
+' RELATIONSHIPS
+' ============================
+
+' User & Role - Association
+User "n" --> "1" Role : has
+User "n" --> "1" Warehouse : works at
+
+' Warehouse - Composition & Association
+Warehouse "n" --> "1" WarehouseType : has type
+Warehouse "1" *-- "1" Address : has
+Warehouse "1" o-- "n" Location : contains
+
+' Product - Association & Aggregation
+Product "n" --> "1" Category : belongs to
+Product "n" --> "1" Supplier : supplied by
+Product "1" o-- "n" ConversionUnit : has units
+Product "1" *-- "1" PackageDimension : has dimensions
+
+' Location hierarchy - Composition
+Location "1" *-- "n" Zone : contains
+Zone "1" *-- "n" Rack : contains
+Rack "1" *-- "n" Bin : contains
+
+' Inventory - Association
+Inventory "n" --> "1" Product : tracks
+Inventory "n" --> "1" Warehouse : in
+Inventory "n" --> "1" Bin : stored in
+Inventory "1" --> "n" InventoryMovement : generates
+
+' Batch - Association & Aggregation
+Batch "n" --> "1" Product : of
+Batch "n" --> "1" Warehouse : in
+Batch "n" --> "1" Transaction : created from
+Batch "1" o-- "n" BatchLocation : has locations
+BatchLocation "n" --> "1" Bin : located in
+
+' Transaction - Association & Composition
+Transaction "n" --> "1" Warehouse : involves
+Transaction "n" --> "0..1" Supplier : supplied by
+Transaction "n" --> "1" User : created by
+Transaction "1" *-- "n" TransactionDetail : contains
+Transaction "1" o-- "n" Allocation : has allocations
+Transaction "1" --> "n" InventoryMovement : generates
+
+' Request - Inheritance & Composition
+Request --|> Transaction : extends
+Request "1" *-- "n" RequestDetail : contains
+
+' Inventory Sheet - Association & Composition
+InventorySheet "n" --> "1" Warehouse : for
+InventorySheet "n" --> "1" User : created by
+InventorySheet "1" *-- "n" InventorySheetItem : contains
+InventorySheet "1" o-- "n" SheetLocation : tracks locations
+
+@enduml

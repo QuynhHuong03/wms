@@ -1,0 +1,84 @@
+@startuml Thêm Kho
+
+' Cấu hình giao diện
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor "Admin" as Admin
+boundary "GD_Chinh" as MainGUI
+boundary "GD_DanhSachKho" as ListView
+boundary "GD_ThemKho" as AddView
+control "Ctrl_Warehouse" as Controller
+entity "DB_Warehouses" as WarehouseDB
+
+Admin -> MainGUI: 1: Chọn "Quản lý kho"
+activate Admin
+activate MainGUI
+
+MainGUI -> ListView: 1.1: Mở danh sách kho
+activate ListView
+deactivate MainGUI
+
+ListView -> ListView: 1.2: Hiển thị danh sách
+
+Admin -> ListView: 2: Click "Thêm kho"
+
+ListView -> AddView: 2.1: Mở form thêm kho
+activate AddView
+deactivate ListView
+
+AddView -> AddView: 2.2: Hiển thị form nhập thông tin
+
+Admin -> AddView: 3: Nhập thông tin và click "Thêm"
+
+AddView -> AddView: 3.1: Hiển thị modal xác nhận
+
+Admin -> AddView: 4: Nhập thông tin
+
+AddView -> AddView: 4.1: Validate dữ liệu
+
+alt Dữ liệu không hợp lệ
+    AddView -> AddView: 4.2: Hiển thị lỗi validation
+else Dữ liệu hợp lệ
+    Admin -> AddView: 4.3: Click "Xác nhận"
+    
+    AddView -> Controller: 4.4: addWarehouse(data)
+    activate Controller
+    
+    Controller -> Controller: 4.4.1: getAllWarehouses()
+    
+    Controller -> WarehouseDB: 4.4.2: Find all warehouses
+    activate WarehouseDB
+    
+    WarehouseDB --> Controller: 4.4.3: Warehouse list
+    deactivate WarehouseDB
+    
+    Controller -> Controller: 4.4.4: Kiểm tra mã kho trùng
+    
+    alt Mã kho đã tồn tại
+        Controller --> AddView: 4.5: return false
+        deactivate Controller
+        AddView -> AddView: 4.4.1: Hiển thị "Mã kho đã tồn tại"
+    else Mã kho hợp lệ
+        Controller -> WarehouseDB: 4.5: insertOne(warehouse_data)
+        activate WarehouseDB
+        
+        WarehouseDB --> Controller: 4.5.1: Insert success
+        deactivate WarehouseDB
+        
+        Controller --> AddView: 4.6: return true
+        deactivate Controller
+        
+        AddView -> AddView: 4.6.1: Hiển thị "Thêm kho thành công"
+        
+        AddView -> ListView: 4.6.2: Chuyển hướng về danh sách kho
+        activate ListView
+        deactivate AddView
+        deactivate ListView
+    end
+end
+
+deactivate Admin
+
+@enduml

@@ -1,0 +1,70 @@
+@startuml Cập Nhật Loại Sản Phẩm
+
+' Cấu hình giao diện
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor "QL Kho tổng" as Admin
+boundary "GD_Chinh" as MainGUI
+boundary "GD_DanhSachLoai" as ListView
+boundary "GD_CapNhatLoai" as EditView
+control "Ctrl_Categories" as Controller
+entity "DB_Categories" as CategoryDB
+
+Admin -> MainGUI: 1: Chọn "Quản lý loại sản phẩm"
+activate Admin
+activate MainGUI
+
+MainGUI -> ListView: 1.1: Mở danh sách loại sản phẩm
+activate ListView
+deactivate MainGUI
+
+ListView -> ListView: 1.2: Hiển thị danh sách
+
+Admin -> ListView: 2: Click "Cập nhật" trên loại sản phẩm
+
+ListView -> EditView: 2.1: Mở form cập nhật với category_id
+activate EditView
+deactivate ListView
+
+EditView -> EditView: 2.2: Hiển thị form với dữ liệu hiện tại
+
+Admin -> EditView: 3: Sửa thông tin
+
+EditView -> EditView: 3.1: Validate dữ liệu
+
+alt Dữ liệu không hợp lệ
+    EditView -> EditView: 3.2: Hiển thị lỗi validation
+else Dữ liệu hợp lệ
+    Admin -> EditView: 3.3: Click "Cập nhật"
+    
+    EditView -> Controller: 3.4: updateCategory(category_id, data)
+    activate Controller
+    
+    Controller -> CategoryDB: 3.4.1: updateOne({category_id}, {$set: data})
+    activate CategoryDB
+    
+    CategoryDB --> Controller: 3.4.2: Update result
+    deactivate CategoryDB
+    
+    alt Cập nhật thành công
+        Controller --> EditView: 3.5: return true
+        deactivate Controller
+        
+        EditView -> EditView: 3.5.1: Hiển thị "Cập nhật loại sản phẩm thành công"
+        
+        EditView -> ListView: 3.5.2: Chuyển hướng về danh sách loại sản phẩm
+        activate ListView
+        deactivate EditView
+        deactivate ListView
+    else Cập nhật thất bại
+        Controller --> EditView: 3.5: return false
+        deactivate Controller
+        EditView -> EditView: 3.5.1: Hiển thị "Cập nhật loại sản phẩm thất bại"
+    end
+end
+
+deactivate Admin
+
+@enduml

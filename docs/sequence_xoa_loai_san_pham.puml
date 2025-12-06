@@ -1,0 +1,55 @@
+@startuml Xóa Loại Sản Phẩm
+
+' Cấu hình giao diện
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor "Admin" as Admin
+boundary "GD_Chinh" as MainGUI
+boundary "GD_DanhSachLoai" as ListView
+control "Ctrl_Categories" as Controller
+entity "DB_Categories" as CategoryDB
+
+Admin -> MainGUI: 1: Chọn "Quản lý loại sản phẩm"
+activate Admin
+activate MainGUI
+
+MainGUI -> ListView: 1.1: Mở danh sách loại sản phẩm
+activate ListView
+deactivate MainGUI
+
+ListView -> ListView: 1.2: Hiển thị danh sách
+
+Admin -> ListView: 2: Click "Xóa" trên loại sản phẩm
+
+ListView -> ListView: 2.1: Hiển thị modal xác nhận
+
+Admin -> ListView: 3: Click "Xác nhận xóa"
+
+ListView -> Controller: 3.1: deleteCategory(category_id)
+activate Controller
+
+Controller -> CategoryDB: 3.1.1: deleteOne({category_id})
+activate CategoryDB
+
+CategoryDB --> Controller: 3.1.2: Delete result
+deactivate CategoryDB
+
+alt Xóa thành công
+    Controller --> ListView: 3.2: return true
+    deactivate Controller
+    
+    ListView -> ListView: 3.2.1: Hiển thị "Xóa loại sản phẩm thành công"
+    
+    ListView -> ListView: 3.2.2: Chuyển hướng về danh sách loại sản phẩm
+    deactivate ListView
+else Xóa thất bại
+    Controller --> ListView: 3.3: return false
+    deactivate Controller
+    ListView -> ListView: 3.3.1: Hiển thị "Xóa loại sản phẩm thất bại"
+end
+
+deactivate Admin
+
+@enduml

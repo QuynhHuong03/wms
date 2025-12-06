@@ -1,0 +1,232 @@
+@startuml Xac_Nhan_Va_Phan_Phoi_Tai_Kho_Tong
+
+' Cấu hình giao diện
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+' Định nghĩa các đối tượng tham gia
+actor "QL Kho Tổng" as MainManager
+boundary "GD_Chinh" as GUI_Main
+boundary "GD_DanhSachYeuCau" as GUI_List
+boundary "GD_ChiTietYeuCau" as GUI_Detail <<Boundary>>
+boundary "GD_ChiDinhKho" as GUI_Assign <<Boundary>>
+control "Ctrl_Request" as RequestController <<Control>>
+control "Ctrl_Inventory" as InventoryController <<Control>>
+entity "DB_Transactions" as TransactionDB <<Entity>>
+entity "DB_Inventory" as InventoryDB <<Entity>>
+
+title Sequence: Quản lý Kho Tổng xác nhận tồn kho và phân phối
+
+note over MainManager, InventoryDB
+  === ĐIỀU KIỆN ĐẦU VÀO ===
+  Phiếu yêu cầu đã được QL Chi nhánh duyệt (status = 1)
+  QL Kho Tổng sẽ:
+  1. Kiểm tra tồn kho tại Kho Tổng
+  2. Quyết định kho nào phân phối (Kho Tổng hoặc Chi nhánh khác)
+end note
+
+' === Xem danh sách phiếu đã duyệt ===
+
+MainManager -> GUI_Main: 1: Chọn "Xác nhận và phân phối"
+activate MainManager
+activate GUI_Main
+
+GUI_Main -> GUI_List: 1.1: Mở danh sách yêu cầu
+activate GUI_List
+deactivate GUI_Main
+
+GUI_List -> RequestController: 1.1: getRequestsByStatus(1)
+activate RequestController
+
+RequestController -> TransactionDB: 1.1.1: Query WHERE status=1
+activate TransactionDB
+
+note right of TransactionDB
+  Query: {
+    status: 1,
+    transaction_type: "goods_request"
+  }
+  
+  Lấy các phiếu đã được
+  QL Chi nhánh duyệt
+end note
+
+TransactionDB --> RequestController: 1.1.2: Danh sách phiếu chờ xử lý
+deactivate TransactionDB
+
+RequestController --> GUI_List: 1.2: Phiếu cần phân bổ kho
+deactivate RequestController
+
+GUI_List -> GUI_List: 1.3: Hiển thị danh sách
+deactivate GUI_List
+
+' === Xem chi tiết và kiểm tra tồn kho ===
+
+MainManager -> GUI_Detail: 2: Xem chi tiết phiếu yêu cầu
+activate GUI_Detail
+
+GUI_Detail -> RequestController: 2.1: getRequestById(request_id)
+activate RequestController
+
+RequestController -> TransactionDB: 2.1.1: Get request details
+activate TransactionDB
+
+TransactionDB --> RequestController: 2.1.2: Request với products[]
+deactivate TransactionDB
+
+RequestController --> GUI_Detail: 2.2: Thông tin phiếu
+deactivate RequestController
+
+' === Kiểm tra tồn kho Kho Tổng ===
+
+GUI_Detail -> InventoryController: 2.3: Kiểm tra tồn kho tại Kho Tổng
+activate InventoryController
+
+loop
+    
+    InventoryController -> InventoryDB: 2.3.1: getTotalStockByProduct(KHO_TONG_01, product_id)
+    activate InventoryDB
+    
+    note right of InventoryDB
+      Aggregate tổng số lượng
+      tại Kho Tổng cho từng sản phẩm
+    end note
+    
+    InventoryDB --> InventoryController: 2.3.2: Stock quantity
+    deactivate InventoryDB
+    
+    InventoryController -> InventoryController: 2.3.3: So sánh\nstock >= requested_quantity
+    
+    note right of InventoryController
+      Đánh dấu từng sản phẩm:
+      - is_sufficient: true/false
+    end note
+    
+end
+
+InventoryController --> GUI_Detail: 2.4: Tình trạng tồn kho
+deactivate InventoryController
+
+GUI_Detail -> GUI_Detail: 2.5: Hiển thị:\n- Sản phẩm yêu cầu\n- Tồn kho Kho Tổng\n- Đủ/Không đủ cho từng item
+deactivate GUI_Detail
+
+' === Quyết định phân bổ kho ===
+
+alt
+    
+    MainManager -> GUI_Detail: 3: Xác nhận "Kho Tổng phân phối"
+    activate GUI_Detail
+    
+    GUI_Detail -> RequestController: 3.1: confirmStockAvailability(request_id, "KHO_TONG_01")
+    activate RequestController
+    
+    RequestController -> TransactionDB: 3.2: updateOne({_id: request_id})\nSET status=3
+    activate TransactionDB
+    
+    note right of TransactionDB
+      Cập nhật:
+      - status: 3 (Đủ hàng, sẵn sàng xuất)
+      - assigned_warehouse_id: "KHO_TONG_01"
+      - processed_by: main_manager_id
+      - processed_at: current_timestamp
+      
+      Luồng tiếp theo:
+      Tạo phiếu XUẤT từ Kho Tổng
+      → Chi nhánh yêu cầu
+    end note
+    
+    TransactionDB --> RequestController: 3.3: Updated successfully
+    deactivate TransactionDB
+    
+    RequestController --> GUI_Detail: 3.4: Xác nhận thành công
+    deactivate RequestController
+    
+    GUI_Detail -> GUI_Detail: 3.5: Hiển thị "Kho Tổng sẽ phân phối\nSẵn sàng tạo phiếu xuất"
+    deactivate GUI_Detail
+
+else Kho Tổng KHÔNG ĐỦ → Chỉ định kho chi nhánh khác
+    
+    MainManager -> GUI_Assign: 4: Click "Tìm kho thay thế"
+    activate GUI_Assign
+    
+    GUI_Assign -> InventoryController: 4.1: getStockByProductAllWarehouses(products[])
+    activate InventoryController
+    
+    loop
+        
+        InventoryController -> InventoryDB: 4.1.1: Aggregate stock tất cả kho
+        activate InventoryDB
+        
+        note right of InventoryDB
+          Query inventory collection
+          Group by warehouse_id
+          Sum quantities
+        end note
+        
+        InventoryDB --> InventoryController: 4.1.2: Stock by warehouse
+        deactivate InventoryDB
+        
+    end
+    
+    InventoryController -> InventoryController: 4.2: Lọc kho đủ hàng\n(stock >= requested_quantity)
+    
+    InventoryController --> GUI_Assign: 4.3: Danh sách kho có đủ hàng
+    deactivate InventoryController
+    
+    GUI_Assign -> GUI_Assign: 4.4: Hiển thị kho thay thế\n(VD: KHO_CN_02 đủ hàng)
+    deactivate GUI_Assign
+    
+    note right of MainManager
+      QL Kho Tổng chọn kho thay thế
+      dựa trên:
+      - Kho có đủ hàng
+      - Khoảng cách giao hàng
+      - Ưu tiên phân bổ
+    end note
+    
+    MainManager -> GUI_Assign: 5: Chọn kho thay thế và xác nhận
+    activate GUI_Assign
+    
+    GUI_Assign -> RequestController: 5.1: assignAlternativeWarehouse(request_id, warehouse_id, note)
+    activate RequestController
+    
+    RequestController -> TransactionDB: 5.2: updateOne({_id: request_id})\nSET status=5
+    activate TransactionDB
+    
+    note right of TransactionDB
+      Cập nhật:
+      - status: 5 (Chỉ định kho thay thế)
+      - assigned_warehouse_id: "KHO_CN_02"
+      - assigned_by: main_manager_id
+      - assigned_at: current_timestamp
+      - assignment_note: "Chi nhánh 2 có đủ hàng"
+      
+      Luồng tiếp theo:
+      Tạo phiếu XUẤT từ KHO_CN_02
+      → Chi nhánh yêu cầu
+    end note
+    
+    TransactionDB --> RequestController: 5.3: Updated successfully
+    deactivate TransactionDB
+    
+    RequestController --> GUI_Assign: 5.4: Chỉ định thành công
+    deactivate RequestController
+    
+    GUI_Assign -> GUI_Assign: 5.5: Hiển thị "Đã chỉ định Chi nhánh 2 phân phối\nThông báo đã gửi đến KHO_CN_02"
+    deactivate GUI_Assign
+    
+end
+
+note over MainManager, InventoryDB
+  === KẾT THÚC SEQUENCE TẠI KHO TỔNG ===
+  
+  Kết quả:
+  - status = 3: Kho Tổng phân phối → Tạo phiếu xuất từ Kho Tổng
+  - status = 5: Kho khác phân phối → Tạo phiếu xuất từ kho được chỉ định
+  
+  Cả 2 trường hợp đều sẵn sàng cho bước tiếp theo:
+  "Tạo Phiếu Xuất Kho"
+end note
+
+@enduml

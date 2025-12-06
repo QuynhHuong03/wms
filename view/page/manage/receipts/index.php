@@ -548,64 +548,98 @@
       
       // Nếu là nhập điều chuyển và đã chọn phiếu xuất, kiểm tra sản phẩm có trong phiếu không
       if (type === "transfer" && exportId && Object.keys(exportProducts).length > 0) {
-        fetch("receipts/process.php?barcode=" + encodeURIComponent(code))
-          .then(res => res.json())
-          .then(data => {
-            if (data.success) {
-              const productId = data.product._id;
-              
-              // Kiểm tra sản phẩm có trong phiếu xuất không
-              if (!exportProducts[productId]) {
-                showError('products-error', `⚠️ Sản phẩm "${data.product.product_name}" KHÔNG có trong phiếu xuất đã chọn!`);
+        fetch("receipts/get_barcode_or_batch.php?barcode=" + encodeURIComponent(code))
+          .then(res => res.text())
+          .then(txt => {
+            try {
+              const data = JSON.parse(txt);
+              if (data.success) {
+                const batchData = data.batch || null;
+                let productPayload = data.product || null;
+                if (!productPayload && batchData && batchData.product_id) {
+                  productPayload = { _id: batchData.product_id, product_name: batchData.product_name || '', purchase_price: batchData.unit_price || 0, package_weight: batchData.unit_weight || 0, package_dimensions: batchData.package_dimensions || {} };
+                }
+                // If we have batch info, prefer batch's unit_price / unit_weight for UI display
+                if (batchData && productPayload) {
+                  if (batchData.unit_price) productPayload.purchase_price = batchData.unit_price;
+                  if (batchData.unit_weight && (!productPayload.package_weight || productPayload.package_weight == 0)) productPayload.package_weight = batchData.unit_weight;
+                  if (batchData.package_dimensions && (!productPayload.package_dimensions || Object.keys(productPayload.package_dimensions).length === 0)) productPayload.package_dimensions = batchData.package_dimensions;
+                }
+                const productId = productPayload ? productPayload._id : null;
+
+                // Kiểm tra sản phẩm có trong phiếu xuất không
+                if (!exportProducts[productId]) {
+                  showError('products-error', `⚠️ Sản phẩm "${productPayload ? productPayload.product_name : (batchData ? batchData.product_name : 'Không rõ')}" KHÔNG có trong phiếu xuất đã chọn!`);
+                  document.getElementById("barcode").value = "";
+                  return;
+                }
+
+                // Kiểm tra số lượng đã quét
+                const exportQty = exportProducts[productId].quantity;
+                const scannedQty = exportProducts[productId].scanned_qty || 0;
+
+                if (scannedQty >= exportQty) {
+                  showError('products-error', `⚠️ Đã quét đủ số lượng cho sản phẩm "${productPayload.product_name}" (${exportQty} ${exportProducts[productId].unit})`);
+                  document.getElementById("barcode").value = "";
+                  return;
+                }
+
+                // merge export pricing/unit into product payload
+                productPayload.purchase_price = exportProducts[productId].unit_price;
+                productPayload.export_unit = exportProducts[productId].unit;
+                productPayload.export_qty = exportQty;
+
+                console.log("✅ Sản phẩm hợp lệ từ phiếu xuất:", productPayload, batchData);
+                addOrUpdateRow(productPayload, batchData);
+
+                // Cập nhật số lượng đã quét
+                exportProducts[productId].scanned_qty = (exportProducts[productId].scanned_qty || 0) + 1;
+
                 document.getElementById("barcode").value = "";
-                return;
+              } else {
+                showError('products-error', data.message || "⚠️ Không tìm thấy sản phẩm!");
               }
-              
-              // Kiểm tra số lượng đã quét
-              const exportQty = exportProducts[productId].quantity;
-              const scannedQty = exportProducts[productId].scanned_qty || 0;
-              
-              if (scannedQty >= exportQty) {
-                showError('products-error', `⚠️ Đã quét đủ số lượng cho sản phẩm "${data.product.product_name}" (${exportQty} ${exportProducts[productId].unit})`);
-                document.getElementById("barcode").value = "";
-                return;
-              }
-              
-              // Sử dụng giá từ phiếu xuất
-              data.product.purchase_price = exportProducts[productId].unit_price;
-              data.product.export_unit = exportProducts[productId].unit;
-              data.product.export_qty = exportQty;
-              
-              console.log("✅ Sản phẩm hợp lệ từ phiếu xuất:", data.product);
-              addOrUpdateRow(data.product);
-              
-              // Cập nhật số lượng đã quét
-              exportProducts[productId].scanned_qty = (exportProducts[productId].scanned_qty || 0) + 1;
-              
-              document.getElementById("barcode").value = "";
-            } else {
-              showError('products-error', data.message || "⚠️ Không tìm thấy sản phẩm!");
+            } catch (err) {
+              console.error('Non-JSON response from barcode API:', txt);
+              showError('products-error', '⚠️ Lỗi server: phản hồi không hợp lệ. Kiểm tra console.');
             }
           })
           .catch(err => showError('products-error','⚠️ Lỗi khi tìm sản phẩm: ' + err));
       } else {
         // Nhập từ nhà cung cấp - không kiểm tra phiếu xuất
-        fetch("receipts/process.php?barcode=" + encodeURIComponent(code))
-          .then(res => res.json())
-          .then(data => {
-            if (data.success) {
-              console.log("Sản phẩm nhận được:", data.product);
-              addOrUpdateRow(data.product);
-              document.getElementById("barcode").value = "";
-            } else {
-              showError('products-error', data.message || "⚠️ Không tìm thấy sản phẩm!");
+        fetch("receipts/get_barcode_or_batch.php?barcode=" + encodeURIComponent(code))
+          .then(res => res.text())
+          .then(txt => {
+            try {
+              const data = JSON.parse(txt);
+              if (data.success) {
+                const batchData = data.batch || null;
+                let productPayload = data.product || null;
+                if (!productPayload && batchData && batchData.product_id) {
+                  productPayload = { _id: batchData.product_id, product_name: batchData.product_name || '', purchase_price: batchData.unit_price || 0, package_weight: batchData.unit_weight || 0, package_dimensions: batchData.package_dimensions || {} };
+                }
+                // Prefer batch price/weight when available
+                if (batchData && productPayload) {
+                  if (batchData.unit_price) productPayload.purchase_price = batchData.unit_price;
+                  if (batchData.unit_weight && (!productPayload.package_weight || productPayload.package_weight == 0)) productPayload.package_weight = batchData.unit_weight;
+                  if (batchData.package_dimensions && (!productPayload.package_dimensions || Object.keys(productPayload.package_dimensions).length === 0)) productPayload.package_dimensions = batchData.package_dimensions;
+                }
+                console.log("Sản phẩm nhận được:", productPayload, batchData);
+                addOrUpdateRow(productPayload, batchData);
+                document.getElementById("barcode").value = "";
+              } else {
+                showError('products-error', data.message || "⚠️ Không tìm thấy sản phẩm!");
+              }
+            } catch (err) {
+              console.error('Non-JSON response from barcode API:', txt);
+              showError('products-error', '⚠️ Lỗi server: phản hồi không hợp lệ. Kiểm tra console.');
             }
           })
           .catch(err => showError('products-error','⚠️ Lỗi khi tìm sản phẩm: ' + err));
       }
     }
 
-    function addOrUpdateRow(product) {
+    function addOrUpdateRow(product, batch) {
       console.log("addOrUpdateRow - Product ID:", product._id); // ✅ Debug
       console.log("productMap hiện tại:", productMap); // ✅ Debug
       
@@ -633,6 +667,33 @@
         qtyInput.value = parseInt(qtyInput.value) + 1;
         calcSubtotal(qtyInput);
         updateDimensions(qtyInput);
+        // Nếu quét theo lô hàng và có batch payload, cập nhật hidden batches và hiển thị badge
+        if (batch) {
+          try {
+            const hiddenBatches = row.querySelector(`input[name='products[${productMap[product._id]}][batches]']`);
+            let current = [];
+            if (hiddenBatches && hiddenBatches.value) {
+              const raw = hiddenBatches.value.replace(/&apos;/g, "'");
+              current = JSON.parse(raw || '[]');
+            }
+            const newBatch = {
+              batch_code: batch.batch_code || batch.barcode || '',
+              quantity: batch.quantity_remaining ? 1 : (batch.quantity || 1),
+              source_location: batch.source_location || batch.location || null,
+              location_text: batch.location_text || ''
+            };
+            current.push(newBatch);
+            hiddenBatches.value = JSON.stringify(current).replace(/'/g, '&apos;');
+            // append badge
+            const batchCell = row.querySelector('.batch-column');
+            if (batchCell) {
+              const span = document.createElement('span');
+              span.style.cssText = 'display:inline-block;background:#e3f2fd;padding:2px 6px;margin:2px;border-radius:4px;font-size:12px;';
+              span.innerHTML = `📦 ${newBatch.batch_code}`;
+              batchCell.appendChild(span);
+            }
+          } catch (e) { console.error('Error appending batch to existing row', e); }
+        }
       } else {
         console.log("Thêm sản phẩm mới vào bảng"); // ✅ Debug
         console.log("Product data:", product); // ✅ Debug xem dữ liệu
@@ -644,7 +705,20 @@
         // ✅ Lưu thông tin kích thước, trọng lượng, thể tích cho từng đơn vị
         const baseUnit = product.baseUnit || 'Cái';
         const baseDim = product.package_dimensions || {};
-        const baseWeight = parseFloat(product.package_weight) || 0;
+        let baseWeight = parseFloat(product.package_weight) || 0;
+        // If base weight is missing (0), try to derive from conversionUnits
+        if ((!baseWeight || baseWeight === 0) && product.conversionUnits && Array.isArray(product.conversionUnits)) {
+          for (let i = 0; i < product.conversionUnits.length; i++) {
+            const cu = product.conversionUnits[i];
+            const cuWeight = parseFloat(cu.weight || 0) || 0;
+            const cuFactor = parseFloat(cu.factor || 0) || 0;
+            if (cuWeight > 0 && cuFactor > 0) {
+              // Weight per base unit = convUnit.weight / factor
+              baseWeight = cuWeight / cuFactor;
+              break;
+            }
+          }
+        }
         const baseVolume = parseFloat(product.volume_per_unit) || 0;
         
         const baseWidth = parseFloat(baseDim.width) || 0;
@@ -717,23 +791,23 @@
         const unitSelectDisabled = isFromExport ? 'disabled' : '';
         const maxQtyAttr = isFromExport && exportProducts[product._id] ? `max="${exportProducts[product._id].quantity}"` : '';
         
-        // Hiển thị thông tin batches nếu nhập từ phiếu xuất
+        // Hiển thị thông tin batches nếu nhập từ phiếu xuất hoặc có batch payload
         let batchDisplay = '-';
-        if (isFromExport && exportProducts[product._id] && exportProducts[product._id].batches) {
+        let batchesJson = '[]';
+        if (batch) {
+          const b = {
+            batch_code: batch.batch_code || batch.barcode || '',
+            quantity: batch.quantity_remaining ? 1 : (batch.quantity || 1),
+            source_location: batch.source_location || batch.location || null,
+            location_text: batch.location_text || ''
+          };
+          batchDisplay = `<span style="display:inline-block;background:#e3f2fd;padding:2px 6px;margin:2px;border-radius:4px;font-size:12px;">📦 ${b.batch_code}</span>`;
+          batchesJson = JSON.stringify([b]).replace(/'/g, '&apos;');
+        } else if (isFromExport && exportProducts[product._id] && exportProducts[product._id].batches) {
           const batches = exportProducts[product._id].batches;
           batchDisplay = batches.map(b => `<span style="display:inline-block;background:#e3f2fd;padding:2px 6px;margin:2px;border-radius:4px;font-size:12px;">📦 ${b.batch_code}</span>`).join('');
-        }
-
-        // ⭐ Chuẩn bị thông tin batches để lưu vào hidden field
-        let batchesJson = '[]';
-        if (isFromExport && exportProducts[product._id] && exportProducts[product._id].batches) {
-          const batches = exportProducts[product._id].batches.map(b => ({
-            batch_code: b.batch_code,
-            quantity: b.quantity,
-            source_location: b.source_location || b.location || null,
-            location_text: b.location_text || b.location_display || ''
-          }));
-          batchesJson = JSON.stringify(batches).replace(/'/g, '&apos;');
+          const mapped = batches.map(b => ({ batch_code: b.batch_code, quantity: b.quantity, source_location: b.source_location || b.location || null, location_text: b.location_text || b.location_display || '' }));
+          batchesJson = JSON.stringify(mapped).replace(/'/g, '&apos;');
           console.log(`📦 Batches for ${product.product_name}:`, batches);
         }
 

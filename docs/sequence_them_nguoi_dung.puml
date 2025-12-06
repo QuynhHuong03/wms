@@ -1,0 +1,99 @@
+@startuml Thêm Người Dùng
+
+' Cấu hình giao diện
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+title Thêm Người Dùng Mới
+
+actor "Admin" as Admin
+boundary "GD_Chinh" as GUI_Main
+boundary "GD_QuanLyNguoiDung" as UserListGUI
+boundary "GD_ThemNguoiDung" as AddUserGUI
+control "Ctrl_Users" as UserCtrl
+entity "DB_Users" as UserDB
+
+Admin -> GUI_Main: 1: Chọn "Quản lý người dùng"
+activate Admin
+activate GUI_Main
+
+GUI_Main -> UserListGUI: 1.1: Mở trang quản lý
+activate UserListGUI
+deactivate GUI_Main
+
+UserListGUI -> UserListGUI: 1.2: Hiển thị danh sách
+
+Admin -> UserListGUI: 2: Click "Thêm người dùng"
+
+UserListGUI -> AddUserGUI: 2.1: Mở form thêm
+activate AddUserGUI
+deactivate UserListGUI
+
+AddUserGUI -> AddUserGUI: 2.2: Hiển thị form (load roles & warehouses)
+
+Admin -> AddUserGUI: 3: Nhập thông tin
+
+AddUserGUI -> AddUserGUI: 3.1: Validate dữ liệu
+
+alt Dữ liệu không hợp lệ
+    AddUserGUI -> AddUserGUI: 3.2: Hiển thị lỗi validation
+else Dữ liệu hợp lệ
+    Admin -> AddUserGUI: 3.3: Click "Thêm"
+    
+    AddUserGUI -> UserCtrl: 3.4: addUser(userData)
+    activate UserCtrl
+    
+    UserCtrl -> UserCtrl: 3.4.1: Hash password
+    
+    UserCtrl -> UserDB: 3.4.2: findUserByEmail(email)
+    activate UserDB
+    
+    UserDB --> UserCtrl: 3.4.3: User / null
+    deactivate UserDB
+    
+    alt Email đã tồn tại
+        UserCtrl --> AddUserGUI: 3.5: false
+        deactivate UserCtrl
+        AddUserGUI -> AddUserGUI: 3.5.1: Hiển thị "Email đã được sử dụng"
+    else Email chưa tồn tại
+        UserCtrl -> UserDB: 3.6: Tạo user_id tự động
+        activate UserDB
+        
+        note right of UserDB
+          - Lấy user_id lớn nhất
+          - Tạo ID mới (NV001, NV002...)
+        end note
+        
+        UserDB --> UserCtrl: 3.5.1: New user_id
+        deactivate UserDB
+        
+        UserCtrl -> UserDB: 3.6: insertOne(userData)
+        activate UserDB
+        
+        note right of UserDB
+          Lưu user với:
+          - user_id, name, email
+          - hashed password
+          - role_id, status, warehouse_id
+          - first_login = true
+        end note
+        
+        UserDB --> UserCtrl: 3.6.1: Success
+        deactivate UserDB
+        
+        UserCtrl --> AddUserGUI: 3.7: user_id
+        deactivate UserCtrl
+        
+        AddUserGUI -> UserListGUI: 3.8: Chuyển hướng về danh sách
+        activate UserListGUI
+        deactivate AddUserGUI
+        
+        UserListGUI -> UserListGUI: 3.9: Hiển thị "Thêm thành công"
+        deactivate UserListGUI
+    end
+end
+
+deactivate Admin
+
+@enduml

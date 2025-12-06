@@ -1,0 +1,318 @@
+@startuml NoSQL Schema - WMS (MongoDB)
+
+' ============================
+' CONFIGURATION
+' ============================
+!define DARKBLUE
+!define LIGHTBLUE
+skinparam linetype ortho
+top to bottom direction
+skinparam nodesep 60
+skinparam ranksep 80
+
+skinparam rectangle {
+    BackgroundColor LightYellow
+    BorderColor Black
+    FontSize 10
+}
+
+skinparam note {
+    BackgroundColor LightBlue
+    BorderColor Black
+}
+
+' ============================
+' MONGODB COLLECTIONS
+' ============================
+
+package "User Management" {
+    entity users {
+        _id: ObjectId
+        --
+        user_id: string
+        name: string
+        email: string
+        password: string
+        gender: string
+        phone: string
+        role_id: int
+        warehouse_id: int
+        status: int
+        first_login: bool
+        created_at: UTCDateTime
+        updated_at: UTCDateTime
+    }
+
+    entity roles {
+        _id: ObjectId
+        --
+        role_id: int
+        role_name: string
+        description: string
+    }
+}
+
+package "Warehouse Management" {
+    entity warehouses {
+        _id: ObjectId
+        --
+        warehouse_id: string
+        warehouse_name: string
+        address: object
+        status: int
+        warehouse_type: int
+        created_at: string
+        updated_at: string
+    }
+
+    entity locations {
+        _id: string
+        --
+        warehouse: object
+        name: string
+        description: string
+        zones: array
+        created_at: string
+        updated_at: string
+    }
+}
+
+package "Product Management" {
+    entity categories {
+        _id: ObjectId
+        --
+        category_id: string
+        category_name: string
+        category_code: string
+        description: string
+        status: int
+        created_at: UTCDateTime
+        updated_at: UTCDateTime
+    }
+
+    entity suppliers {
+        _id: ObjectId
+        --
+        supplier_id: string
+        supplier_name: string
+        contact: string
+        email: string
+        phone: string
+        address: string
+        status: int
+        created_at: string
+        updated_at: string
+    }
+
+    entity products {
+        _id: ObjectId
+        --
+        sku: string
+        product_name: string
+        barcode: string
+        category: object
+        supplier: object
+        baseUnit: string
+        conversionUnits: array
+        package_dimensions: object
+        package_weight: float
+        volume_per_unit: float
+        stackable: bool
+        max_stack_height: int
+        min_stock: int
+        purchase_price: float
+        status: int
+        image: string
+        created_at: string
+        updated_at: string
+    }
+}
+
+package "Inventory & Stock" {
+    entity inventory {
+        _id: ObjectId
+        --
+        warehouse_id: string
+        product_id: ObjectId
+        product_sku: string
+        product_name: string
+        qty: float
+        zone_id: string
+        rack_id: string
+        bin_id: string
+        receipt_id: string
+        received_at: UTCDateTime
+    }
+
+    entity batches {
+        _id: ObjectId
+        --
+        batch_code: string
+        product_id: ObjectId
+        product_sku: string
+        quantity_imported: float
+        quantity_remaining: float
+        warehouse_id: string
+        import_date: UTCDateTime
+        unit_price: float
+        receipt_id: string
+        transaction_id: string
+        status: string
+        barcode: string
+        created_at: UTCDateTime
+        updated_at: UTCDateTime
+    }
+
+    entity batch_locations {
+        _id: ObjectId
+        --
+        batch_code: string
+        product_id: ObjectId
+        warehouse_id: string
+        zone_id: string
+        rack_id: string
+        bin_id: string
+        quantity: float
+        import_date: UTCDateTime
+        created_at: UTCDateTime
+    }
+}
+
+package "Transactions & Movements" {
+    entity transactions {
+        _id: ObjectId
+        --
+        transaction_id: string
+        transaction_type: string
+        warehouse_id: string
+        status: int
+        created_by: string
+        created_at: UTCDateTime
+        approved_by: string
+        approved_at: UTCDateTime
+        note: string
+        items: array
+        details: array
+    }
+
+    entity inventory_movements {
+        _id: ObjectId
+        --
+        warehouse_id: string
+        product_id: ObjectId
+        transaction_id: string
+        movement_type: string
+        qty: float
+        created_by: string
+        created_at: UTCDateTime
+    }
+
+    entity inventory_sheets {
+        _id: ObjectId
+        --
+        sheet_code: string
+        warehouse_id: string
+        created_by: string
+        created_at: UTCDateTime
+        status: int
+        items: array
+        count_date: UTCDateTime
+        approved_by: string
+        approved_at: UTCDateTime
+        locations: object
+    }
+}
+
+' Relationships
+users --> roles
+users --> warehouses
+warehouses --> locations
+products --> categories
+products --> suppliers
+inventory --> products
+inventory --> warehouses
+inventory --> locations
+batches --> products
+batches --> warehouses
+batches --> transactions
+batches --> batch_locations
+batch_locations --> batches
+batch_locations --> locations
+transactions --> warehouses
+transactions --> users
+transactions --> inventory_movements
+inventory_movements --> transactions
+inventory_movements --> products
+inventory_sheets --> warehouses
+inventory_sheets --> users
+
+' Key Features
+note right of locations
+  Embedded Structure
+  Zone Rack Bin hierarchy
+  Query all structure at once
+  Fast update clear hierarchy
+end note
+
+note right of transactions
+  Polymorphic Pattern
+  Types import export
+  goods request transfer
+  Items embedded
+end note
+
+note right of products
+  Denormalization
+  Category and Supplier info
+  duplicated in product
+  Trade-off Update multiple places
+end note
+
+note right of batches
+  FIFO Tracking
+  Batch tracking
+  Price per batch
+  quantity remaining
+  Sort by import date
+end note
+
+note right of inventory
+  Denormalized Fields
+  product sku product name
+  to reduce lookup
+  Location tracking
+  zone rack bin
+end note
+
+note right of batch_locations
+  Many to Many
+  1 Batch many Bins
+  1 Bin many Batches
+  Junction table needed
+end note
+
+' Critical Indexes
+note as IndexNote
+  users email unique user_id unique
+  products sku unique barcode product_name text
+  inventory warehouse_id plus product_id zone_id plus rack_id plus bin_id
+  batches batch_code unique product_id plus warehouse_id plus import_date
+  transactions transaction_id unique transaction_type plus status warehouse_id plus created_at
+end note
+
+note as DataFlow
+  Transaction Flow Import
+  1. Create Transaction pending
+  2. Approve Transaction
+  3. Generate Batches
+  4. Insert Inventory entries
+  5. Update Bin quantities
+  6. Create Inventory Movement
+  7. Complete Transaction
+  Get inventory by warehouse
+  Find product locations
+  FIFO batch selection
+  Stock movements history
+end note
+
+@enduml

@@ -289,9 +289,13 @@ class MReceipt {
         if (!$this->col) return null;
         try {
             // Find receipts containing this product in items array
+            // Support both 'details' and 'items' fields
             $filter = [
                 'warehouse_id' => $warehouseId,
-                'items.product_id' => $productId
+                '$or' => [
+                    ['items.product_id' => $productId],
+                    ['details.product_id' => $productId]
+                ]
             ];
             
             $receipt = $this->col->findOne($filter, [

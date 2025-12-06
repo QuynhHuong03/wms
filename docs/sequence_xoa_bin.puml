@@ -1,0 +1,66 @@
+@startuml
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor "QL Kho" as User
+boundary "GD_Chinh" as GUI_Main
+boundary "GD_QuanLyViTri" as View
+control "Ctrl_Location" as Controller
+entity "DB_Locations" as LocationDB
+entity "DB_Inventory" as InventoryDB
+
+title Xóa bin
+
+User -> GUI_Main: 1: Chọn "Quản lý vị trí"
+activate User
+activate GUI_Main
+
+GUI_Main -> View: 1.1: Mở trang quản lý vị trí
+activate View
+deactivate GUI_Main
+
+View -> View: 1.2: Hiển thị danh sách zones với bins
+
+User -> View: 2: Click "Xóa" bin
+
+View -> View: 2.1: Hiển thị confirm dialog
+
+User -> View: 2.2: Xác nhận xóa
+
+View -> Controller: 2.3: deleteBin(zone_id, rack_id, bin_id)
+activate Controller
+
+Controller -> InventoryDB: 2.3.1: sumQuantityByBin(warehouseId, zone_id, rack_id, bin_id)
+activate InventoryDB
+
+InventoryDB --> Controller: 2.3.2: return totalQty
+deactivate InventoryDB
+
+alt Bin có sản phẩm (quantity > 0)
+    Controller --> View: 2.3.3: return {success: false, message: "Không thể xóa bin có sản phẩm"}
+    deactivate Controller
+    
+    View -> View: 2.4: Hiển thị thông báo lỗi
+    
+else Bin trống (quantity = 0)
+    Controller -> LocationDB: 2.3.4: Delete bin from warehouse
+    activate LocationDB
+    
+    LocationDB --> Controller: 2.3.5: Success
+    deactivate LocationDB
+    
+    Controller --> View: 2.3.6: return {success: true}
+    deactivate Controller
+    
+    View -> View: 2.5: Hiển thị toast thông báo
+    
+    View -> View: 2.6: Reload trang
+    
+    View -> View: 2.7: Hiển thị danh sách đã cập nhật
+end
+
+deactivate View
+deactivate User
+
+@enduml

@@ -1,0 +1,244 @@
+@startuml Domain Model - WMS
+
+' Cấu hình
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 200
+
+skinparam class {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor Black
+}
+
+' ===== CORE ENTITIES =====
+
+class User {
+    - _id
+    - user_id
+    - name
+    - email
+    - password
+    - role_id
+    - warehouse_id
+    - phone
+    - status
+    - created_at
+    - updated_at
+}
+
+class Role {
+    - _id
+    - role_id
+    - role_name
+    - description
+}
+
+class Warehouse {
+    - _id
+    - warehouse_id
+    - warehouse_name
+    - address
+    - status
+    - warehouse_type
+    - manager_id
+    - created_at
+    - updated_at
+}
+
+class Location {
+    - _id
+    - warehouse_id
+    - zone_id
+    - rack_id
+    - bin_id
+    - bin_code
+    - width
+    - depth
+    - height
+    - capacity
+    - quantity
+    - status
+    - product_id
+    - created_at
+    - updated_at
+}
+
+' ===== PRODUCT & CATEGORY =====
+
+class Category {
+    - _id
+    - category_id
+    - category_name
+    - category_code
+    - description
+    - status
+    - created_at
+    - update_at
+}
+
+class Supplier {
+    - _id
+    - supplier_id
+    - supplier_name
+    - contact
+    - email
+    - phone
+    - address
+    - status
+    - created_at
+    - updated_at
+}
+
+class Product {
+    - _id
+    - sku
+    - product_id
+    - product_name
+    - barcode
+    - category
+    - supplier
+    - model
+    - baseUnit
+    - conversionUnits[]
+    - package_dimensions
+    - package_weight
+    - volume_per_unit
+    - stackable
+    - max_stack_height
+    - min_stock
+    - status
+    - description
+    - image
+    - created_at
+    - updated_at
+}
+
+' ===== INVENTORY =====
+
+class Inventory {
+    - _id
+    - warehouse_id
+    - product_id
+    - product_sku
+    - product_name
+    - qty
+    - zone_id
+    - rack_id
+    - bin_id
+    - receipt_id
+    - receipt_code
+    - note
+    - received_at
+    - type
+}
+
+class Batch {
+    - _id
+    - batch_code
+    - product_id
+    - product_sku
+    - quantity_imported
+    - quantity_remaining
+    - warehouse_id
+    - import_date
+    - unit_price
+    - receipt_id
+    - status
+}
+
+class BatchLocation {
+    - _id
+    - batch_code
+    - product_id
+    - warehouse_id
+    - zone_id
+    - rack_id
+    - bin_id
+    - quantity
+    - import_date
+    - created_at
+}
+
+' ===== TRANSACTIONS =====
+
+class Transaction {
+    - _id
+    - transaction_id
+    - type
+    - warehouse_id
+    - status
+    - created_by
+    - created_at
+    - approved_by
+    - approved_at
+    - note
+    - items[]
+}
+
+class InventorySheet {
+    - _id
+    - sheet_code
+    - warehouse_id
+    - created_by
+    - created_by_name
+    - created_at
+    - status
+    - note
+    - items[]
+    - count_date
+    - approved_by
+    - approved_at
+    - approve_note
+    - locations
+}
+
+class InventoryMovement {
+    - _id
+    - warehouse_id
+    - product_id
+    - product_sku
+    - transaction_id
+    - movement_type
+    - qty
+    - created_by
+    - created_at
+    - note
+}
+
+' ===== RELATIONSHIPS =====
+
+' User & Role
+User "1" --> "1" Role : has
+User "n" --> "1" Warehouse : works at
+
+' Warehouse
+Warehouse "1" --> "n" Location : has locations
+
+' Product
+Product "n" --> "1" Category : belongs to
+Product "n" --> "1" Supplier : supplied by
+
+' Inventory
+Inventory "n" --> "1" Product : of
+Inventory "n" --> "1" Warehouse : located in
+Inventory "n" --> "1" Location : at
+
+' Batch
+Batch "n" --> "1" Product : tracks
+Batch "1" --> "n" BatchLocation : has
+
+' BatchLocation
+BatchLocation "n" --> "1" Warehouse : in
+BatchLocation "n" --> "1" Location : at
+
+' Transaction
+Transaction "n" --> "1" Warehouse : involves
+Transaction "n" --> "1" User : created by
+Transaction "1" --> "n" InventoryMovement : generates
+
+' Inventory Sheet
+InventorySheet "n" --> "1" Warehouse : for
+InventorySheet "n" --> "1" User : created by
+
+@enduml

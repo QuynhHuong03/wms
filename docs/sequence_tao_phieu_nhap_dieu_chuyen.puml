@@ -1,0 +1,144 @@
+@startuml
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor "QL Kho/ NV Kho" as Admin
+boundary "GD_Chinh" as MainGUI
+boundary "GD_TaoPN" as CreateView
+control "Ctrl_Receipt" as Controller
+control "Ctrl_Warehouse" as WarehouseCtrl
+control "Ctrl_Export" as ExportCtrl
+control "Ctrl_Product" as ProductCtrl
+entity "DB_Receipts" as ReceiptDB
+entity "DB_Warehouses" as WarehouseDB
+entity "DB_Transactions" as TransactionDB
+
+Admin -> MainGUI: 1: Chọn "Tạo phiếu nhập"
+activate Admin
+activate MainGUI
+
+MainGUI -> CreateView: 1.1: Mở form tạo phiếu
+activate CreateView
+deactivate MainGUI
+
+CreateView -> WarehouseCtrl: 1.2: getAllWarehouses()
+activate WarehouseCtrl
+
+WarehouseCtrl -> WarehouseDB: 1.2.1: find({})
+activate WarehouseDB
+
+WarehouseDB --> WarehouseCtrl: 1.2.2: Danh sách kho
+deactivate WarehouseDB
+
+WarehouseCtrl --> CreateView: 1.2.3: return warehouses
+deactivate WarehouseCtrl
+
+CreateView -> CreateView: 1.3: Hiển thị form
+
+Admin -> CreateView: 2: Chọn loại phiếu "transfer"
+
+CreateView -> CreateView: 2.1: toggleFields() - Hiển thị trường kho nguồn
+
+Admin -> CreateView: 3: Chọn kho nguồn
+
+CreateView -> ExportCtrl: 3.1: getExports(source_warehouse, destination_warehouse)
+activate ExportCtrl
+
+ExportCtrl -> TransactionDB: 3.1.1: find({transaction_type: "export", status: 1, warehouse_id, destination_warehouse_id})
+activate TransactionDB
+
+TransactionDB --> ExportCtrl: 3.1.2: Danh sách phiếu xuất
+deactivate TransactionDB
+
+ExportCtrl --> CreateView: 3.1.3: return exports
+deactivate ExportCtrl
+
+CreateView -> CreateView: 3.2: Hiển thị dropdown phiếu xuất
+
+Admin -> CreateView: 4: Chọn phiếu xuất
+
+CreateView -> ExportCtrl: 4.1: getExportDetails(export_id)
+activate ExportCtrl
+
+ExportCtrl -> TransactionDB: 4.1.1: findOne({_id: export_id})
+activate TransactionDB
+
+TransactionDB --> ExportCtrl: 4.1.2: Chi tiết phiếu xuất
+deactivate TransactionDB
+
+ExportCtrl --> CreateView: 4.1.3: return export với products và batches
+deactivate ExportCtrl
+
+CreateView -> CreateView: 4.2: Hiển thị thông tin phiếu xuất
+
+
+loop Quét sản phẩm từ phiếu xuất
+    Admin -> CreateView: 5: Nhập/Quét mã sản phẩm hoặc mã lô
+    
+    CreateView -> ProductCtrl: 5.1: getProductOrBatch(barcode, export_id)
+    activate ProductCtrl
+    
+    ProductCtrl -> TransactionDB: 5.1.1: Kiểm tra trong phiếu xuất
+    activate TransactionDB
+    
+    alt Tìm thấy trong phiếu xuất
+        TransactionDB --> ProductCtrl: 5.1.2: Thông tin sản phẩm/lô
+        deactivate TransactionDB
+        
+        ProductCtrl --> CreateView: 5.1.3: return product/batch JSON
+        deactivate ProductCtrl
+        
+        CreateView -> CreateView: 5.2: addOrUpdateRow()
+        
+        Admin -> CreateView: 5.3: Nhập số lượng
+        
+        CreateView -> CreateView: 5.4: validateQuantity()
+        
+        alt Số lượng vượt quá phiếu xuất
+            CreateView -> CreateView: 5.4.1: Hiển thị lỗi giới hạn
+        else Hợp lệ
+            CreateView -> CreateView: 5.4.2: Cập nhật số lượng
+        end
+        
+    else Không tìm thấy trong phiếu xuất
+        TransactionDB --> ProductCtrl: 5.1.2b: null
+        deactivate TransactionDB
+        
+        ProductCtrl --> CreateView: 5.1.3b: return null
+        deactivate ProductCtrl
+        
+        CreateView -> CreateView: 5.2b: Hiển thị lỗi
+        note right: "Sản phẩm/lô không có trong phiếu xuất"
+    end
+end
+
+Admin -> CreateView: 6: Click "Tạo phiếu"
+
+CreateView -> CreateView: 6.1: showConfirmDialog()
+
+Admin -> CreateView: 6.2: Click "Xác nhận"
+
+CreateView -> Controller: 6.3: createReceipt(payload) - Submit form
+activate Controller
+
+Controller -> Controller: 6.3.1: generateReceiptId()
+note right: Tạo mã IR0001, IR0002...
+
+Controller -> ReceiptDB: 6.3.2: insertOne(doc)
+activate ReceiptDB
+
+ReceiptDB --> Controller: 6.3.3: Insert result
+deactivate ReceiptDB
+
+Controller --> CreateView: 6.3.4: return [true, receipt_id]
+deactivate Controller
+
+CreateView -> CreateView: 6.4: Hiển thị "Tạo phiếu thành công!"
+
+CreateView -> MainGUI: 6.5: Chuyển hướng về danh sách phiếu
+deactivate CreateView
+
+deactivate Admin
+
+@enduml
