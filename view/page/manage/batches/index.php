@@ -41,10 +41,18 @@ if ($docRoot && $docRoot !== '' && strpos($dirFs, $docRoot) === 0) {
   .batch-list-container .btn-view {background:#17a2b8;color:#fff;}
   .batch-list-container .btn-delete {background:#dc3545;color:#fff;}
   .batch-list-container .btn:hover {opacity:0.9;}
-  .batch-list-container .status {font-weight:600;padding:6px 10px;border-radius:8px;display:inline-block;}
-  .batch-list-container .storing {background:#d4edda;color:#155724;}
-  .batch-list-container .low-stock {background:#fff3cd;color:#856404;}
-  .batch-list-container .out-of-stock {background:#f8d7da;color:#721c24;}
+  .batch-list-container .status {font-weight:600;padding:6px 12px;border-radius:8px;display:inline-block;font-size:13px;}
+  .batch-list-container .storing {background:#d1fae5;color:#065f46;}
+  .batch-list-container .low-stock {background:#fef3c7;color:#92400e;}
+  .batch-list-container .out-of-stock {background:#fee2e2;color:#991b1b;}
+  .status {font-weight:600;padding:6px 12px;border-radius:8px;display:inline-block;font-size:13px;}
+  .storing {background:#d1fae5;color:#065f46;}
+  .low-stock {background:#fef3c7;color:#92400e;}
+  .out-of-stock {background:#fee2e2;color:#991b1b;}
+  .bg-success {background:#d1fae5;color:#065f46;padding:6px 12px;border-radius:8px;font-weight:600;font-size:13px;}
+  .bg-warning {background:#fef3c7;color:#92400e;padding:6px 12px;border-radius:8px;font-weight:600;font-size:13px;}
+  .bg-danger {background:#fee2e2;color:#991b1b;padding:6px 12px;border-radius:8px;font-weight:600;font-size:13px;}
+  .bg-info {background:#dbeafe;color:#1e40af;padding:6px 12px;border-radius:8px;font-weight:600;font-size:13px;}
   .batch-list-container .top-actions {margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
   .stats {display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px;margin:20px 0;}
   .stat-card {padding:20px;border-radius:12px;color:#fff;box-shadow:0 3px 10px rgba(0,0,0,0.1);}
@@ -202,18 +210,20 @@ if ($docRoot && $docRoot !== '' && strpos($dirFs, $docRoot) === 0) {
 </div>
 
 <!-- Modal Chi tiết Lô -->
-<div id="batchDetailModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;overflow-y:auto;">
-    <div style="max-width:1200px;margin:50px auto;background:#fff;border-radius:12px;padding:24px;position:relative;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:2px solid #e5e7eb;padding-bottom:12px;">
-            <h3 style="margin:0;"><i class="fa-solid fa-box"></i> Chi tiết Lô Hàng</h3>
-            <button onclick="closeModal()" style="background:#dc3545;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;">
-                <i class="fa-solid fa-xmark"></i> Đóng
+<div id="batchDetailModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:1000;overflow-y:auto;">
+    <div style="max-width:1300px;margin:40px auto;background:#fff;border-radius:16px;padding:0;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:24px 32px;background:linear-gradient(135deg,#3b82f6 0%,#2563eb 100%);border-radius:16px 16px 0 0;">
+            <h3 style="margin:0;color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;gap:10px;">
+                <i class="fa-solid fa-box"></i> Chi tiết Lô Hàng
+            </h3>
+            <button onclick="closeModal()" style="background:#6b7280;color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;transition:all 0.2s;" onmouseover="this.style.background='#4b5563'" onmouseout="this.style.background='#6b7280'">
+                ✕ Đóng
             </button>
         </div>
-        <div id="batchDetailContent">
-            <div style="text-align:center;padding:40px;">
-                <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
-                <p style="margin-top:10px;">Đang tải...</p>
+        <div id="batchDetailContent" style="padding:32px;">
+            <div style="text-align:center;padding:60px;">
+                <i class="fa-solid fa-spinner fa-spin fa-3x" style="color:#3b82f6;"></i>
+                <p style="margin-top:16px;color:#6b7280;font-size:16px;">Đang tải dữ liệu...</p>
             </div>
         </div>
     </div>
@@ -285,6 +295,10 @@ async function viewBatchDetail(batchCode) {
         }
 
         const batch = data.data;
+        
+        console.log('Batch data:', batch);
+        console.log('product_sku:', batch.product_sku);
+        console.log('product_id:', batch.product_id);
 
         const statusBadgeClass = mapStatusClass(batch.status);
 
@@ -301,88 +315,96 @@ async function viewBatchDetail(batchCode) {
         }
 
         let html = `
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:20px;">
-                <div>
-                    <h6 style="margin-bottom:16px;"><i class="fa-solid fa-box"></i> Thông tin lô hàng</h6>
-                    <table style="width:100%;border-collapse:collapse;">
-                        <tr><th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;text-align:left;width:150px;">Mã lô:</th><td style="padding:8px;border:1px solid #e5e7eb;"><div style="display:flex;align-items:center;gap:8px;"><strong>${batch.batch_code}</strong><button onclick='copyToClipboard(${JSON.stringify(batch.batch_code)})' title="Copy mã lô" style="background:#6c757d;color:#fff;border:none;padding:4px 8px;border-radius:4px;cursor:pointer;"><i class="far fa-copy"></i></button></div></td></tr>
-                        <tr><th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;text-align:left;">Sản phẩm:</th><td style="padding:8px;border:1px solid #e5e7eb;">${batch.product_name}</td></tr>
-                        <tr><th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;text-align:left;">SKU:</th><td style="padding:8px;border:1px solid #e5e7eb;">${batch.product_id}</td></tr>
-                        <tr><th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;text-align:left;">Barcode:</th><td style="padding:8px;border:1px solid #e5e7eb;">${batch.barcode || 'N/A'}</td></tr>
-                        <tr><th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;text-align:left;">Số lượng nhập:</th><td style="padding:8px;border:1px solid #e5e7eb;">${batch.quantity_imported || 0}</td></tr>
-                        <tr><th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;text-align:left;">Số lượng còn:</th><td style="padding:8px;border:1px solid #e5e7eb;"><strong style="color:${(batch.quantity_remaining || 0) > 0 ? '#059669' : '#dc2626'}">${batch.quantity_remaining || 0}</strong></td></tr>
-                        <tr><th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;text-align:left;">Đơn vị:</th><td style="padding:8px;border:1px solid #e5e7eb;">${batch.unit || 'cái'}</td></tr>
-                        <tr><th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;text-align:left;">Đơn giá:</th><td style="padding:8px;border:1px solid #e5e7eb;">${(batch.unit_price || 0).toLocaleString('vi-VN')} đ</td></tr>
-                        <tr><th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;text-align:left;">Ngày nhập:</th><td style="padding:8px;border:1px solid #e5e7eb;">${batch.import_date || 'N/A'}</td></tr>
-                        <tr><th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;text-align:left;">Trạng thái:</th><td style="padding:8px;border:1px solid #e5e7eb;"><span class="status ${statusBadgeClass}">${batch.status || ''}</span></td></tr>
-                        <tr><th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;text-align:left;">Loại:</th><td style="padding:8px;border:1px solid #e5e7eb;">${batch.type || (batch.source === 'transfer' ? 'transfer' : (batch.source || 'purchase'))}</td></tr>
-                        <tr><th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;text-align:left;">Nguồn:</th><td style="padding:8px;border:1px solid #e5e7eb;">${sourceHtml}</td></tr>
-                        ${batch.source_warehouse_id ? `<tr><th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;text-align:left;">Kho nguồn:</th><td style="padding:8px;border:1px solid #e5e7eb;">${batch.source_warehouse_id}</td></tr>` : ''}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:32px;">
+                <div style="background:#f9fafb;padding:24px;border-radius:12px;border:1px solid #e5e7eb;">
+                    <h6 style="margin:0 0 20px 0;font-size:16px;font-weight:700;color:#111827;display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:2px solid #3b82f6;">
+                        <i class="fa-solid fa-box" style="color:#3b82f6;"></i> Thông tin lô hàng
+                    </h6>
+                    <table style="width:100%;border-collapse:separate;border-spacing:0;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+                        <tr><th style="padding:12px;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);text-align:left;width:150px;font-size:13px;color:#1e40af;font-weight:600;">Mã lô:</th><td style="padding:12px;background:#fff;"><div style="display:flex;align-items:center;gap:8px;"><strong style="color:#111827;">${batch.batch_code}</strong><button onclick='copyToClipboard(${JSON.stringify(batch.batch_code)})' title="Copy mã lô" style="background:#6b7280;color:#fff;border:none;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:12px;transition:all 0.2s;" onmouseover="this.style.background='#4b5563'" onmouseout="this.style.background='#6b7280'"><i class="far fa-copy"></i></button></div></td></tr>
+                        <tr><th style="padding:12px;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);text-align:left;font-size:13px;color:#1e40af;font-weight:600;">Sản phẩm:</th><td style="padding:12px;background:#fff;font-weight:500;">${batch.product_name}</td></tr>
+                        <tr><th style="padding:12px;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);text-align:left;font-size:13px;color:#1e40af;font-weight:600;">SKU:</th><td style="padding:12px;background:#fff;"><span style="font-family:monospace;background:#f3f4f6;padding:4px 8px;border-radius:4px;font-size:13px;">${batch.product_sku || batch.product_id || 'N/A'}</span></td></tr>
+                        <tr><th style="padding:12px;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);text-align:left;font-size:13px;color:#1e40af;font-weight:600;">Barcode:</th><td style="padding:12px;background:#fff;">${batch.barcode || '<span style="color:#9ca3af;">N/A</span>'}</td></tr>
+                        <tr><th style="padding:12px;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);text-align:left;font-size:13px;color:#1e40af;font-weight:600;">SL Nhập:</th><td style="padding:12px;background:#fff;font-weight:600;font-size:16px;">${batch.quantity_imported || 0}</td></tr>
+                        <tr><th style="padding:12px;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);text-align:left;font-size:13px;color:#1e40af;font-weight:600;">SL Còn:</th><td style="padding:12px;background:#fff;"><strong style="font-size:18px;font-weight:700;color:${(batch.quantity_remaining || 0) > 0 ? '#059669' : '#dc2626'}">${batch.quantity_remaining || 0}</strong></td></tr>
+                        <tr><th style="padding:12px;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);text-align:left;font-size:13px;color:#1e40af;font-weight:600;">Đơn vị:</th><td style="padding:12px;background:#fff;">${batch.unit || 'cái'}</td></tr>
+                        <tr><th style="padding:12px;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);text-align:left;font-size:13px;color:#1e40af;font-weight:600;">Đơn giá:</th><td style="padding:12px;background:#fff;font-weight:600;color:#059669;">${(batch.unit_price || 0).toLocaleString('vi-VN')} đ</td></tr>
+                        <tr><th style="padding:12px;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);text-align:left;font-size:13px;color:#1e40af;font-weight:600;">Ngày nhập:</th><td style="padding:12px;background:#fff;">${batch.import_date || 'N/A'}</td></tr>
+                        <tr><th style="padding:12px;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);text-align:left;font-size:13px;color:#1e40af;font-weight:600;">Trạng thái:</th><td style="padding:12px;background:#fff;"><span style="padding:6px 12px;border-radius:8px;font-weight:600;font-size:13px;display:inline-block;background:#d1fae5;color:#065f46;">${batch.status || ''}</span></td></tr>
+                        <tr><th style="padding:12px;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);text-align:left;font-size:13px;color:#1e40af;font-weight:600;">Loại:</th><td style="padding:12px;background:#fff;">${batch.type || (batch.source === 'transfer' ? 'transfer' : (batch.source || 'purchase'))}</td></tr>
+                        <tr><th style="padding:12px;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);text-align:left;font-size:13px;color:#1e40af;font-weight:600;">Nguồn:</th><td style="padding:12px;background:#fff;">${sourceHtml}</td></tr>
+                        ${batch.source_warehouse_id ? `<tr><th style="padding:12px;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);text-align:left;font-size:13px;color:#1e40af;font-weight:600;">Kho nguồn:</th><td style="padding:12px;background:#fff;">${batch.source_warehouse_id}</td></tr>` : ''}
                     </table>
                 </div>
                 
-                <div>
-                    <h6 style="margin-bottom:16px;"><i class="fa-solid fa-map-marker-alt"></i> Vị trí (${(batch.locations && batch.locations.length) || 0})</h6>
+                <div style="background:#f9fafb;padding:24px;border-radius:12px;border:1px solid #e5e7eb;">
+                    <h6 style="margin:0 0 20px 0;font-size:16px;font-weight:700;color:#111827;display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:2px solid #10b981;">
+                        <i class="fa-solid fa-map-marker-alt" style="color:#10b981;"></i> Vị trí lưu kho <span style="font-size:14px;font-weight:500;color:#6b7280;">(${(batch.locations && batch.locations.length) || 0})</span>
+                    </h6>
                     ${batch.locations && batch.locations.length > 0 ? `
                         <div style="overflow-x:auto;">
-                            <table style="width:100%;border-collapse:collapse;">
+                            <table style="width:100%;border-collapse:separate;border-spacing:0;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
                                 <thead>
-                                    <tr>
-                                        <th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;">Vị trí</th>
-                                        <th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;">Số lượng</th>
+                                    <tr style="background:linear-gradient(135deg,#d1fae5 0%,#a7f3d0 100%);">
+                                        <th style="padding:12px;text-align:left;font-size:13px;color:#065f46;font-weight:600;">Vị trí</th>
+                                        <th style="padding:12px;text-align:center;font-size:13px;color:#065f46;font-weight:600;width:100px;">Số lượng</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${batch.locations.map(loc => `
-                                        <tr>
-                                            <td style="padding:8px;border:1px solid #e5e7eb;">${loc.location_string || 'N/A'}</td>
-                                            <td style="padding:8px;border:1px solid #e5e7eb;"><strong>${loc.quantity || 0}</strong></td>
+                                    ${batch.locations.map((loc, idx) => `
+                                        <tr style="background:${idx % 2 === 0 ? '#fff' : '#f9fafb'};">
+                                            <td style="padding:12px;font-weight:500;">${loc.location_string || 'N/A'}</td>
+                                            <td style="padding:12px;text-align:center;"><strong style="font-size:16px;color:#059669;">${loc.quantity || 0}</strong></td>
                                         </tr>
                                     `).join('')}
                                 </tbody>
                             </table>
                         </div>
-                    ` : '<p style="color:#6b7280;">Chưa có vị trí lưu kho</p>'}
+                    ` : '<div style="text-align:center;padding:40px;color:#9ca3af;"><i class="fa-solid fa-box-open fa-3x" style="margin-bottom:12px;"></i><p style="margin:0;font-size:14px;">Chưa có vị trí lưu kho</p></div>'}
                 </div>
             </div>
             
-            <hr style="margin:20px 0;border:none;border-top:1px solid #e5e7eb;">
+            <div style="height:2px;background:linear-gradient(to right,#e5e7eb 0%,#9ca3af 50%,#e5e7eb 100%);margin:32px 0;border-radius:2px;"></div>
             
-            <h6 style="margin-bottom:16px;"><i class="fa-solid fa-history"></i> Lịch sử di chuyển (${(batch.movements && batch.movements.length) || 0} lần)</h6>
-            ${batch.movements && batch.movements.length > 0 ? `
-                <div style="overflow-x:auto;">
-                    <table style="width:100%;border-collapse:collapse;">
-                        <thead>
-                            <tr>
-                                <th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;">Thời gian</th>
-                                <th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;">Loại</th>
-                                <th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;">Số lượng</th>
-                                <th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;">Từ</th>
-                                <th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;">Đến</th>
-                                <th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;">Phiếu</th>
-                                <th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;">Ghi chú</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${batch.movements.map(mov => `
-                                <tr>
-                                    <td style="padding:8px;border:1px solid #e5e7eb;font-size:12px;">${mov.date || 'N/A'}</td>
-                                    <td style="padding:8px;border:1px solid #e5e7eb;">
-                                        <span class="status ${mov.movement_type === 'nhập' ? 'storing' : 'out-of-stock'}">
-                                            ${mov.movement_type === 'nhập' ? '📥' : '📤'} ${mov.movement_type}
-                                        </span>
-                                    </td>
-                                    <td style="padding:8px;border:1px solid #e5e7eb;"><strong>${mov.quantity || 0}</strong></td>
-                                    <td style="padding:8px;border:1px solid #e5e7eb;font-size:12px;">${mov.from_location || 'N/A'}</td>
-                                    <td style="padding:8px;border:1px solid #e5e7eb;font-size:12px;">${mov.to_location || 'N/A'}</td>
-                                    <td style="padding:8px;border:1px solid #e5e7eb;font-size:12px;">${mov.transaction_id || 'N/A'}</td>
-                                    <td style="padding:8px;border:1px solid #e5e7eb;font-size:12px;">${mov.note || ''}</td>
+            <div style="background:#f9fafb;padding:24px;border-radius:12px;border:1px solid #e5e7eb;">
+                <h6 style="margin:0 0 20px 0;font-size:16px;font-weight:700;color:#111827;display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:2px solid #f59e0b;">
+                    <i class="fa-solid fa-history" style="color:#f59e0b;"></i> Lịch sử di chuyển <span style="font-size:14px;font-weight:500;color:#6b7280;">(${(batch.movements && batch.movements.length) || 0} lần)</span>
+                </h6>
+                ${batch.movements && batch.movements.length > 0 ? `
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%;border-collapse:separate;border-spacing:0;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+                            <thead>
+                                <tr style="background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);">
+                                    <th style="padding:12px;text-align:left;font-size:13px;color:#78350f;font-weight:600;">Thời gian</th>
+                                    <th style="padding:12px;text-align:center;font-size:13px;color:#78350f;font-weight:600;width:120px;">Loại</th>
+                                    <th style="padding:12px;text-align:center;font-size:13px;color:#78350f;font-weight:600;width:100px;">Số lượng</th>
+                                    <th style="padding:12px;text-align:left;font-size:13px;color:#78350f;font-weight:600;">Từ</th>
+                                    <th style="padding:12px;text-align:left;font-size:13px;color:#78350f;font-weight:600;">Đến</th>
+                                    <th style="padding:12px;text-align:left;font-size:13px;color:#78350f;font-weight:600;">Phiếu</th>
+                                    <th style="padding:12px;text-align:left;font-size:13px;color:#78350f;font-weight:600;">Ghi chú</th>
                                 </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            ` : '<p style="color:#6b7280;">Chưa có lịch sử di chuyển</p>'}
+                            </thead>
+                            <tbody>
+                                ${batch.movements.map((mov, idx) => `
+                                    <tr style="background:${idx % 2 === 0 ? '#fff' : '#f9fafb'};">
+                                        <td style="padding:12px;font-size:13px;color:#6b7280;">${mov.date || 'N/A'}</td>
+                                        <td style="padding:12px;text-align:center;">
+                                            <span style="color:#111827;font-weight:500;">
+                                                ${mov.movement_type}
+                                            </span>
+                                        </td>
+                                        <td style="padding:12px;text-align:center;"><strong style="font-size:15px;">${mov.quantity || 0}</strong></td>
+                                        <td style="padding:12px;font-size:13px;">${mov.from_location || '<span style="color:#9ca3af;">N/A</span>'}</td>
+                                        <td style="padding:12px;font-size:13px;">${mov.to_location || '<span style="color:#9ca3af;">N/A</span>'}</td>
+                                        <td style="padding:12px;font-size:13px;">${mov.transaction_id || '<span style="color:#9ca3af;">N/A</span>'}</td>
+                                        <td style="padding:12px;font-size:13px;color:#6b7280;">${mov.note || ''}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                ` : '<div style="text-align:center;padding:40px;color:#9ca3af;"><i class="fa-solid fa-clock-rotate-left fa-3x" style="margin-bottom:12px;"></i><p style="margin:0;font-size:14px;">Chưa có lịch sử di chuyển</p></div>'}
+            </div>
         `;
 
         content.innerHTML = html;

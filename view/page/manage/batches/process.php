@@ -85,6 +85,22 @@ try {
             
             // Format data
             $batchData = json_decode(json_encode($batch), true);
+            
+            // Lấy SKU thực tế từ products nếu chưa có
+            if (empty($batchData['product_sku']) && !empty($batchData['product_id'])) {
+                try {
+                    $product = $db->products->findOne(['_id' => new MongoDB\BSON\ObjectId($batchData['product_id'])]);
+                    if ($product && isset($product['sku'])) {
+                        $batchData['product_sku'] = $product['sku'];
+                    }
+                } catch (Exception $e) {
+                    // Try with string ID
+                    $product = $db->products->findOne(['_id' => $batchData['product_id']]);
+                    if ($product && isset($product['sku'])) {
+                        $batchData['product_sku'] = $product['sku'];
+                    }
+                }
+            }
 
             // If this batch was created from a transfer, expose the source batch code
             if (isset($batch['source_batch_code'])) {

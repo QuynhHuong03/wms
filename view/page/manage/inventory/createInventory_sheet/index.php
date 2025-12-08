@@ -552,7 +552,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
                     
                     if (status === 'completed') {
                         setTimeout(() => {
-                            showAlert('✅ Phiếu đã hoàn thành! Vui lòng chờ quản lý duyệt để áp dụng vào hệ thống.', 'success');
+                            showAlert(' Phiếu đã hoàn thành! Vui lòng chờ quản lý duyệt để áp dụng vào hệ thống.', 'success');
                             setTimeout(() => {
                                 window.location.href = 'index.php?page=inventory/inventory_sheets';
                             }, 2000);

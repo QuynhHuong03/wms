@@ -389,52 +389,102 @@ if ($warehouseId) {
     <!-- Add Bin Modal -->
     <div id="addBinModal" class="modal" role="dialog" aria-hidden="true">
         <div class="modal-backdrop" onclick="closeAddBinModal()"></div>
-        <div class="modal-panel" role="document" aria-labelledby="addBinTitle" style="max-width:540px">
-            <h3 id="addBinTitle">Thêm Bin</h3>
+        <div class="modal-panel" role="document" aria-labelledby="addBinTitle" style="max-width:640px">
+            <h3 id="addBinTitle">Thêm Bin Mới</h3>
             <form id="addBinForm" onsubmit="return submitAddBinModal(event)">
                 <input type="hidden" id="modalZoneId">
                 <input type="hidden" id="modalRackId">
-                <div style="margin-bottom:8px">
-                    <label style="font-weight:600">📦 Tên bin</label><br>
-                    <input id="modalBinName" type="text" placeholder="Ví dụ: Bin hàng nhỏ" style="width:100%;padding:8px;border:1px solid #e6e7eb;border-radius:6px">
+                
+                <!-- Vị trí bin sẽ được thêm vào -->
+                <div style="margin-bottom:16px;padding:12px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb">
+                    <div style="font-size:13px;color:#6b7280;margin-bottom:4px">Thêm bin vào vị trí:</div>
+                    <div style="font-weight:600" id="modalBinLocation">Zone / Rack</div>
                 </div>
                 
-                <!-- Kích thước bin (có thể sửa) -->
-                <div style="margin-bottom:12px">
-                    <label style="font-weight:600">📏 Kích thước bin (cm)</label>
-                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px">
+                <div style="margin-bottom:16px">
+                    <label style="display:block;margin-bottom:8px;font-weight:600">
+                        <i class="fas fa-box"></i> Tên Bin:
+                    </label>
+                    <input id="modalBinName" type="text" placeholder="Ví dụ: Z1/R1/B1, Bin hàng điện tử" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px">
+                    <div style="font-size:12px;color:#6b7280;margin-top:4px">Mã bin sẽ được tự động tạo theo format Zone/Rack/Bin</div>
+                </div>
+                
+                <!-- Kích thước bin -->
+                <div style="margin-bottom:16px">
+                    <label style="display:block;margin-bottom:8px;font-weight:600">
+                        <i class="fas fa-ruler-combined"></i> Kích thước bin (cm)
+                    </label>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
                         <div>
-                            <label class="muted" style="font-size:12px">Chiều rộng</label>
-                            <input id="modalBinWidth" type="number" step="0.1" min="0" placeholder="0" style="width:100%;padding:6px;border:1px solid #e6e7eb;border-radius:6px">
+                            <label style="font-size:12px;color:#6b7280;margin-bottom:4px;display:block">Chiều rộng</label>
+                            <input id="modalBinWidth" type="number" step="0.1" min="0" placeholder="50" style="width:100%;padding:8px;border:2px solid #e5e7eb;border-radius:6px;font-size:14px">
                         </div>
                         <div>
-                            <label class="muted" style="font-size:12px">Chiều sâu</label>
-                            <input id="modalBinDepth" type="number" step="0.1" min="0" placeholder="0" style="width:100%;padding:6px;border:1px solid #e6e7eb;border-radius:6px">
+                            <label style="font-size:12px;color:#6b7280;margin-bottom:4px;display:block">Chiều sâu</label>
+                            <input id="modalBinDepth" type="number" step="0.1" min="0" placeholder="40" style="width:100%;padding:8px;border:2px solid #e5e7eb;border-radius:6px;font-size:14px">
                         </div>
                         <div>
-                            <label class="muted" style="font-size:12px">Chiều cao</label>
-                            <input id="modalBinHeight" type="number" step="0.1" min="0" placeholder="0" style="width:100%;padding:6px;border:1px solid #e6e7eb;border-radius:6px">
+                            <label style="font-size:12px;color:#6b7280;margin-bottom:4px;display:block">Chiều cao</label>
+                            <input id="modalBinHeight" type="number" step="0.1" min="0" placeholder="30" style="width:100%;padding:8px;border:2px solid #e5e7eb;border-radius:6px;font-size:14px">
                         </div>
                     </div>
-                    <div style="margin-top:4px;font-size:11px;color:#6b7280">✏️ Có thể điều chỉnh kích thước (mặc định lấy từ giá trị cài đặt)</div>
+                    <div style="margin-top:6px;font-size:12px;color:#6b7280;display:flex;align-items:center;gap:4px">
+                        <i class="fas fa-info-circle"></i>
+                        Kích thước mặc định được lấy từ cài đặt hoặc bin cùng zone
+                    </div>
                 </div>
                 
-                <!-- Sức chứa (readonly - tự động tính) -->
-                <div style="margin-bottom:12px">
-                    <label style="font-weight:600">📊 Sức chứa hiện tại (0-100%)</label>
-                    <input id="modalBinCurrentCapacity" type="number" min="0" max="100" value="0" readonly style="width:100%;padding:8px;margin-top:6px;border:1px solid #e6e7eb;border-radius:6px;background:#f9fafb;cursor:not-allowed;font-size:14px;font-weight:600;text-align:center">
+                <!-- Sức chứa -->
+                <div style="margin-bottom:16px">
+                    <label style="display:block;margin-bottom:8px;font-weight:600">
+                        <i class="fas fa-percentage"></i> Sức chứa hiện tại (0-100%)
+                    </label>
+                    <input id="modalBinCurrentCapacity" type="number" min="0" max="100" value="0" readonly style="width:100%;padding:10px;border:2px solid #d1d5db;border-radius:6px;background:#f9fafb;color:#6b7280;cursor:not-allowed;font-size:16px;font-weight:600;text-align:center">
                     <input type="hidden" id="modalBinMaxCapacity" value="100">
-                    <div style="margin-top:4px;font-size:11px;color:#6b7280">🔒 Sức chứa tự động tính khi có sản phẩm trong bin</div>
+                    <div style="margin-top:6px;font-size:12px;color:#6b7280;display:flex;align-items:center;gap:4px">
+                        <i class="fas fa-lock"></i>
+                        Sức chứa được tính tự động khi có sản phẩm trong bin
+                    </div>
                 </div>
                 
-                <div style="margin-bottom:8px" class="muted" style="font-size:12px">💡 Mã bin và code sẽ được hệ thống tự sinh (B1, B2, ... và Zone-Rack-Bin).</div>
-                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                    <label style="display:flex;align-items:center;margin-right:12px"><input id="modalAutoRack" type="checkbox" style="margin-right:6px"> Tự tạo Rack tiếp theo</label>
-                    <label style="display:flex;align-items:center"><input id="modalForce" type="checkbox" style="margin-right:6px"> Force create</label>
-                    <div style="margin-left:auto;display:flex;gap:8px">
-                        <button type="button" class="btn small ghost" onclick="closeAddBinModal()">Hủy</button>
-                        <button type="submit" class="btn small">Thêm</button>
+                <!-- Tùy chọn nâng cao -->
+                <div style="margin-bottom:16px;padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                        <i class="fas fa-cog" style="color:#0369a1"></i>
+                        <span style="font-weight:600;color:#0369a1">Tùy chọn nâng cao</span>
                     </div>
+                    <div style="display:flex;flex-direction:column;gap:6px">
+                        <label style="display:flex;align-items:center;cursor:pointer;padding:6px;border-radius:4px;transition:background 0.2s" onmouseover="this.style.background='rgba(3,105,161,0.05)'" onmouseout="this.style.background='transparent'">
+                            <input id="modalAutoRack" type="checkbox" style="margin-right:8px;cursor:pointer">
+                            <span style="font-size:13px;color:#0c4a6e">
+                                Tự động chọn rack tiếp theo khi rack hiện tại đầy
+                            </span>
+                        </label>
+                        <label style="display:flex;align-items:center;cursor:pointer;padding:6px;border-radius:4px;transition:background 0.2s" onmouseover="this.style.background='rgba(3,105,161,0.05)'" onmouseout="this.style.background='transparent'">
+                            <input id="modalForce" type="checkbox" style="margin-right:8px;cursor:pointer">
+                            <span style="font-size:13px;color:#0c4a6e">
+                                Bỏ qua giới hạn và tạo bin (Force create)
+                            </span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div style="padding:10px;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:6px;margin-bottom:16px;font-size:12px">
+                    <div style="display:flex;align-items:start;gap:8px">
+                        <!-- <i class="fas fa-lightbulb" style="color:#d97706;margin-top:2px"></i> -->
+                        <div style="color:#78350f;line-height:1.5">
+                            <strong>Lưu ý:</strong> Mã bin (B1, B2, B3...) và code đầy đủ (Zone-Rack-Bin) sẽ được hệ thống tự động tạo theo thứ tự.
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display:flex;gap:8px;justify-content:flex-end">
+                    <button type="button" class="btn small ghost" onclick="closeAddBinModal()">
+                        <i class="fas fa-times"></i> Hủy
+                    </button>
+                    <button type="submit" class="btn small">
+                        <i class="fas fa-plus"></i> Thêm Bin
+                    </button>
                 </div>
             </form>
         </div>
@@ -550,6 +600,56 @@ if ($warehouseId) {
                 <div style="display:flex;gap:8px;justify-content:flex-end">
                     <button type="button" class="btn small ghost" onclick="closeEditQuantityModal()">Hủy</button>
                     <button type="submit" class="btn small">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Zone Modal -->
+    <div id="addZoneModal" class="modal" role="dialog" aria-hidden="true">
+        <div class="modal-backdrop" onclick="closeAddZoneModal()"></div>
+        <div class="modal-panel" role="document" style="max-width:540px">
+            <h3>Thêm Zone Mới</h3>
+            <form id="addZoneForm" onsubmit="return submitAddZone(event)">
+                <div style="margin-bottom:16px">
+                    <label style="display:block;margin-bottom:8px;font-weight:600">
+                        <i class="fas fa-tag"></i> Zone ID:
+                    </label>
+                    <input type="text" id="addZoneId" class="form-control" placeholder="Ví dụ: Z1, Z2, Z3" required style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px">
+                    <div style="font-size:12px;color:#6b7280;margin-top:4px">Mã định danh duy nhất cho zone (ví dụ: Z1, Z2, Z3)</div>
+                </div>
+                
+                <div style="margin-bottom:16px">
+                    <label style="display:block;margin-bottom:8px;font-weight:600">
+                        <i class="fas fa-warehouse"></i> Tên Zone:
+                    </label>
+                    <input type="text" id="addZoneName" class="form-control" placeholder="Ví dụ: Khu A, Khu vực lưu trữ" required style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px">
+                    <div style="font-size:12px;color:#6b7280;margin-top:4px">Tên mô tả cho zone</div>
+                </div>
+                
+                <div style="margin-bottom:16px">
+                    <label style="display:block;margin-bottom:8px;font-weight:600">
+                        <i class="fas fa-align-left"></i> Mô tả (tùy chọn):
+                    </label>
+                    <textarea id="addZoneDescription" class="form-control" placeholder="Nhập mô tả về zone này" rows="3" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px"></textarea>
+                    <div style="font-size:12px;color:#6b7280;margin-top:4px">Thông tin bổ sung về zone (không bắt buộc)</div>
+                </div>
+                
+                <div style="padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;margin-bottom:16px">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                        <i class="fas fa-info-circle" style="color:#0369a1"></i>
+                        <span style="font-weight:600;color:#0369a1">Lưu ý</span>
+                    </div>
+                    <div style="font-size:12px;color:#0c4a6e;line-height:1.5">
+                        • Zone mới sẽ được tạo với cấu trúc rỗng (chưa có rack và bin)<br>
+                        • Bạn có thể thêm rack và bin sau khi zone được tạo<br>
+                        • Tối đa 3 zones được phép trong hệ thống
+                    </div>
+                </div>
+                
+                <div style="display:flex;gap:8px;justify-content:flex-end">
+                    <button type="button" class="btn small ghost" onclick="closeAddZoneModal()">Hủy</button>
+                    <button type="submit" class="btn small">Thêm Zone</button>
                 </div>
             </form>
         </div>
@@ -928,6 +1028,12 @@ if ($warehouseId) {
             document.getElementById('modalZoneId').value = zone_id;
             document.getElementById('modalRackId').value = rack_id;
             
+            // Update location display
+            const locationEl = document.getElementById('modalBinLocation');
+            if (locationEl) {
+                locationEl.textContent = `${zone_id} / ${rack_id}`;
+            }
+            
             // Count only ACTUAL bins (with data-bin attribute that's not empty) in this rack
             const rackEl = document.querySelector(`.zone[data-zone="${zone_id}"] .rack[data-rack="${rack_id}"]`);
             let nextBinNum = 1;
@@ -982,7 +1088,11 @@ if ($warehouseId) {
             // Reset capacity fields
             const currentCapEl = document.getElementById('modalBinCurrentCapacity'); if (currentCapEl) currentCapEl.value = '0';
             const maxCapEl = document.getElementById('modalBinMaxCapacity'); if (maxCapEl) maxCapEl.value = '100';
+            
+            // Reset checkboxes
+            document.getElementById('modalAutoRack').checked = false;
             document.getElementById('modalForce').checked = false;
+            
             const m = document.getElementById('addBinModal'); m.setAttribute('aria-hidden','false');
         }
         function closeAddBinModal(){ document.getElementById('addBinModal').setAttribute('aria-hidden','true'); }
@@ -1397,12 +1507,50 @@ if ($warehouseId) {
 			}
 		});
 
-        document.getElementById('addZoneBtn').addEventListener('click', async ()=>{
-            const zid = prompt('Zone ID (ví dụ Z4):'); if(!zid) return;
-            const zname = prompt('Zone name:', 'Zone ' + zid) || zid;
-            // create with empty racks
-            const res = await post({ action: 'add_zone', zone_id: zid, name: zname, racks: [] });
-            alert(JSON.stringify(res)); if(res.success) location.reload();
+        // Add Zone Modal handlers
+        function openAddZoneModal(){
+            document.getElementById('addZoneId').value = '';
+            document.getElementById('addZoneName').value = '';
+            document.getElementById('addZoneDescription').value = '';
+            document.getElementById('addZoneModal').setAttribute('aria-hidden', 'false');
+        }
+
+        function closeAddZoneModal(){
+            document.getElementById('addZoneModal').setAttribute('aria-hidden', 'true');
+        }
+
+        async function submitAddZone(e){
+            e.preventDefault();
+            const zid = document.getElementById('addZoneId').value.trim();
+            const zname = document.getElementById('addZoneName').value.trim();
+            const zdesc = document.getElementById('addZoneDescription').value.trim();
+            
+            if(!zid || !zname){
+                alert('Vui lòng nhập đầy đủ Zone ID và Tên Zone');
+                return false;
+            }
+            
+            closeAddZoneModal();
+            showToast({success: true, message: 'Đang tạo zone mới...'});
+            
+            const res = await post({ 
+                action: 'add_zone', 
+                zone_id: zid, 
+                name: zname, 
+                description: zdesc,
+                racks: [] 
+            });
+            
+            showToast(res);
+            if(res.success) {
+                setTimeout(() => location.reload(), 600);
+            }
+            
+            return false;
+        }
+
+        document.getElementById('addZoneBtn').addEventListener('click', ()=>{
+            openAddZoneModal();
         });
 
 		document.getElementById('previewBtn').addEventListener('click', ()=>{

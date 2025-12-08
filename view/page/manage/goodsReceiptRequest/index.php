@@ -480,7 +480,7 @@ if ($isWarehouseMain && $isManager) {
   <?php else: ?>
     <!-- ========== VIEW CHO CHI NHÁNH / NHÂN VIÊN ========== -->
   <div class="top-actions">
-    <h2><i class="fa-solid fa-file-circle-plus"></i> Danh sách phiếu yêu cầu nhập hàng</h2>
+    <h2><i class="fa-solid fa-file-circle-plus"></i> Danh sách phiếu yêu cầu nhập kho</h2>
 
     <div style="display:flex;gap:10px;align-items:center;">
       <div class="filters">

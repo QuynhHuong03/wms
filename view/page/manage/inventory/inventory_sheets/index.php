@@ -265,10 +265,127 @@ function buildUrl($overrides = []) {
         background: #fff;
         border-radius: 12px;
         padding: 24px;
-        max-width: 600px;
+        max-width: 900px;
         width: 90%;
-        max-height: 80vh;
+        max-height: 85vh;
         overflow-y: auto;
+    }
+    .detail-info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+        padding: 16px;
+        background: #f9fafb;
+        border-radius: 8px;
+    }
+    .detail-info-item {
+        display: flex;
+        flex-direction: column;
+    }
+    .detail-info-label {
+        font-size: 12px;
+        color: #6b7280;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+    .detail-info-value {
+        font-size: 14px;
+        color: #111827;
+        font-weight: 500;
+    }
+    .detail-divider {
+        height: 2px;
+        background: linear-gradient(to right, #3b82f6, #8b5cf6);
+        margin: 20px 0;
+        border-radius: 2px;
+    }
+    .detail-section-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .detail-section-title::before {
+        content: '';
+        width: 4px;
+        height: 20px;
+        background: #3b82f6;
+        border-radius: 2px;
+    }
+    .detail-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .detail-table thead {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    }
+    .detail-table thead th {
+        padding: 12px;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .detail-table tbody td {
+        padding: 12px;
+        border-top: 1px solid #e5e7eb;
+        font-size: 14px;
+        color: #374151;
+    }
+    .detail-table tbody tr:hover {
+        background: #f9fafb;
+    }
+    .sku-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        background: #eff6ff;
+        color: #1e40af;
+        border-radius: 6px;
+        font-family: 'Courier New', monospace;
+        font-weight: 600;
+        font-size: 12px;
+    }
+    .status-badge-large {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 13px;
+    }
+    .status-badge-large.pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+    .status-badge-large.approved {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    .status-badge-large.rejected {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    .note-box {
+        padding: 12px;
+        background: #fef3c7;
+        border-left: 4px solid #f59e0b;
+        border-radius: 6px;
+        margin-top: 16px;
+        font-size: 14px;
+        color: #78350f;
     }
     .modal-header {
         display: flex;
@@ -528,7 +645,6 @@ function buildUrl($overrides = []) {
     </div>
 </div>
 
-<!-- Modal xem chi tiết -->
 <div class="modal" id="viewModal">
     <div class="modal-content">
         <div class="modal-header">
@@ -541,7 +657,6 @@ function buildUrl($overrides = []) {
     </div>
 </div>
 
-<!-- Modal duyệt phiếu -->
 <div class="modal" id="approveModal">
     <div class="modal-content" style="max-width: 1200px;">
         <div class="modal-header">
@@ -574,7 +689,7 @@ function buildUrl($overrides = []) {
                         <div id="quantityHint"></div>
                         <input type="number" id="adjustQuantity" class="form-control" min="1" placeholder="Nhập số lượng">
                         <button type="button" class="btn btn-primary" id="btnConfirmLocation" style="margin-top: 8px; width: 100%;">
-                            ✔️ Xác nhận vị trí này
+                             Xác nhận vị trí này
                         </button>
                     </div>
                 </div>
@@ -587,7 +702,7 @@ function buildUrl($overrides = []) {
         </div>
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
             <button class="btn btn-secondary" onclick="closeApproveModal()">Hủy</button>
-            <button class="btn btn-success" id="btnConfirmApprove" onclick="confirmApproveWithLocations()">✔️ Xác nhận duyệt</button>
+            <button class="btn btn-success" id="btnConfirmApprove" onclick="confirmApproveWithLocations()"> Xác nhận duyệt</button>
         </div>
     </div>
 </div>
@@ -619,42 +734,116 @@ function buildUrl($overrides = []) {
                 const sheet = result.data;
                 const items = sheet.items || [];
                 
+                console.log('Sheet data:', sheet);
+                console.log('Items:', items);
+                
+                // Determine status info
+                let statusClass = 'pending';
+                let statusText = 'Chờ duyệt';
+                
+                if (sheet.status === 2) {
+                    statusClass = 'approved';
+                    statusText = 'Đã hoàn thành';
+                } else if (sheet.status === 3) {
+                    statusClass = 'rejected';
+                    statusText = 'Đã từ chối';
+                }
+                
                 let html = `
-                    <p><strong>Mã phiếu:</strong> ${sheet.sheet_code || ''}</p>
-                    <p><strong>Người tạo:</strong> ${sheet.created_by_name || ''}</p>
-                    <p><strong>Ngày tạo:</strong> ${formatDate(sheet.created_at)}</p>
-                    <p><strong>Ngày kiểm kê:</strong> ${formatDate(sheet.count_date) || 'Chưa có'}</p>
-                    <p><strong>Trạng thái:</strong> ${getStatusText(sheet.status)}</p>
-                    ${sheet.approved_by_name ? `<p><strong>Người duyệt:</strong> ${sheet.approved_by_name}</p>` : ''}
-                    ${sheet.approved_at ? `<p><strong>Ngày duyệt:</strong> ${formatDate(sheet.approved_at)}</p>` : ''}
-                    <p><strong>Ghi chú:</strong> ${sheet.note || 'Không có'}</p>
-                    ${sheet.approve_note ? `<p><strong>Ghi chú duyệt:</strong> ${sheet.approve_note}</p>` : ''}
-                    ${sheet.reject_note ? `<p><strong>Lý do từ chối:</strong> ${sheet.reject_note}</p>` : ''}
-                    <hr>
-                    <h4>Danh sách hàng hóa (${items.length} mặt hàng)</h4>
-                    <table class="sheets-table" style="font-size: 12px;">
+                    <div class="detail-info-grid">
+                        <div class="detail-info-item">
+                            <span class="detail-info-label">Mã phiếu</span>
+                            <span class="detail-info-value" style="color: #3b82f6; font-weight: 700;">${sheet.sheet_code || 'N/A'}</span>
+                        </div>
+                        <div class="detail-info-item">
+                            <span class="detail-info-label">Trạng thái</span>
+                            <span class="status-badge-large ${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="detail-info-item">
+                            <span class="detail-info-label">Người tạo</span>
+                            <span class="detail-info-value">${sheet.created_by_name || 'N/A'}</span>
+                        </div>
+                        <div class="detail-info-item">
+                            <span class="detail-info-label">Ngày tạo</span>
+                            <span class="detail-info-value">${formatDate(sheet.created_at) || 'N/A'}</span>
+                        </div>
+                        <div class="detail-info-item">
+                            <span class="detail-info-label">Ngày kiểm kê</span>
+                            <span class="detail-info-value">${formatDate(sheet.count_date) || 'Chưa có'}</span>
+                        </div>
+                        ${sheet.approved_by_name ? `
+                        <div class="detail-info-item">
+                            <span class="detail-info-label">Người duyệt</span>
+                            <span class="detail-info-value">${sheet.approved_by_name}</span>
+                        </div>
+                        ` : ''}
+                        ${sheet.approved_at ? `
+                        <div class="detail-info-item">
+                            <span class="detail-info-label">Ngày duyệt</span>
+                            <span class="detail-info-value">${formatDate(sheet.approved_at)}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                    
+                    ${sheet.note ? `
+                    <div class="note-box">
+                        <strong>Ghi chú:</strong> ${sheet.note}
+                    </div>
+                    ` : ''}
+                    
+                    ${sheet.approve_note ? `
+                    <div class="note-box" style="background: #d1fae5; border-left-color: #059669; color: #065f46;">
+                        <strong>Ghi chú duyệt:</strong> ${sheet.approve_note}
+                    </div>
+                    ` : ''}
+                    
+                    ${sheet.reject_note ? `
+                    <div class="note-box" style="background: #fee2e2; border-left-color: #dc2626; color: #991b1b;">
+                        <strong>Lý do từ chối:</strong> ${sheet.reject_note}
+                    </div>
+                    ` : ''}
+                    
+                    <div class="detail-divider"></div>
+                    
+                    <h4 class="detail-section-title">Danh sách hàng hóa <span style="color: #6b7280; font-size: 14px; font-weight: 500;">(${items.length} mặt hàng)</span></h4>
+                    
+                    <table class="detail-table">
                         <thead>
                             <tr>
-                                <th>SKU</th>
-                                <th>Tên SP</th>
-                                <th>SL Hệ thống</th>
-                                <th>SL Thực tế</th>
-                                <th>Chênh lệch</th>
+                                <th style="width: 50px;">STT</th>
+                                <th style="width: 150px;">SKU</th>
+                                <th>Tên sản phẩm</th>
+                                <th style="width: 110px; text-align: center; white-space: nowrap;">SL Hệ thống</th>
+                                <th style="width: 110px; text-align: center; white-space: nowrap;">SL Thực tế</th>
+                                <th style="width: 110px; text-align: center; white-space: nowrap;">Chênh lệch</th>
                             </tr>
                         </thead>
                         <tbody>
                 `;
 
-                items.forEach(item => {
+                items.forEach((item, index) => {
                     const diff = (item.actual_qty || 0) - (item.system_qty || 0);
-                    const diffClass = diff > 0 ? 'color: #059669' : (diff < 0 ? 'color: #dc2626' : 'color: #6b7280');
+                    let diffDisplay = '';
+                    
+                    if (diff > 0) {
+                        diffDisplay = `+${diff}`;
+                    } else if (diff < 0) {
+                        diffDisplay = `${diff}`;
+                    } else {
+                        diffDisplay = '0';
+                    }
+                    
+                    const sku = item.product_sku || item.sku || '';
+                    console.log('Item SKU:', sku, 'Full item:', item);
+                    
                     html += `
                         <tr>
-                            <td>${item.product_sku || ''}</td>
-                            <td>${item.product_name || ''}</td>
-                            <td style="text-align: center;">${item.system_qty || 0}</td>
-                            <td style="text-align: center;">${item.actual_qty || 0}</td>
-                            <td style="text-align: center; font-weight: 600; ${diffClass}">${diff}</td>
+                            <td style="text-align: center; color: #6b7280; font-weight: 500;">${index + 1}</td>
+                            <td>${sku ? `<span class="">${sku}</span>` : '<span style="color: #9ca3af;">N/A</span>'}</td>
+                            <td style="font-weight: 500;">${item.product_name || '<span style="color: #9ca3af;">Không rõ</span>'}</td>
+                            <td style="text-align: center; font-weight: 600;">${item.system_qty || 0}</td>
+                            <td style="text-align: center; font-weight: 600;">${item.actual_qty || 0}</td>
+                            <td style="text-align: center; font-weight: 500;">${diffDisplay}</td>
                         </tr>
                     `;
                 });

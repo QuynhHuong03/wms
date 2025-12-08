@@ -35,6 +35,14 @@ try {
                 $input = $_POST;
             }
             
+            // Log items để kiểm tra SKU
+            if (isset($input['items']) && is_array($input['items'])) {
+                error_log('Creating sheet with ' . count($input['items']) . ' items');
+                if (count($input['items']) > 0) {
+                    error_log('First item: ' . json_encode($input['items'][0]));
+                }
+            }
+            
             $sheetId = $cSheet->createInventorySheet($input);
             if ($sheetId) {
                 echo json_encode(['ok' => true, 'sheet_id' => (string)$sheetId]);

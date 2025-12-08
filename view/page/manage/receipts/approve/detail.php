@@ -50,7 +50,7 @@ $statusClass = isset($statusClassMap[$status]) ? $statusClassMap[$status] : 'pen
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Chi tiết phiếu nhập hàng</title>
+  <title>Chi tiết phiếu nhập kho</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
@@ -91,7 +91,7 @@ $statusClass = isset($statusClassMap[$status]) ? $statusClassMap[$status] : 'pen
 <body>
 <div class="receipt-detail-container">
   <div class="header">
-    <h2><i class="fa-solid fa-file-circle-info"></i> Chi tiết phiếu nhập hàng</h2>
+    <h2><i class="fa-solid fa-file-circle-info"></i> Chi tiết phiếu nhập kho</h2>
   </div>
 
   <div class="info">

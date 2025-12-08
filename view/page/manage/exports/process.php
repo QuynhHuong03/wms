@@ -11,7 +11,12 @@ include_once(__DIR__ . "/../../../../model/connect.php");
 include_once(__DIR__ . "/../../../../controller/cExport.php");
 
 $action = $_POST['action'] ?? '';
-$export_id = $_POST['export_id'] ?? '';
+$export_id = trim($_POST['export_id'] ?? '');
+
+error_log("=== EXPORT CONFIRM DEBUG ===");
+error_log("Action: " . $action);
+error_log("Export ID received: '" . $export_id . "'");
+error_log("Export ID length: " . strlen($export_id));
 
 if (empty($action) || empty($export_id)) {
     echo json_encode(['success' => false, 'message' => 'Thiếu thông tin']);
@@ -31,10 +36,40 @@ if (!$con) {
 
 try {
     $transCol = $con->selectCollection('transactions');
+    
+    // Debug: Log export_id received
+    error_log("Searching for export with transaction_id: '" . $export_id . "'");
+    
+    // Thử tìm với nhiều cách khác nhau
     $export = $transCol->findOne(['transaction_id' => $export_id]);
+    error_log("Export found with exact match: " . ($export ? "YES" : "NO"));
+    
+    // Nếu không tìm thấy, thử trim trong database
+    if (!$export) {
+        error_log("Trying to find all transactions with type 'export'");
+        $allExports = $transCol->find(['type' => 'export'], ['limit' => 10])->toArray();
+        error_log("Total exports found: " . count($allExports));
+        
+        if (count($allExports) > 0) {
+            error_log("First export transaction_id: '" . ($allExports[0]['transaction_id'] ?? 'N/A') . "'");
+            
+            // Thử tìm bằng regex (case-insensitive, trim spaces)
+            $export = $transCol->findOne([
+                'transaction_id' => new MongoDB\BSON\Regex('^\\s*' . preg_quote($export_id) . '\\s*$', 'i')
+            ]);
+            error_log("Export found with regex: " . ($export ? "YES" : "NO"));
+        }
+    }
     
     if (!$export) {
-        echo json_encode(['success' => false, 'message' => 'Không tìm thấy phiếu xuất']);
+        echo json_encode([
+            'success' => false, 
+            'message' => 'Không tìm thấy phiếu xuất',
+            'debug' => [
+                'search_id' => $export_id,
+                'search_length' => strlen($export_id)
+            ]
+        ]);
         exit;
     }
     

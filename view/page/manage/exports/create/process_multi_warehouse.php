@@ -170,7 +170,7 @@ try {
         );
         
         $exportList = implode(', ', $createdExports);
-        $_SESSION['flash_request'] = "✅ Tạo phiếu xuất thành công: $exportList. Vui lòng vào danh sách phiếu xuất để xác nhận xuất kho.";
+        $_SESSION['flash_request'] = " Tạo phiếu xuất thành công: $exportList. Vui lòng vào danh sách phiếu xuất để xác nhận xuất kho.";
     } else {
         $_SESSION['flash_request_error'] = "⚠️ Có lỗi xảy ra khi tạo phiếu xuất!";
     }

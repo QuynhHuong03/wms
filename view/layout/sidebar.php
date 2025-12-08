@@ -275,10 +275,10 @@ body {
     </div>
 
     <div class="menu-links">
-
-
         <?php if ($roleId == 1): ?>
-            <div class="submenu" id="submenu-user">
+            <a href="index.php?page=dashboard" class="<?= $currentPage=='dashboard'?'active':'' ?>"><i class="fas fa-home"></i> Dashboard</a>
+            
+            <div class="submenu" id="submenu-users">
                 <a href="javascript:void(0)" class="submenu-toggle">
                     <span><i class="fas fa-users"></i> Quản lý người dùng</span>
                     <i class="fas fa-chevron-down arrow"></i>
@@ -379,8 +379,24 @@ body {
             
             <a href="index.php?page=locations" class="<?= $currentPage=='locations'?'active':'' ?>"><i class="fas fa-warehouse"></i> Sơ đồ vị trí kho </a>
             <a href="index.php?page=inventory" class="<?= $currentPage=='inventory'?'active':'' ?>"><i class="fa-solid fa-box-open"></i> Xem tồn kho </a>
-            <a href="index.php?page=report" class="<?= $currentPage=='report'?'active':'' ?>"><i class="fas fa-chart-line"></i> Báo cáo thống kê</a>
-
+            <div class="submenu" id="submenu-product">
+                <a href="javascript:void(0)" class="submenu-toggle">
+                    <span><i class="fas fa-chart-line"></i> Báo cáo thống kê</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </a>
+                <div class="submenu-items">
+                    <a href="index.php?page=report/InboundStatistics" class="<?= $currentPage=='categories'?'active':'' ?>">
+                        <i class="fas fa-tags"></i> Thống kê phiếu nhập
+                    </a>
+                    <a href="index.php?page=report/OutboundStatistics" class="<?= $currentPage=='products'?'active':'' ?>">
+                        <i class="fas fa-box"></i> Thống kê phiếu xuất
+                    </a>
+                    <a href="index.php?page=report/InventoryStatistics" class="<?= $currentPage=='products'?'active':'' ?>">
+                        <i class="fas fa-box"></i> Thống kê tồn kho
+                    </a>
+                </div>
+            </div>
+            
         <?php elseif ($roleId == 3): ?>
             <div class="submenu" id="submenu-receipts-nvt">
                 <a href="javascript:void(0)" class="submenu-toggle">
@@ -436,12 +452,22 @@ body {
             </div>
             <div class="submenu" id="submenu-request-cnh">
                 <a href="javascript:void(0)" class="submenu-toggle">
-                    <span><i class="fa-solid fa-file-circle-plus"></i> Phiếu yêu cầu nhập hàng</span>
+                    <span><i class="fa-solid fa-file-circle-plus"></i> Phiếu yêu cầu nhập kho</span>
                     <i class="fas fa-chevron-down arrow"></i>
                 </a>
                 <div class="submenu-items">
                     <a href="index.php?page=goodsReceiptRequest/createReceipt" class="<?= $currentPage=='goodsReceiptRequest/createReceipt'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu yêu cầu</a>
                     <a href="index.php?page=goodsReceiptRequest" class="<?= $currentPage=='goodsReceiptRequest'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu yêu cầu</a>
+                </div>
+            </div>
+            <div class="submenu" id="submenu-inventory-sheets-t">
+                <a href="javascript:void(0)" class="submenu-toggle">
+                    <span><i class="fas fa-clipboard-list"></i> Quản lý kiểm kê</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </a>
+                <div class="submenu-items">
+                    <a href="index.php?page=inventory/createInventory_sheet" class="<?= $currentPage=='inventory/createInventory_sheet'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu kiểm kê</a>
+                    <a href="index.php?page=inventory/inventory_sheets" class="<?= $currentPage=='inventory/inventory_sheets'?'active':'' ?>"><i class="fa-solid fa-clipboard-check"></i> Quản lý phiếu</a>
                 </div>
             </div>
             <a href="index.php?page=locations" class="<?= $currentPage=='locations'?'active':'' ?>"><i class="fas fa-boxes"></i> Sơ đồ vị trí kho </a>
@@ -470,12 +496,22 @@ body {
             </div>
             <div class="submenu" id="submenu-request-nvcn">
                 <a href="javascript:void(0)" class="submenu-toggle">
-                    <span><i class="fa-solid fa-file-circle-plus"></i> Phiếu yêu cầu nhập hàng</span>
+                    <span><i class="fa-solid fa-file-circle-plus"></i> Phiếu yêu cầu nhập kho</span>
                     <i class="fas fa-chevron-down arrow"></i>
                 </a>
                 <div class="submenu-items">
                     <a href="index.php?page=goodsReceiptRequest/createReceipt" class="<?= $currentPage=='goodsReceiptRequest/createReceipt'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu yêu cầu</a>
                     <a href="index.php?page=goodsReceiptRequest" class="<?= $currentPage=='goodsReceiptRequest'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> Danh sách phiếu yêu cầu</a>
+                </div>
+            </div>
+            <div class="submenu" id="submenu-inventory-sheets-t">
+                <a href="javascript:void(0)" class="submenu-toggle">
+                    <span><i class="fas fa-clipboard-list"></i> Quản lý kiểm kê</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </a>
+                <div class="submenu-items">
+                    <a href="index.php?page=inventory/createInventory_sheet" class="<?= $currentPage=='inventory/createInventory_sheet'?'active':'' ?>"><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu kiểm kê</a>
+                    <a href="index.php?page=inventory/inventory_sheets" class="<?= $currentPage=='inventory/inventory_sheets'?'active':'' ?>"><i class="fa-solid fa-clipboard-check"></i> Quản lý phiếu</a>
                 </div>
             </div>
             <a href="index.php?page=inventory" class="<?= $currentPage=='inventory'?'active':'' ?>"><i class="fas fa-boxes"></i> Xem tồn kho </a>

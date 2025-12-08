@@ -37,16 +37,27 @@ function __resolve_sku_by_product_id($productId) {
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
-      --bg: #0e1422;
-      --card: rgba(255, 255, 255, 0.04);
-      --border: rgba(255, 255, 255, 0.08);
-      --text: #e6eef8;
-      --muted: #94a3b8;
-      --accent: #1e90ff;
-      --success: #22c55e;
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-light: #60a5fa;
+      --success: #10b981;
+      --success-light: #34d399;
       --warning: #f59e0b;
+      --warning-light: #fbbf24;
       --danger: #ef4444;
-      --glass: rgba(255,255,255,0.08);
+      --danger-light: #f87171;
+      --purple: #8b5cf6;
+      --purple-light: #a78bfa;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+      --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.08);
+      --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
     }
 
     * { 
@@ -56,18 +67,19 @@ function __resolve_sku_by_product_id($productId) {
     }
     
     body {
-      font-family: 'Inter', system-ui, Segoe UI, Roboto, Arial;
-      /* background: linear-gradient(180deg, #08111f 0%, #0a1427 100%); */
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
+      background-attachment: fixed;
       color: var(--text);
       margin: 0;
-      line-height: 1.0;
+      line-height: 1.6;
       overflow-x: hidden;
     }
 
     .container {
-      max-width: 1250px;
-      /* margin: 30px auto; */
-      /* padding: 0 16px; */
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
     }
 
     /* header {
@@ -82,18 +94,30 @@ function __resolve_sku_by_product_id($productId) {
       color: #fff;
     } */
 
+    header {
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-md);
+    }
+
     h1 {
       margin: 0;
-      font-size: 26px;
+      font-size: 28px;
       font-weight: 700;
       letter-spacing: -0.5px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
     .muted { 
       color: var(--text-light); 
-      font-size: 13px;
-      font-weight: 500;
-      margin-top: 6px;
+      font-size: 14px;
+      font-weight: 400;
+      margin-top: 8px;
     }
 
     .controls {
@@ -124,8 +148,8 @@ function __resolve_sku_by_product_id($productId) {
 
     .kpis {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 30px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
       margin-bottom: 32px;
       animation: fadeUp 0.6s ease;
     }
@@ -155,39 +179,44 @@ function __resolve_sku_by_product_id($productId) {
     }
 
     .card {
-      background: var(--card);
+      background: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-      backdrop-filter: blur(10px);
-      transition: all 0.25s ease;
-      min-height: 90px;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--shadow-md);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      min-height: 120px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
     }
-    .card:hover { transform: translateY(-2px); }
+    .card:hover { 
+      transform: translateY(-4px); 
+      box-shadow: var(--shadow-lg);
+    }
 
     .kpi-title {
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 8px;
-      font-weight: 500;
+      font-size: 14px;
+      color: var(--text-light);
+      margin-bottom: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .kpi-value {
-      font-size: 24px;
-      font-weight: 700;
-      margin: 6px 0;
-      line-height: 1.1;
+      font-size: 32px;
+      font-weight: 800;
+      margin: 8px 0;
+      line-height: 1.2;
+      color: var(--text);
     }
     
     .kpi-desc {
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 6px;
-      line-height: 1.3;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      line-height: 1.4;
     }
 
     .grid-2 {
@@ -205,11 +234,11 @@ function __resolve_sku_by_product_id($productId) {
     }
 
     canvas {
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.02);
+      border-radius: 12px;
+      background: var(--bg-secondary);
       width: 100% !important;
       height: auto !important;
-      min-height: 220px;
+      min-height: 250px;
       position: relative;
       z-index: 1;
       display: block;
@@ -218,32 +247,32 @@ function __resolve_sku_by_product_id($productId) {
     /* Ensure chart container stays above other floating elements */
     .grid-2 > .card { z-index: 3; }
     /* Make the doughnut chart a bit larger and centered */
-    #chartGroups { max-width: 420px; margin: 6px auto; min-height: 260px; }
+    #chartGroups { max-width: 450px; margin: 0 auto; min-height: 280px; }
 
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 14px;
-      margin-top: 12px;
+      margin-top: 16px;
     }
     th, td {
-      padding: 12px 16px;
+      padding: 14px 16px;
       text-align: left;
       border-bottom: 1px solid var(--border);
     }
     th {
-      color: var(--text-light);
-      font-weight: 600;
+      color: var(--text);
+      font-weight: 700;
       text-transform: uppercase;
       font-size: 12px;
-      letter-spacing: 0.5px;
-      background: var(--bg-secondary);
+      letter-spacing: 0.8px;
+      background: var(--bg-primary);
     }
     tbody tr {
       transition: all 0.2s ease;
     }
     tbody tr:hover {
-      background: var(--bg-secondary);
+      background: var(--bg-primary);
     }
 
     .map {
@@ -253,26 +282,48 @@ function __resolve_sku_by_product_id($productId) {
     }
 
     .bin {
-      height: 44px;
-      border-radius: 6px;
+      height: 48px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
-      font-weight: 500;
-      transition: 0.2s;
+      font-size: 13px;
+      font-weight: 600;
+      transition: 0.3s;
+      border: 2px solid transparent;
     }
-    .bin.empty { background: rgba(255,255,255,0.03); color: var(--muted); }
-    .bin.medium { background: rgba(30,144,255,0.15); color: var(--accent); }
-    .bin.full { background: rgba(239,68,68,0.15); color: var(--danger); }
-    .bin:hover { transform: scale(1.05); }
+    .bin.empty { 
+      background: var(--bg-primary); 
+      color: var(--text-muted);
+      border-color: var(--border);
+    }
+    .bin.medium { 
+      background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+      color: var(--accent);
+      border-color: var(--accent-light);
+    }
+    .bin.full { 
+      background: linear-gradient(135deg, #fee2e2, #fecaca);
+      color: var(--danger);
+      border-color: var(--danger-light);
+    }
+    .bin:hover { 
+      transform: scale(1.08);
+      box-shadow: var(--shadow-md);
+    }
 
     footer {
-      margin-top: 40px;
+      margin-top: 48px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-size: 13px;
+      color: var(--text-light);
+      padding: 20px 24px;
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      box-shadow: var(--shadow-md);
+    }
       color: var(--text-light);
       padding: 12px 4px;
     }
@@ -320,7 +371,7 @@ function __resolve_sku_by_product_id($productId) {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 16px;
-      margin-bottom: 32px;
+      margin-bottom: 24px;
       animation: fadeUp 0.6s ease 0.15s both;
     }
     
@@ -328,11 +379,11 @@ function __resolve_sku_by_product_id($productId) {
       background: linear-gradient(135deg, var(--accent), var(--accent-light));
       border: none;
       color: #ffffff;
-      padding: 16px 24px;
+      padding: 18px 24px;
       border-radius: 14px;
       cursor: pointer;
       font-size: 15px;
-      font-weight: 600;
+      font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -350,8 +401,8 @@ function __resolve_sku_by_product_id($productId) {
       left: -100%;
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-      transition: left 0.5s ease;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.6s ease;
     }
     
     .action-btn:hover::before {
@@ -369,29 +420,29 @@ function __resolve_sku_by_product_id($productId) {
     
     .action-btn.success {
       background: linear-gradient(135deg, var(--success), var(--success-light));
-      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
     }
     
     .action-btn.success:hover {
-      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.6);
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.5);
     }
     
     .action-btn.warning {
       background: linear-gradient(135deg, var(--warning), var(--warning-light));
-      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
     }
     
     .action-btn.warning:hover {
-      box-shadow: 0 8px 24px rgba(245, 158, 11, 0.6);
+      box-shadow: 0 8px 24px rgba(245, 158, 11, 0.5);
     }
     
     .action-btn.purple {
       background: linear-gradient(135deg, var(--purple), var(--purple-light));
-      box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+      box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
     }
     
     .action-btn.purple:hover {
-      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.6);
+      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.5);
     }
     
     .action-btn .badge {
@@ -432,13 +483,63 @@ function __resolve_sku_by_product_id($productId) {
     .kpi-success .kpi-value { color: var(--success); }
     .kpi-warning .kpi-value { color: var(--warning); }
     .kpi-danger .kpi-value { color: var(--danger); }
+    
+    /* Alert items styling */
+    #alerts li {
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: var(--bg-primary);
+      margin-bottom: 8px;
+      font-size: 13px;
+      line-height: 1.6;
+      transition: all 0.2s ease;
+    }
+    
+    #alerts li:hover {
+      background: #f1f5f9;
+      transform: translateX(4px);
+    }
+    
+    #alerts button {
+      transition: all 0.2s ease;
+    }
+    
+    #alerts button:hover {
+      transform: scale(1.05);
+      opacity: 0.9;
+    }
+    
+    /* Links styling */
+    a {
+      transition: all 0.2s ease;
+    }
+    
+    a:hover {
+      opacity: 0.8;
+    }
+    
+    h3 {
+      position: relative;
+      padding-bottom: 12px;
+    }
+    
+    h3::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--purple));
+      border-radius: 2px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
       <div>
-        <h1>📊 Dashboard <?= $roleId == 1 ? '- Admin' : ($roleId == 2 ? '- Quản lý kho' : '- Nhân viên') ?></h1>
+        <h1>Dashboard <?= $roleId == 1 ? '- Admin' : ($roleId == 2 ? '- Quản lý kho' : '- Nhân viên') ?></h1>
         <div class="muted">Tổng quan nhanh về tồn kho, nhập/xuất và cảnh báo</div>
       </div>
     </header>
@@ -447,100 +548,84 @@ function __resolve_sku_by_product_id($productId) {
     <!-- Quick Actions for Admin -->
     <section class="quick-actions">
       <button class="action-btn success" onclick="window.location='index.php?page=receipts/create'">
-        <span>➕</span> Tạo phiếu nhập
+        Tạo phiếu nhập
       </button>
       <button class="action-btn" onclick="window.location='index.php?page=exports/create'">
-        <span>📤</span> Tạo phiếu xuất
+        Tạo phiếu xuất
       </button>
       <button class="action-btn warning" onclick="window.location='index.php?page=receipts/approve'">
-        <span>✅</span> Duyệt phiếu
+        Duyệt phiếu
         <?php if (($data['pendingRequests'] ?? 0) > 0): ?>
           <span class="badge"><?= $data['pendingRequests'] ?></span>
         <?php endif; ?>
       </button>
       <button class="action-btn purple" onclick="window.location='index.php?page=users'">
-        <span>👥</span> Quản lý User
+        Quản lý User
       </button>
       <button class="action-btn" onclick="window.location='index.php?page=warehouses'">
-        <span>🏭</span> Quản lý Kho
+        Quản lý Kho
       </button>
       <button class="action-btn success" onclick="window.location='index.php?page=products'">
-        <span>📦</span> Quản lý SP
+        Quản lý SP
       </button>
     </section>
     <?php endif; ?>
 
     <!-- KPI Cards -->
     <section class="kpis">
-      <div class="card">
+      <div class="card" style="border-left: 4px solid var(--accent);">
         <div class="kpi-title">Tổng SKU</div>
-        <div class="kpi-value"><?= number_format($data['totalSKU'] ?? 0) ?></div>
+        <div class="kpi-value" style="color: var(--accent);"><?= number_format($data['totalSKU'] ?? 0) ?></div>
         <div class="kpi-desc">Mã sản phẩm đang quản lý</div>
       </div>
-      <div class="card">
+      <div class="card" style="border-left: 4px solid var(--purple);">
         <div class="kpi-title">Tổng số lượng</div>
-        <div class="kpi-value"><?= number_format($data['totalQty'] ?? 0) ?></div>
+        <div class="kpi-value" style="color: var(--purple);"><?= number_format($data['totalQty'] ?? 0) ?></div>
         <div class="kpi-desc">Tổng đơn vị tồn kho</div>
       </div>
-      <!-- <div class="card kpi-purple">
-        <div class="kpi-title">Tổng giá trị kho</div>
-        <div class="kpi-value" style="font-size: 20px; color: var(--purple)"><?= number_format($data['totalValue'] ?? 0, 0, ',', '.') ?> ₫</div>
-        <div class="kpi-desc">Ước tính toàn bộ hàng hóa</div>
-      </div> -->
-      <div class="card">
+      <div class="card" style="border-left: 4px solid var(--warning);">
         <div class="kpi-title">Sắp hết hàng</div>
-        <div class="kpi-value" style="color: var(--warning)"><?= number_format($data['lowStockCount'] ?? 0) ?></div>
+        <div class="kpi-value" style="color: var(--warning);"><?= number_format($data['lowStockCount'] ?? 0) ?></div>
         <div class="kpi-desc">SKU dưới ngưỡng an toàn</div>
       </div>
-      <div class="card">
+      <div class="card" style="border-left: 4px solid var(--success);">
         <div class="kpi-title">Số kho</div>
-        <div class="kpi-value" style="color: var(--success)"><?= number_format($data['totalWarehouses'] ?? 0) ?></div>
+        <div class="kpi-value" style="color: var(--success);"><?= number_format($data['totalWarehouses'] ?? 0) ?></div>
         <div class="kpi-desc">Kho hoạt động</div>
       </div>
-      <!-- <div class="card kpi-<?= ($data['warehouseUtilization'] ?? 0) > 80 ? 'warning' : 'accent' ?>">
-        <div class="kpi-title">Công suất kho</div>
-        <div class="kpi-value" style="color: <?= ($data['warehouseUtilization'] ?? 0) > 90 ? 'var(--danger)' : (($data['warehouseUtilization'] ?? 0) > 80 ? 'var(--warning)' : 'var(--accent)') ?>;">
-          <?= number_format($data['warehouseUtilization'] ?? 0, 1) ?>%
-        </div>
-        <div class="progress" aria-label="Tỷ lệ sử dụng">
-          <?php $util = floatval($data['warehouseUtilization'] ?? 0); $utilClass = $util > 90 ? 'danger' : ($util > 80 ? 'warn' : ''); ?>
-          <div class="progress-bar <?= $utilClass ?>" style="width: <?= min(max($util,0),100) ?>%"></div>
-        </div>
-        <div class="kpi-desc">Tỷ lệ sử dụng</div>
-      </div> -->
-      <div class="card">
+      <div class="card" style="border-left: 4px solid var(--success);">
         <div class="kpi-title">Nhập hôm nay</div>
-        <div class="kpi-value" style="color: var(--success)"><?= number_format($data['receiptsToday'] ?? 0) ?></div>
+        <div class="kpi-value" style="color: var(--success);"><?= number_format($data['receiptsToday'] ?? 0) ?></div>
         <div class="kpi-desc">Phiếu nhập</div>
       </div>
-      <div class="card">
+      <div class="card" style="border-left: 4px solid var(--accent);">
         <div class="kpi-title">Xuất hôm nay</div>
-        <div class="kpi-value" style="color: var(--accent)"><?= number_format($data['exportsToday'] ?? 0) ?></div>
+        <div class="kpi-value" style="color: var(--accent);"><?= number_format($data['exportsToday'] ?? 0) ?></div>
         <div class="kpi-desc">Phiếu xuất</div>
       </div>
-      <div class="card">
+      <div class="card" style="border-left: 4px solid var(--warning);">
         <div class="kpi-title">Chờ xử lý</div>
-        <div class="kpi-value" style="color: var(--warning)"><?= number_format($data['pendingRequests'] ?? 0) ?></div>
+        <div class="kpi-value" style="color: var(--warning);"><?= number_format($data['pendingRequests'] ?? 0) ?></div>
         <div class="kpi-desc">Yêu cầu chờ</div>
       </div>
-      <div class="card">
+      <div class="card" style="border-left: 4px solid var(--danger);">
         <div class="kpi-title">URGENT</div>
-        <div class="kpi-value" style="color: var(--danger)"><?= number_format($data['urgentRequests'] ?? 0) ?></div>
+        <div class="kpi-value" style="color: var(--danger);"><?= number_format($data['urgentRequests'] ?? 0) ?></div>
         <div class="kpi-desc">Cần xử lý ngay!</div>
       </div>
     </section>
 
     <!-- Main Charts -->
     <section class="grid-2">
-      <div class="card" style="padding: 20px;">
-        <h3 style="margin-top:0; margin-bottom: 16px;">Thống kê nhập - xuất</h3>
+      <div class="card" style="padding: 24px;">
+        <h3 style="margin:0 0 20px 0; color: var(--text); font-size: 18px; font-weight: 700;">Thống kê nhập - xuất</h3>
         <div class="charts">
           <canvas id="chartInOut"></canvas>
           <canvas id="chartGroups"></canvas>
         </div>
       </div>
-      <div class="card" style="padding: 20px;">
-        <h3 style="margin-top:0">Cảnh báo & Hoạt động gần đây</h3>
+      <div class="card" style="padding: 24px;">
+        <h3 style="margin:0 0 16px 0; color: var(--text); font-size: 18px; font-weight: 700;">Cảnh báo & Hoạt động gần đây</h3>
         <ul id="alerts" style="padding-left:18px;margin:6px 0;">
           <?php if (isset($data['alerts']) && !empty($data['alerts'])): ?>
             <?php foreach ($data['alerts'] as $alert): ?>

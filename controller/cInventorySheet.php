@@ -91,6 +91,7 @@ class CInventorySheet {
     // Create new inventory sheet
     public function createInventorySheet($data) {
         $mSheet = new MInventorySheet();
+        $mProduct = new MProduct();
         
         // Convert status text to number: draft=0, completed=1, approved=2, rejected=3
         $statusMap = ['draft' => 0, 'completed' => 1, 'approved' => 2, 'rejected' => 3];
@@ -103,6 +104,25 @@ class CInventorySheet {
             $status = 1;
         }
         
+        // Ensure all items have SKU
+        $items = $data['items'] ?? [];
+        foreach ($items as &$item) {
+            // If no SKU, try to get from product database
+            if (empty($item['product_sku']) && empty($item['sku'])) {
+                if (!empty($item['product_id'])) {
+                    $productInfo = $mProduct->getProductById($item['product_id']);
+                    if ($productInfo && isset($productInfo['sku'])) {
+                        $item['product_sku'] = $productInfo['sku'];
+                        $item['sku'] = $productInfo['sku'];
+                    }
+                }
+            } elseif (!empty($item['sku']) && empty($item['product_sku'])) {
+                $item['product_sku'] = $item['sku'];
+            } elseif (!empty($item['product_sku']) && empty($item['sku'])) {
+                $item['sku'] = $item['product_sku'];
+            }
+        }
+        
         $sheetData = [
             'sheet_code' => $this->generateSheetCode(),
             'warehouse_id' => $this->currentWarehouseId(),
@@ -111,7 +131,7 @@ class CInventorySheet {
             'created_at' => new MongoDB\BSON\UTCDateTime(),
             'status' => $status, // 0=draft, 1=completed, 2=approved, 3=rejected
             'note' => $data['note'] ?? '',
-            'items' => $data['items'] ?? [],
+            'items' => $items,
             'count_date' => !empty($data['count_date']) ? new MongoDB\BSON\UTCDateTime(new DateTime($data['count_date'])) : new MongoDB\BSON\UTCDateTime()
         ];
         
@@ -141,7 +161,40 @@ class CInventorySheet {
     // Get sheet by ID
     public function getSheetById($sheetId) {
         $mSheet = new MInventorySheet();
-        return $mSheet->getSheetById($sheetId);
+        $mProduct = new MProduct();
+        $sheet = $mSheet->getSheetById($sheetId);
+        
+        if (!$sheet) {
+            return null;
+        }
+        
+        // Convert to array if it's a MongoDB document
+        $sheetArray = json_decode(json_encode($sheet), true);
+        
+        // Ensure SKU is included in items
+        if (isset($sheetArray['items']) && is_array($sheetArray['items'])) {
+            foreach ($sheetArray['items'] as $index => &$item) {
+                // Check if SKU exists in item
+                $hasSku = !empty($item['product_sku']) || !empty($item['sku']);
+                
+                if (!$hasSku && !empty($item['product_id'])) {
+                    // Try to get SKU from product database
+                    $productInfo = $mProduct->getProductById($item['product_id']);
+                    if ($productInfo && isset($productInfo['sku'])) {
+                        $item['product_sku'] = $productInfo['sku'];
+                        $item['sku'] = $productInfo['sku'];
+                    }
+                } elseif (!empty($item['sku']) && empty($item['product_sku'])) {
+                    // Copy sku to product_sku for consistency
+                    $item['product_sku'] = $item['sku'];
+                } elseif (!empty($item['product_sku']) && empty($item['sku'])) {
+                    // Copy product_sku to sku for consistency
+                    $item['sku'] = $item['product_sku'];
+                }
+            }
+        }
+        
+        return $sheetArray;
     }
 
     // List sheets with pagination

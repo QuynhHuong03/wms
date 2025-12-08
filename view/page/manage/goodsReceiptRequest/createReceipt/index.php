@@ -71,7 +71,7 @@ $warehouses = $warehouseController->getAllWarehouses() ?? [];
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Tạo phiếu yêu cầu nhập hàng</title>
+  <title>Tạo phiếu yêu cầu nhập kho</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     body {font-family: "Segoe UI", Tahoma, sans-serif;background:#f3f6fa;margin:0}
@@ -112,7 +112,7 @@ $warehouses = $warehouseController->getAllWarehouses() ?? [];
 </head>
 <body>
   <div class="form-container">
-    <h2><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu yêu cầu nhập hàng</h2>
+    <h2><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu yêu cầu nhập kho</h2>
 
     <?php if (count($productsBelowMin) > 0): ?>
       <div class="alert alert-warning">
@@ -128,8 +128,8 @@ $warehouses = $warehouseController->getAllWarehouses() ?? [];
     <div class="alert alert-info" style="background:#e7f3ff;border-color:#b3d9ff;">
       <strong><i class="fa-solid fa-info-circle"></i> Hướng dẫn:</strong>
       <ul style="margin:8px 0 0 20px;padding:0;">
-        <li>Bạn có thể chọn <strong>bất kỳ sản phẩm nào</strong> trong hệ thống để yêu cầu nhập hàng</li>
-        <li>Chọn <strong>đơn vị</strong> phù hợp (cái, thùng, v.v.) - hệ thống sẽ tự động quy đổi</li>
+        <li>Bạn có thể chọn bất kỳ sản phẩm nào trong hệ thống để yêu cầu nhập hàng</li>
+        <li>Chọn đơn vị phù hợp (cái, thùng, v.v.) - hệ thống sẽ tự động quy đổi</li>
         <li>Ví dụ: <em>1 thùng = 15 cái</em> → Nhập <strong>10 thùng</strong> = yêu cầu <strong>150 cái</strong></li>
       </ul>
     </div>

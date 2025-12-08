@@ -31,6 +31,14 @@
           <span style="color:#666;">Còn thiếu:</span>
           <strong id="summaryRemaining" style="color:#dc3545;">0</strong>
         </div>
+        
+        <!-- Error message inline -->
+        <div id="selectionError" style="display:none;margin-top:12px;padding:12px;background:#fee2e2;border:2px solid #ef4444;border-left:4px solid #dc2626;border-radius:8px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <i class="fa-solid fa-exclamation-circle" style="color:#dc2626;font-size:18px;"></i>
+            <span style="color:#991b1b;font-weight:600;font-size:14px;" id="errorMessage"></span>
+          </div>
+        </div>
       </div>
     </div>
     <div class="warehouse-modal-footer">
@@ -49,7 +57,12 @@ let currentBaseUnit = '';
 let currentDestinationWarehouse = null;
 let warehouseSelections = {};
 
+// Make warehouseSelections globally accessible
+window.warehouseSelections = warehouseSelections;
+
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('Warehouse modal script loaded');
+  
   document.querySelectorAll('.btn-choose-warehouse').forEach(btn => {
     btn.addEventListener('click', function() {
       openWarehouseModal(
@@ -61,6 +74,14 @@ document.addEventListener('DOMContentLoaded', function() {
       );
     });
   });
+  
+  // Update global reference when warehouseSelections changes
+  const originalConfirmWarehouseSelection = confirmWarehouseSelection;
+  window.confirmWarehouseSelection = function() {
+    originalConfirmWarehouseSelection();
+    window.warehouseSelections = warehouseSelections;
+    console.log('Updated window.warehouseSelections:', window.warehouseSelections);
+  };
 });
 
 function openWarehouseModal(productId, productName, requiredQty, baseUnit, destinationWarehouse) {
@@ -79,6 +100,7 @@ function openWarehouseModal(productId, productName, requiredQty, baseUnit, desti
 
 function closeWarehouseModal() {
   document.getElementById('warehouseModal').classList.remove('active');
+  hideError(); // Clear error when closing
 }
 
 async function loadWarehouseStock(productId, destinationWarehouse) {
@@ -160,13 +182,16 @@ function updateSummary() {
   const inputs = document.querySelectorAll('.warehouse-qty-field');
   let totalQty = 0, warehouseCount = 0;
   
+  // Clear error when updating
+  hideError();
+  
   inputs.forEach(input => {
     const qty = parseInt(input.value) || 0;
     const maxQty = parseInt(input.dataset.availableQty);
     
     if (qty > maxQty) {
       input.value = maxQty;
-      alert(`Số lượng không được vượt quá tồn kho (${maxQty})`);
+      showError(`Số lượng không được vượt quá tồn kho (${maxQty})`);
       return;
     }
     
@@ -183,6 +208,25 @@ function updateSummary() {
   document.getElementById('summaryRemaining').style.color = remaining <= 0 ? '#28a745' : '#dc3545';
 }
 
+function showError(message) {
+  const errorDiv = document.getElementById('selectionError');
+  const errorMsg = document.getElementById('errorMessage');
+  if (errorDiv && errorMsg) {
+    errorMsg.textContent = message;
+    errorDiv.style.display = 'block';
+    
+    // Scroll to error
+    errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function hideError() {
+  const errorDiv = document.getElementById('selectionError');
+  if (errorDiv) {
+    errorDiv.style.display = 'none';
+  }
+}
+
 function confirmWarehouseSelection() {
   const inputs = document.querySelectorAll('.warehouse-qty-field');
   const selections = {};
@@ -196,18 +240,25 @@ function confirmWarehouseSelection() {
     }
   });
   
+  console.log('confirmWarehouseSelection - selections:', selections);
+  console.log('confirmWarehouseSelection - totalQty:', totalQty);
+  
   if (totalQty === 0) {
-    alert('Vui lòng chọn ít nhất 1 kho và nhập số lượng!');
+    showError('Vui lòng chọn ít nhất 1 kho và nhập số lượng!');
     return;
   }
   
   if (totalQty < currentRequiredQty) {
-    if (!confirm(`Tổng số lượng (${totalQty}) nhỏ hơn yêu cầu (${currentRequiredQty}). Bạn có chắc muốn tiếp tục?`)) {
-      return;
-    }
+    showError(`Tổng số lượng (${totalQty}) nhỏ hơn yêu cầu (${currentRequiredQty}). Vui lòng kiểm tra lại!`);
+    return;
   }
   
   warehouseSelections[currentProductId] = selections;
+  window.warehouseSelections = warehouseSelections;
+  
+  console.log('Updated warehouseSelections:', warehouseSelections);
+  console.log('Updated window.warehouseSelections:', window.warehouseSelections);
+  
   updateProductSelectionInfo(currentProductId, Object.keys(selections).length, totalQty);
   closeWarehouseModal();
 }
@@ -224,9 +275,34 @@ function updateProductSelectionInfo(productId, warehouseCount, totalQty) {
   }
 }
 
-document.querySelector('form').addEventListener('submit', function(e) {
-  const container = document.createElement('div');
-  container.innerHTML = `<input type="hidden" name="warehouse_selections" value='${JSON.stringify(warehouseSelections)}'>`;
-  this.appendChild(container);
+// Attach warehouse_selections to form before submit
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('Setting up form submit handler');
+  
+  const exportForm = document.getElementById('exportForm');
+  if (exportForm) {
+    console.log('Export form found, adding submit listener');
+    
+    exportForm.addEventListener('submit', function(e) {
+      console.log('Form submit event triggered');
+      
+      // Add warehouse selections as hidden input
+      const existingInput = this.querySelector('input[name="warehouse_selections"]');
+      if (existingInput) {
+        existingInput.remove();
+        console.log('Removed existing warehouse_selections input');
+      }
+      
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'warehouse_selections';
+      input.value = JSON.stringify(window.warehouseSelections || warehouseSelections || {});
+      this.appendChild(input);
+      
+      console.log('Form submit - warehouse_selections:', input.value);
+    });
+  } else {
+    console.error('Export form with id="exportForm" not found!');
+  }
 });
 </script>

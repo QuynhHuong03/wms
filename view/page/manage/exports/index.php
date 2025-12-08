@@ -370,6 +370,126 @@ if ($con) {
   <?php endif; ?>
 </div>
 
+<!-- Confirm Export Modal -->
+<div class="warehouse-modal" id="confirmExportModal" style="backdrop-filter:blur(4px);display:none;">
+  <div class="warehouse-modal-content" style="max-width:500px;">
+    <div class="warehouse-modal-header" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%);">
+      <h3><i class="fa-solid fa-circle-check"></i> Xác nhận xuất kho</h3>
+      <button class="warehouse-modal-close" onclick="closeConfirmExportModal()">×</button>
+    </div>
+    <div class="warehouse-modal-body">
+      <div style="padding:20px 0;text-align:center;">
+        <i class="fa-solid fa-truck-loading" style="font-size:64px;color:#10b981;margin-bottom:20px;"></i>
+        <p style="font-size:16px;color:#334155;line-height:1.6;margin:0;">
+          Bạn có chắc chắn muốn xác nhận xuất kho?
+        </p>
+        <p style="font-size:14px;color:#64748b;margin-top:12px;line-height:1.5;">
+          Hành động này sẽ trừ hàng khỏi kho và không thể hoàn tác.
+        </p>
+      </div>
+    </div>
+    <div class="warehouse-modal-footer" style="background:#f8fafc;">
+      <button type="button" class="btn" style="background:#6c757d;color:#fff;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-weight:600;" onclick="closeConfirmExportModal()">
+        <i class="fa-solid fa-xmark"></i> Hủy
+      </button>
+      <button type="button" class="btn" style="background:#10b981;color:#fff;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-weight:600;" onclick="proceedConfirmExport()">
+        <i class="fa-solid fa-check"></i> Xác nhận xuất
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .warehouse-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    background: rgba(11, 18, 32, 0.5);
+  }
+  
+  .warehouse-modal.active {
+    display: flex !important;
+  }
+  
+  .warehouse-modal-content {
+    background: #fff;
+    border-radius: 16px;
+    max-width: 900px;
+    width: 90%;
+    max-height: 85vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease;
+  }
+  
+  @keyframes modalSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .warehouse-modal-header {
+    padding: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #fff;
+  }
+  
+  .warehouse-modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .warehouse-modal-close {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: 0.2s;
+  }
+  
+  .warehouse-modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+  }
+  
+  .warehouse-modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  
+  .warehouse-modal-footer {
+    padding: 20px 24px;
+    border-top: 2px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+</style>
+
 <script>
   function filterTable() {
     const searchValue = document.getElementById('filter-search').value.toLowerCase();
@@ -409,40 +529,102 @@ if ($con) {
     window.open('index.php?page=exports/print&id=' + exportId, '_blank');
   }
   
+  let currentExportId = null;
+  
   function confirmExport(exportId) {
-    // Simple confirmation title only (no icon or bullets)
-    if (!confirm('XÁC NHẬN XUẤT KHO')) {
+    console.log('confirmExport called with:', exportId);
+    console.log('Type:', typeof exportId);
+    
+    // Store export ID and show modal
+    currentExportId = exportId;
+    console.log('currentExportId set to:', currentExportId);
+    
+    const modal = document.getElementById('confirmExportModal');
+    console.log('Modal element:', modal);
+    
+    if (modal) {
+      modal.classList.add('active');
+      console.log('Modal opened');
+    } else {
+      console.error('Modal not found!');
+    }
+  }
+  
+  function closeConfirmExportModal() {
+    document.getElementById('confirmExportModal').classList.remove('active');
+    currentExportId = null;
+  }
+  
+  function proceedConfirmExport() {
+    console.log('proceedConfirmExport called');
+    console.log('currentExportId value:', currentExportId);
+    console.log('currentExportId type:', typeof currentExportId);
+    
+    if (!currentExportId) {
+      alert('Lỗi: Không tìm thấy mã phiếu xuất!');
+      console.error('currentExportId is null/undefined');
       return;
     }
     
-    // Hiển thị loading
-    const btn = event.target.closest('button');
-    const originalHTML = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
-    btn.disabled = true;
+    console.log('Proceeding with export ID:', currentExportId);
     
+    // LƯU export ID vào biến local TRƯỚC KHI đóng modal
+    const exportIdToConfirm = currentExportId;
+    
+    // Close modal
+    closeConfirmExportModal();
+    
+    // Show loading overlay or disable all buttons
+    const confirmBtn = document.querySelector(`button[onclick*="confirmExport('${exportIdToConfirm}')"]`);
+    let originalHTML = '';
+    
+    if (confirmBtn) {
+      originalHTML = confirmBtn.innerHTML;
+      confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+      confirmBtn.disabled = true;
+    }
+    
+    // Make API call với biến local
     fetch('exports/process.php', {
       method: 'POST',
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: `action=confirm_export&export_id=${encodeURIComponent(exportId)}`
+      body: `action=confirm_export&export_id=${encodeURIComponent(exportIdToConfirm)}`
     })
     .then(res => res.json())
     .then(data => {
+      console.log('Response:', data);
       if (data.success) {
         alert('✅ ' + data.message);
         location.reload();
       } else {
         alert('❌ ' + data.message);
-        btn.innerHTML = originalHTML;
-        btn.disabled = false;
+        if (confirmBtn && originalHTML) {
+          confirmBtn.innerHTML = originalHTML;
+          confirmBtn.disabled = false;
+        }
       }
     })
     .catch(err => {
+      console.error('Error:', err);
       alert('❌ Lỗi: ' + err.message);
-      btn.innerHTML = originalHTML;
-      btn.disabled = false;
+      if (confirmBtn && originalHTML) {
+        confirmBtn.innerHTML = originalHTML;
+        confirmBtn.disabled = false;
+      }
     });
   }
+  
+  // Close modal on backdrop click
+  document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('confirmExportModal');
+    if (modal) {
+      modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+          closeConfirmExportModal();
+        }
+      });
+    }
+  });
 
   // Tự động lọc khi gõ hoặc thay đổi select
   document.getElementById('filter-search')?.addEventListener('input', filterTable);

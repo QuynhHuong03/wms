@@ -177,39 +177,292 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv_receipts') {
   <title>Thống kê Nhập kho</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f0f4f8;color:#1e293b;line-height:1.6}
-    .container{max-width:1200px;margin:0 auto;padding:20px}
-    h2{font-size:28px;font-weight:600;color:#0f172a;margin-bottom:20px;border-left:4px solid #0ea5e9;padding-left:12px}
-    h3{font-size:18px;font-weight:600;color:#334155;margin-bottom:14px}
-    .card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
-    .filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-bottom:16px;border-bottom:1px solid #f1f5f9}
-    .filters label{font-size:14px;font-weight:500;color:#64748b}
-    .filters input[type="date"],.filters select{height:36px;padding:0 12px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;font-size:14px;transition:all 0.2s}
-    .filters input[type="date"]:focus,.filters select:focus{outline:none;border-color:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,0.1)}
-    .filters button{height:36px;padding:0 16px;border-radius:6px;border:none;background:#0ea5e9;color:#fff;font-weight:500;cursor:pointer;transition:all 0.2s;font-size:14px}
-    .filters button:hover{background:#0284c7;transform:translateY(-1px);box-shadow:0 2px 4px rgba(14,165,233,0.3)}
-    .filters a button{background:#64748b}
-    .filters a button:hover{background:#475569}
-    .filters .btn-export{background:#10b981}
-    .filters .btn-export:hover{background:#059669}
-    .summary{display:flex;align-items:center;gap:8px;padding:12px 0;font-size:15px;color:#475569}
-    .summary strong{color:#0f172a;font-size:24px;font-weight:700;margin-left:4px}
-    .chart-container{margin-top:16px;padding:12px;background:#f8fafc;border-radius:8px}
-    table{width:100%;border-collapse:collapse;font-size:14px}
-    table thead th{background:#f8fafc;color:#475569;font-weight:600;padding:12px;border-bottom:2px solid #e2e8f0;text-align:left;position:sticky;top:0}
-    table tbody td{padding:12px;border-bottom:1px solid #f1f5f9}
-    table tbody tr{transition:background 0.15s}
-    table tbody tr:hover{background:#f8fafc}
-    ol{padding-left:24px;margin-top:8px}
-    ol li{padding:8px 0;color:#334155;border-bottom:1px solid #f1f5f9}
-    ol li:last-child{border-bottom:none}
-    .table-wrapper{overflow-x:auto;margin-top:12px}
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
+      min-height: 100vh;
+      padding: 30px 20px;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    h2 {
+      font-size: 32px;
+      font-weight: 700;
+      color: black;
+      margin-bottom: 30px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      letter-spacing: -0.5px;
+    }
+    
+    h3 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+    }
+    
+    .filters {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #f1f5f9;
+    }
+    
+    .filters label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #475569;
+      white-space: nowrap;
+    }
+    
+    .filters input[type="date"],
+    .filters select {
+      height: 42px;
+      padding: 0 14px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      background: #ffffff;
+      font-size: 14px;
+      color: #1e293b;
+      transition: all 0.3s ease;
+      min-width: 150px;
+    }
+    
+    .filters input[type="date"]:hover,
+    .filters select:hover {
+      border-color: #cbd5e1;
+    }
+    
+    .filters input[type="date"]:focus,
+    .filters select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102,126,234,0.1);
+    }
+    
+    .filters button {
+      height: 42px;
+      padding: 0 24px;
+      border-radius: 8px;
+      border: none;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #ffffff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+    }
+    
+    .filters button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(102,126,234,0.4);
+    }
+    
+    .filters button:active {
+      transform: translateY(0);
+    }
+    
+    .filters .btn-export {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+    }
+    
+    .filters .btn-export:hover {
+      box-shadow: 0 6px 16px rgba(16,185,129,0.4);
+    }
+    
+    .summary {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 20px;
+      margin-top: 20px;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border-radius: 12px;
+      border-left: 4px solid #0ea5e9;
+    }
+    
+    .summary span {
+      font-size: 16px;
+      color: #475569;
+      font-weight: 500;
+    }
+    
+    .summary strong {
+      color: #0369a1;
+      font-size: 28px;
+      font-weight: 700;
+    }
+    
+    .chart-container {
+      margin-top: 24px;
+      padding: 20px;
+      background: #f8fafc;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 14px;
+    }
+    
+    table thead th {
+      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+      color: #1e293b;
+      font-weight: 600;
+      padding: 16px;
+      text-align: left;
+      position: sticky;
+      top: 0;
+      border-bottom: 2px solid #e2e8f0;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    table thead th:first-child {
+      border-top-left-radius: 8px;
+    }
+    
+    table thead th:last-child {
+      border-top-right-radius: 8px;
+    }
+    
+    table tbody td {
+      padding: 16px;
+      border-bottom: 1px solid #f1f5f9;
+      color: #334155;
+    }
+    
+    table tbody tr {
+      transition: all 0.2s ease;
+    }
+    
+    table tbody tr:hover {
+      background: #f8fafc;
+      transform: scale(1.01);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    table tbody tr:last-child td:first-child {
+      border-bottom-left-radius: 8px;
+    }
+    
+    table tbody tr:last-child td:last-child {
+      border-bottom-right-radius: 8px;
+    }
+    
+    ol {
+      padding-left: 0;
+      margin-top: 16px;
+      list-style: none;
+      counter-reset: item;
+    }
+    
+    ol li {
+      padding: 16px 20px;
+      color: #1e293b;
+      border-bottom: 1px solid #f1f5f9;
+      counter-increment: item;
+      position: relative;
+      padding-left: 60px;
+      transition: all 0.2s ease;
+    }
+    
+    ol li:before {
+      content: counter(item);
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    
+    ol li:hover {
+      background: #f8fafc;
+      padding-left: 70px;
+    }
+    
+    ol li:last-child {
+      border-bottom: none;
+    }
+    
+    ol li strong {
+      color: #0f172a;
+      font-weight: 600;
+    }
+    
+    .table-wrapper {
+      overflow-x: auto;
+      margin-top: 16px;
+      border-radius: 8px;
+    }
+    
+    code {
+      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: 'Courier New', monospace;
+      color: #475569;
+      font-weight: 600;
+    }
+    
+    .badge {
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      color: #1e40af;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 13px;
+      display: inline-block;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2> Thống kê Nhập kho</h2>
+    <h2>Thống kê Nhập kho</h2>
     
     <div class="card">
       <form method="get" action="/kltn/view/page/manage/index.php" class="filters">
@@ -225,12 +478,12 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv_receipts') {
             <option value="<?= htmlspecialchars($wid) ?>" <?= $warehouse == $wid ? 'selected' : '' ?>><?= htmlspecialchars($w['warehouse_name'] ?? $w['name'] ?? $wid) ?></option>
           <?php endforeach; ?>
         </select>
-        <button type="submit"> Xem báo cáo</button>
-        <a href="<?= '/kltn/view/page/manage/report/InboundStatistics/index.php?export=csv_receipts&from=' . rawurlencode($from) . '&to=' . rawurlencode($to) ?>"><button type="button" class="btn-export"> Xuất file</button></a>
+        <button type="submit">Xem báo cáo</button>
+        <a href="<?= '/kltn/view/page/manage/report/InboundStatistics/index.php?export=csv_receipts&from=' . rawurlencode($from) . '&to=' . rawurlencode($to) ?>"><button type="button" class="btn-export">Xuất file</button></a>
       </form>
       
       <div class="summary">
-        Tổng số phiếu nhập:<strong><?= number_format(count($inboundReceipts)) ?></strong> phiếu
+        <span>Tổng số phiếu nhập:</span><strong><?= number_format(count($inboundReceipts)) ?></strong><span>phiếu</span>
       </div>
       
       <div class="chart-container">
@@ -239,7 +492,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv_receipts') {
     </div>
 
     <div class="card">
-      <h3> Top 10 sản phẩm nhập nhiều nhất</h3>
+      <h3>Top 10 sản phẩm nhập nhiều nhất</h3>
       <ol>
         <?php foreach ($topProducts as $pid => $qty):
             $pinfo = $topProductInfo[$pid] ?? [];
@@ -251,7 +504,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv_receipts') {
     </div>
 
     <div class="card">
-      <h3> Chi tiết phiếu nhập</h3>
+      <h3>Chi tiết phiếu nhập</h3>
       <div class="table-wrapper">
         <table>
           <thead>
@@ -291,11 +544,11 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv_receipts') {
               $productCount = count($unique);
             ?>
               <tr>
-                <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:13px"><?= htmlspecialchars($tid) ?></code></td>
+                <td><code><?= htmlspecialchars($tid) ?></code></td>
                 <td><?= htmlspecialchars($created_at) ?></td>
                 <td><?= htmlspecialchars($warehouse_id) ?></td>
                 <td><?= htmlspecialchars($supplier_name) ?></td>
-                <td style="text-align:center"><span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:12px;font-weight:600;font-size:13px"><?= $productCount ?></span></td>
+                <td style="text-align:center"><span class="badge"><?= $productCount ?></span></td>
                 <td style="color:#64748b"><?= htmlspecialchars($r['note'] ?? ($r['notes'] ?? '-')) ?></td>
               </tr>
             <?php endforeach; ?>
