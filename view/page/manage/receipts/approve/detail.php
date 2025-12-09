@@ -85,6 +85,26 @@ $statusClass = isset($statusClassMap[$status]) ? $statusClassMap[$status] : 'pen
     .btn-reject{background:#dc3545;color:#fff;}
     .btn:hover{opacity:0.9;transform:translateY(-2px);}
     @media(max-width:700px){.info{grid-template-columns:1fr;padding:20px;}}
+    
+    /* Custom SweetAlert2 styles */
+    .swal-custom-popup {
+      border-radius: 16px !important;
+      padding: 0 !important;
+    }
+    .swal-custom-title {
+      padding: 20px 20px 10px !important;
+      border-bottom: 2px solid #f0f0f0;
+      margin-bottom: 0 !important;
+    }
+    .swal2-html-container {
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    /* Override table styles inside modal */
+    .swal2-html-container .products-table th {
+      background: #667eea !important;
+      color: #fff !important;
+    }
   </style>
 </head>
 
@@ -395,56 +415,86 @@ function confirmAction(action, id) {
   // Default confirmation (approve)
   const actionText = action === 'approve' ? 'duyệt' : 'thực hiện';
   const color = action === 'approve' ? '#28a745' : '#6c757d';
+  
   Swal.fire({
     title: `Xác nhận ${actionText} phiếu này?`,
+    text: '',
     icon: 'question',
     showCancelButton: true,
-    confirmButtonText: `Xác nhận`,
-    cancelButtonText: `Hủy`,
-    confirmButtonColor: color,
-    cancelButtonColor: '#6c757d',
+    confirmButtonText: 'OK',
+    cancelButtonText: 'Cancel',
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#aaa',
   }).then((result) => {
     if (result.isConfirmed) {
       // Load approval form fragment via AJAX and show in modal
       const url = `receipts/approve/process.php?action=${action}&id=${encodeURIComponent(id)}&ajax=1`;
       fetch(url, { credentials: 'same-origin' })
-        .then(res => res.text())
-        .then(html => {
-          Swal.fire({
-            title: 'Nhập thông tin sản phẩm mới trước khi duyệt',
-            html: html,
-            width: '70%',
-            showCancelButton: true,
-            showConfirmButton: false,
-            didOpen: () => {
-              const container = Swal.getHtmlContainer();
-              if (!container) return;
-              const form = container.querySelector('form#approve-new-products-form');
-              if (form) {
-                form.addEventListener('submit', function(e) {
-                  e.preventDefault();
-                  const fd = new FormData(form);
-                  // send POST with ajax=1
-                  const postUrl = `receipts/approve/process.php?action=${action}&id=${encodeURIComponent(id)}&ajax=1`;
-                  fetch(postUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
-                    .then(r => r.json())
-                    .then(data => {
-                      if (data.success) {
-                        Swal.fire({ icon: 'success', title: 'Đã duyệt', text: data.message || '' }).then(()=>{
-                          // reload current page to show updated status
-                          window.location.reload();
-                        });
-                      } else {
-                        Swal.fire({ icon: 'error', title: 'Lỗi', text: data.message || 'Không thể duyệt phiếu' });
-                      }
-                    })
-                    .catch(err => {
-                      Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Lỗi kết nối' });
-                    });
+        .then(res => {
+          const contentType = res.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            // Response is JSON - means no form needed, directly approved
+            return res.json().then(data => {
+              if (data.success) {
+                Swal.fire({ 
+                  icon: 'success', 
+                  title: 'Thành công', 
+                  text: data.message || 'Đã duyệt phiếu thành công!'
+                }).then(() => {
+                  window.location.reload();
                 });
+              } else {
+                Swal.fire({ icon: 'error', title: 'Lỗi', text: data.message || 'Không thể duyệt phiếu' });
               }
-            }
-          });
+            });
+          } else {
+            // Response is HTML form - show in modal
+            return res.text().then(html => {
+              Swal.fire({
+                title: '<div style="color:#667eea;font-size:20px;"><i class="fa-solid fa-box"></i> Nhập thông tin sản phẩm mới</div>',
+                html: html,
+                width: '900px',
+                showCancelButton: false,
+                showConfirmButton: false,
+                customClass: {
+                  popup: 'swal-custom-popup',
+                  title: 'swal-custom-title'
+                },
+                didOpen: () => {
+                  const container = Swal.getHtmlContainer();
+                  if (!container) return;
+                  const form = container.querySelector('form#approve-new-products-form');
+                  if (form) {
+                    form.addEventListener('submit', function(e) {
+                      e.preventDefault();
+                      const fd = new FormData(form);
+                      // send POST with ajax=1
+                      const postUrl = `receipts/approve/process.php?action=${action}&id=${encodeURIComponent(id)}&ajax=1`;
+                      fetch(postUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                        .then(r => r.json())
+                        .then(data => {
+                          if (data.success) {
+                            Swal.close();
+                            Swal.fire({ 
+                              icon: 'success', 
+                              title: 'Thành công', 
+                              text: data.message || 'Đã duyệt phiếu thành công!'
+                            }).then(() => {
+                              window.location.reload();
+                            });
+                          } else {
+                            Swal.fire({ icon: 'error', title: 'Lỗi', text: data.message || 'Không thể duyệt phiếu' });
+                          }
+                        })
+                        .catch(err => {
+                          Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Lỗi kết nối' });
+                        });
+                    });
+                  }
+                }
+              });
+            });
+          }
         })
         .catch(err => {
           Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Không thể tải form duyệt' });

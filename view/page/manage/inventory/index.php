@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 include_once(__DIR__ . "/../../../../controller/cInventory.php");
 include_once(__DIR__ . "/../../../../controller/cWarehouse.php");
@@ -648,9 +648,9 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
 						</option>
 					<?php endforeach; ?>
 				</select>
-				<?php if (!$is_central_warehouse): ?>
+				<!-- <?php if (!$is_central_warehouse): ?>
 					<div style="margin-top:6px; color:#475569; font-size:13px;">Bạn đang ở: <strong><?=h($user_warehouse_name ?: $user_warehouse_id)?></strong>. Chỉ kho tổng KHO_TONG_01 mới có quyền xem tất cả kho.</div>
-				<?php endif; ?>
+				<?php endif; ?> -->
 				
 				<label>Từ: <input type="date" name="from" value="<?=h($from)?>"></label>
 				<label>Đến: <input type="date" name="to" value="<?=h($to)?>"></label>
@@ -811,11 +811,10 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
 						<table style="width:100%; border-collapse:collapse;">
 							<thead>
 								<tr style="background:#f8fafc;">
-									<th style="padding:12px; border:1px solid #e5e7eb; font-weight:600; color:#475569;">📦 Kho</th>
-									<th style="padding:12px; border:1px solid #e5e7eb; font-weight:600; color:#475569;">📍 Vị trí (Zone/Rack/Bin)</th>
-									<th style="padding:12px; border:1px solid #e5e7eb; font-weight:600; color:#475569;">🏷️ Mã ô</th>
-									<th style="padding:12px; border:1px solid #e5e7eb; font-weight:600; color:#475569;">📊 Số lượng</th>
-									<th style="padding:12px; border:1px solid #e5e7eb; font-weight:600; color:#475569;">📅 Ngày nhập</th>
+									<th style="padding:12px; border:1px solid #e5e7eb; font-weight:600; color:#475569;"> Kho</th>
+									<th style="padding:12px; border:1px solid #e5e7eb; font-weight:600; color:#475569;"> Vị trí (Zone/Rack/Bin)</th>
+									<th style="padding:12px; border:1px solid #e5e7eb; font-weight:600; color:#475569;"> Số lượng</th>
+									<th style="padding:12px; border:1px solid #e5e7eb; font-weight:600; color:#475569;"> Ngày nhập</th>
 								</tr>
 							</thead>
 							<tbody id="binModalRows"></tbody>
@@ -913,9 +912,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
 									<td style="padding:10px; border:1px solid #e5e7eb; text-align:center; font-family:monospace; font-weight:500; color:#1e40af;">
 										${location || '-'}
 									</td>
-									<td style="padding:10px; border:1px solid #e5e7eb; text-align:center; font-weight:500; color:#7c3aed;">
-										${row.bin_code || '-'}
-									</td>
 									<td style="padding:10px; border:1px solid #e5e7eb; text-align:center; font-weight:700; color:#059669; font-size:15px;">
 										${qty.toLocaleString('vi-VN')} <span style="font-weight:400; color:#6b7280; font-size:13px;">cái</span>
 									</td>
@@ -931,8 +927,8 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
 							totalRow.style.background = '#f1f5f9';
 							totalRow.style.fontWeight = '700';
 							totalRow.innerHTML = `
-								<td colspan="3" style="padding:12px; border:1px solid #e5e7eb; text-align:right; color:#1e293b;">
-									<strong>📦 Tổng cộng:</strong>
+								<td colspan="2" style="padding:12px; border:1px solid #e5e7eb; text-align:right; color:#1e293b;">
+									<strong> Tổng cộng:</strong>
 								</td>
 								<td style="padding:12px; border:1px solid #e5e7eb; text-align:center; color:#059669; font-size:16px;">
 									${totalQty.toLocaleString('vi-VN')} <span style="font-weight:400; color:#6b7280; font-size:14px;">cái</span>

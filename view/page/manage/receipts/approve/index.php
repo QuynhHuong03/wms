@@ -45,6 +45,96 @@ if ($warehouse_id) {
   .receipt-list-container .top-actions {margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
   .filters {display:flex;gap:10px;align-items:center;}
   .filters select {padding:6px 10px;border-radius:6px;border:1px solid #ccc;font-size:14px;}
+  
+  /* Custom SweetAlert2 styles */
+  .swal-custom-popup {
+    border-radius: 16px !important;
+    padding: 0 !important;
+  }
+  .swal-custom-title {
+    padding: 20px 20px 10px !important;
+    border-bottom: 2px solid #f0f0f0;
+    margin-bottom: 0 !important;
+  }
+  .swal2-html-container {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Toast notification styles */
+  .toast {
+    min-width: 300px;
+    background: #fff;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    animation: slideIn 0.3s ease-out;
+    border-left: 4px solid #28a745;
+  }
+  .toast.success {
+    border-left-color: #28a745;
+  }
+  .toast.success .toast-icon {
+    color: #28a745;
+  }
+  .toast.error {
+    border-left-color: #dc3545;
+  }
+  .toast.error .toast-icon {
+    color: #dc3545;
+  }
+  .toast-icon {
+    font-size: 24px;
+  }
+  .toast-message {
+    flex: 1;
+    color: #333;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .toast-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .toast-close:hover {
+    color: #666;
+  }
+  @keyframes slideIn {
+    from {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  @keyframes slideOut {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+  }
+  .toast.hiding {
+    animation: slideOut 0.3s ease-out forwards;
+  }
 </style>
 
 <div class="receipt-list-container">
@@ -106,13 +196,62 @@ if ($warehouse_id) {
   $totalPages = ceil($totalReceipts / $itemsPerPage);
   $offset = ($currentPage - 1) * $itemsPerPage;
   $receiptsToDisplay = array_slice($receiptsArr, $offset, $itemsPerPage);
+  ?>
 
+  <!-- Toast notification container -->
+  <div id="toastContainer" style="position:fixed;top:20px;right:20px;z-index:9999;"></div>
+  
+  <script>
+  // Define showToast function early so it's available for inline scripts
+  function showToast(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    if (!container) {
+      console.error('Toast container not found');
+      return;
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    
+    const icon = type === 'success' 
+      ? '<i class="fa-solid fa-circle-check toast-icon"></i>'
+      : '<i class="fa-solid fa-circle-exclamation toast-icon"></i>';
+    
+    toast.innerHTML = `
+      ${icon}
+      <div class="toast-message">${message}</div>
+      <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Tự động ẩn sau 4 giây
+    setTimeout(() => {
+      toast.classList.add('hiding');
+      setTimeout(() => toast.remove(), 300);
+    }, 4000);
+  }
+  </script>
+  
+  <?php
+  // Hiển thị toast cho thông báo thành công
   if (isset($_SESSION['flash_receipt'])) {
-    echo '<div style="padding:10px;background:#e6ffed;border:1px solid #b7f0c6;margin-bottom:12px;color:#256029;">'.htmlspecialchars($_SESSION['flash_receipt']).'</div>';
+    $message = htmlspecialchars($_SESSION['flash_receipt']);
+    echo "<script>
+      document.addEventListener('DOMContentLoaded', function() {
+        showToast('$message', 'success');
+      });
+    </script>";
     unset($_SESSION['flash_receipt']);
   }
+  // Hiển thị toast cho thông báo lỗi
   if (isset($_SESSION['flash_receipt_error'])) {
-    echo '<div style="padding:10px;background:#ffecec;border:1px solid #f5c2c2;margin-bottom:12px;color:#8a1f1f;">'.htmlspecialchars($_SESSION['flash_receipt_error']).'</div>';
+    $message = htmlspecialchars($_SESSION['flash_receipt_error']);
+    echo "<script>
+      document.addEventListener('DOMContentLoaded', function() {
+        showToast('$message', 'error');
+      });
+    </script>";
     unset($_SESSION['flash_receipt_error']);
   }
   ?>
@@ -207,7 +346,7 @@ if ($warehouse_id) {
           // Nếu là quản lý và phiếu đang chờ duyệt
           if ($status === 0 && $isManager) {
             echo "
-              <a href='receipts/approve/process.php?action=approve&id={$r['transaction_id']}' class='btn btn-approve confirm-action' data-action='approve' data-id='{$r['transaction_id']}' title='Duyệt'>
+              <a href='receipts/approve/process.php?action=approve&id={$r['transaction_id']}' class='btn btn-approve confirm-action' data-action='approve' data-id='{$r['transaction_id']}' data-receipt-type='{$r['type']}' title='Duyệt'>
                 <i class=\"fa-solid fa-check\"></i>
               </a>
               <a href='receipts/approve/process.php?action=reject&id={$r['transaction_id']}' class='btn btn-reject confirm-action' data-action='reject' data-id='{$r['transaction_id']}' title='Từ chối'>
@@ -216,20 +355,23 @@ if ($warehouse_id) {
             ";
           }
 
-          // Nếu là nhân viên và phiếu đã duyệt (được phép xếp hàng)
+          // Nếu là nhân viên và phiếu đã duyệt (được phép xem vị trí)
           if (!$isManager && $status === 1) {
             echo "
-                <a href='index.php?page=receipts/locate&id={$r['transaction_id']}' class='btn btn-locate' title='Xếp hàng'>
-                  <i class=\"fa-solid fa-dolly\"></i> Xếp hàng
+                <a href='index.php?page=receipts/locate&id={$r['transaction_id']}' class='btn btn-locate' title='Xem vị trí xếp hàng'>
+                  <i class=\"fa-solid fa-location-dot\"></i> Vị trí
                 </a>
             ";
           }
 
-          // Nút 'Vị trí' cho duyệt/hoàn tất (quản lý hoặc nhân viên đều xem lại/sửa được)
+          // Nút 'Xếp hàng' cho quản lý khi phiếu đã duyệt, hoặc nút 'Vị trí' cho phiếu hoàn tất
           if (($status === 1 && $isManager) || $status === 3) {
+            $btnText = $status === 3 ? 'Vị trí' : 'Xếp hàng';
+            $btnIcon = $status === 3 ? 'fa-location-dot' : 'fa-dolly';
+            $btnTitle = $status === 3 ? 'Xem/Sửa vị trí đã xếp' : 'Xếp hàng vào vị trí';
             echo "
-                <a href='index.php?page=receipts/locate&id={$r['transaction_id']}' class='btn btn-locate' title='Xem/Sửa vị trí đã xếp'>
-                  <i class=\"fa-solid fa-location-dot\"></i> Vị trí
+                <a href='index.php?page=receipts/locate&id={$r['transaction_id']}' class='btn btn-locate' title='$btnTitle'>
+                  <i class=\"fa-solid $btnIcon\"></i> $btnText
                 </a>
             ";
           }
@@ -365,24 +507,91 @@ if ($warehouse_id) {
       return;
     }
 
-    // Default: simple confirmation (approve)
+    // Default: confirmation for approval with modal
     const actionText = action === 'approve' ? 'duyệt' : 'thực hiện';
     const color = action === 'approve' ? '#28a745' : '#6c757d';
     Swal.fire({
       title: `Xác nhận ${actionText} phiếu này?`,
+      text: '',
       icon: 'question',
       showCancelButton: true,
-      confirmButtonText: `Xác nhận`,
-      cancelButtonText: `Hủy`,
-      confirmButtonColor: color,
-      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'OK',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#aaa',
     }).then((result) => {
       if (result.isConfirmed) {
-        if (href) {
-          window.location.href = href;
-        } else {
-          window.location.href = `receipts/approve/process.php?action=${action}&id=${encodeURIComponent(id)}`;
+        // Check if this is a transfer receipt - if so, approve directly without modal
+        const receiptType = document.querySelector(`[data-id="${id}"]`)?.getAttribute('data-receipt-type');
+        
+        if (receiptType === 'transfer') {
+          // For transfer receipts, approve directly without showing the modal
+          window.location.href = href || `receipts/approve/process.php?action=${action}&id=${encodeURIComponent(id)}`;
+          return;
         }
+        
+        // For purchase receipts, load approval form fragment via AJAX and show in modal
+        const url = `receipts/approve/process.php?action=${action}&id=${encodeURIComponent(id)}&ajax=1`;
+        fetch(url, { credentials: 'same-origin' })
+          .then(res => {
+            const contentType = res.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+              // Response is JSON - means no form needed, directly approved
+              return res.json().then(data => {
+                if (data.success) {
+                  showToast(data.message || 'Đã duyệt phiếu thành công!', 'success');
+                  setTimeout(() => window.location.reload(), 1500);
+                } else {
+                  Swal.fire({ icon: 'error', title: 'Lỗi', text: data.message || 'Không thể duyệt phiếu' });
+                }
+              });
+            } else {
+              // Response is HTML form - show in modal
+              return res.text().then(html => {
+                Swal.fire({
+                  title: '<div style="color:#667eea;font-size:20px;"><i class="fa-solid fa-box"></i> Nhập thông tin sản phẩm mới</div>',
+                  html: html,
+                  width: '900px',
+                  showCancelButton: false,
+                  showConfirmButton: false,
+                  customClass: {
+                    popup: 'swal-custom-popup',
+                    title: 'swal-custom-title'
+                  },
+                  didOpen: () => {
+                    const container = Swal.getHtmlContainer();
+                    if (!container) return;
+                    const form = container.querySelector('form#approve-new-products-form');
+                    if (form) {
+                      form.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        const fd = new FormData(form);
+                        // send POST with ajax=1
+                        const postUrl = `receipts/approve/process.php?action=${action}&id=${encodeURIComponent(id)}&ajax=1`;
+                        fetch(postUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                          .then(r => r.json())
+                          .then(data => {
+                            if (data.success) {
+                              Swal.close();
+                              showToast(data.message || 'Đã duyệt phiếu thành công!', 'success');
+                              setTimeout(() => window.location.reload(), 1500);
+                            } else {
+                              Swal.fire({ icon: 'error', title: 'Lỗi', text: data.message || 'Không thể duyệt phiếu' });
+                            }
+                          })
+                          .catch(err => {
+                            Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Lỗi kết nối' });
+                          });
+                      });
+                    }
+                  }
+                });
+              });
+            }
+          })
+          .catch(err => {
+            Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Không thể tải form duyệt' });
+          });
       }
     });
   }

@@ -197,7 +197,7 @@
 <body>
   <div class="form-container">
     <h2><i class="fa-solid fa-file-circle-plus"></i> Tạo phiếu nhập kho</h2>
-    <form id="receiptForm" method="post" action="../process.php">
+    <form id="receiptForm" method="post" action="javascript:void(0)" onsubmit="return false;">
       <?php
         // Thêm các trường ẩn bắt buộc
         $user_id = $_SESSION['login']['user_id'] ?? 'system';
@@ -292,22 +292,42 @@
       </table>
       <br>
       
-      <div id="confirmSection">
-        <p><i class="fa-solid fa-circle-exclamation"></i> Bạn có chắc chắn muốn tạo phiếu nhập kho này không?</p>
-        <button type="button" class="btn btn-confirm" onclick="confirmCreate()"><i class="fa-solid fa-check"></i> Xác nhận</button>
-        <button type="button" class="btn btn-cancel" onclick="cancelCreate()"><i class="fa-solid fa-times"></i> Hủy</button>
-      </div>
-      
       <button type="button" id="createBtn" class="btn" onclick="validateAndShowConfirm()"><i class="fa-solid fa-save"></i> Tạo phiếu</button>
     </form>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <script>
     let rowIndex = 0;
     let productMap = {};
     // If user selects an export (internal transfer) we will store it here
     let currentExport = null;
+
+    // Ngăn form submit mặc định - bắt buộc phải qua modal xác nhận
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM loaded, setting up form prevention');
+      const form = document.getElementById('receiptForm');
+      if (form) {
+        console.log('Form found, adding submit listener');
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('Form submit prevented - must use validateAndShowConfirm()');
+          alert('Form submit bị chặn! Vui lòng dùng nút "Tạo phiếu".');
+          return false;
+        });
+      } else {
+        console.error('Form #receiptForm not found!');
+      }
+      
+      // Kiểm tra SweetAlert2
+      if (typeof Swal !== 'undefined') {
+        console.log('SweetAlert2 loaded successfully');
+      } else {
+        console.error('SweetAlert2 NOT loaded!');
+      }
+    });
 
     // Toggle receipt type (purchase vs transfer)
     function toggleReceiptType() {
@@ -433,11 +453,14 @@
       
       let hasError = false;
 
-      // Kiểm tra nhà cung cấp
-      const supplierId = document.getElementById('supplier_id').value;
-      if (!supplierId || supplierId === '') {
-        showError('supplier-error', '⚠️ Vui lòng chọn nhà cung cấp!');
-        hasError = true;
+      // Kiểm tra nhà cung cấp (chỉ cho loại phiếu purchase)
+      const receiptType = document.getElementById('receipt_type').value;
+      if (receiptType === 'purchase') {
+        const supplierId = document.getElementById('supplier_id').value;
+        if (!supplierId || supplierId === '') {
+          showError('supplier-error', '⚠️ Vui lòng chọn nhà cung cấp!');
+          hasError = true;
+        }
       }
 
       // Kiểm tra danh sách sản phẩm
@@ -474,26 +497,96 @@
       return !hasError;
     }
 
-    // --- Validate và hiển thị phần confirm ---
+    // --- Validate và hiển thị modal xác nhận ---
     function validateAndShowConfirm() {
-      if (validateForm()) {
-        // Ẩn nút tạo phiếu, hiển thị phần confirm
-        document.getElementById('createBtn').style.display = 'none';
-        document.getElementById('confirmSection').classList.add('show');
-        // Scroll đến phần confirm
-        document.getElementById('confirmSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      console.log('validateAndShowConfirm called');
+      
+      // Kiểm tra SweetAlert2 đã load chưa
+      if (typeof Swal === 'undefined') {
+        alert('SweetAlert2 chưa được load. Vui lòng tải lại trang.');
+        return;
       }
-    }
-
-    // --- Xác nhận tạo phiếu ---
-    function confirmCreate() {
-      document.getElementById('receiptForm').submit();
-    }
-
-    // --- Hủy tạo phiếu ---
-    function cancelCreate() {
-      document.getElementById('confirmSection').classList.remove('show');
-      document.getElementById('createBtn').style.display = 'inline-block';
+      
+      if (!validateForm()) {
+        console.log('Validation failed');
+        return; // Dừng nếu form không hợp lệ
+      }
+      
+      console.log('Validation passed, showing modal');
+      
+      // Lấy thông tin tổng quan
+      const tbody = document.getElementById('productTable').querySelector('tbody');
+      const rows = tbody.querySelectorAll('tr');
+      const receiptType = document.getElementById('receipt_type').value;
+      const receiptTypeText = receiptType === 'transfer' ? 'Nhập điều chuyển nội bộ' : 'Nhập từ nhà cung cấp';
+      
+      // Tính tổng tiền
+      let totalAmount = 0;
+      rows.forEach(row => {
+        const subtotal = parseNumber(row.querySelector("input[name*='[subtotal]']").value);
+        totalAmount += subtotal;
+      });
+      
+      console.log('Total amount:', totalAmount);
+      console.log('Calling Swal.fire...');
+      
+      // Hiển thị modal xác nhận bằng SweetAlert2
+      Swal.fire({
+        title: 'Xác nhận tạo phiếu nhập',
+        html: `
+          <div style="text-align: left; padding: 15px;">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <i class="fa-solid fa-circle-question" style="color: #ffc107; font-size: 60px;"></i>
+            </div>
+            <p style="font-size: 16px; color: #333; margin-bottom: 15px; text-align: center;">
+              <strong>Bạn có chắc chắn muốn tạo phiếu nhập này không?</strong>
+            </p>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px;">
+              <p style="margin: 8px 0; color: #555;">
+                <i class="fa-solid fa-file-alt" style="color: #007bff; width: 20px;"></i> 
+                <strong>Loại phiếu:</strong> ${receiptTypeText}
+              </p>
+              <p style="margin: 8px 0; color: #555;">
+                <i class="fa-solid fa-box" style="color: #28a745; width: 20px;"></i> 
+                <strong>Số lượng sản phẩm:</strong> ${rows.length} mặt hàng
+              </p>
+              <p style="margin: 8px 0; color: #555;">
+                <i class="fa-solid fa-money-bill-wave" style="color: #ffc107; width: 20px;"></i> 
+                <strong>Tổng giá trị:</strong> ${formatNumber(totalAmount)} VNĐ
+              </p>
+            </div>
+          </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#dc3545',
+        confirmButtonText: '<i class="fa-solid fa-check"></i> Xác nhận tạo phiếu',
+        cancelButtonText: '<i class="fa-solid fa-times"></i> Hủy bỏ',
+        reverseButtons: true,
+        width: '550px',
+        customClass: {
+          confirmButton: 'btn btn-confirm',
+          cancelButton: 'btn btn-danger'
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Hiển thị loading khi đang tạo phiếu
+          Swal.fire({
+            title: 'Đang tạo phiếu nhập...',
+            html: '<i class="fa-solid fa-spinner fa-spin" style="font-size: 40px; color: #007bff;"></i><br><br>Vui lòng chờ trong giây lát',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+              // Submit form sau khi hiển thị loading (luôn dùng AJAX)
+              setTimeout(() => {
+                submitReceiptAjax();
+              }, 500);
+            }
+          });
+        }
+      });
     }
 
     // --- Xóa lỗi khi người dùng thay đổi nhà cung cấp ---
@@ -1035,6 +1128,75 @@
       
       const qty = parseNumber(qtyInput.value) || 0;
       subtotalInput.value = formatNumber(raw * qty);
+    }
+    
+    // Gửi form bằng AJAX (dành cho trường hợp purchase) để nhận JSON và tránh alert JS từ server
+    function submitReceiptAjax() {
+      const form = document.getElementById('receiptForm');
+      const fd = new FormData(form);
+      const url = form.action || 'process.php';
+
+      fetch(url, {
+        method: 'POST',
+        body: fd,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      }).then(res => res.json())
+        .then(data => {
+          try { Swal.close(); } catch(e){}
+          if (data && data.success) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Tạo phiếu thành công!',
+              html: `
+                <div style="text-align: left; padding: 10px;">
+                  <p style="text-align: center; margin-bottom: 15px;">
+                    <i class="fa-solid fa-check-circle" style="color: #28a745; font-size: 50px;"></i>
+                  </p>
+                  <div style="background: #d4edda; padding: 12px; border-radius: 6px; border: 1px solid #c3e6cb;">
+                    ${data.message || 'Phiếu nhập đã được tạo thành công!'}
+                  </div>
+                </div>
+              `,
+              confirmButtonText: '<i class="fa-solid fa-list"></i> Xem danh sách phiếu',
+              confirmButtonColor: '#007bff',
+              allowOutsideClick: false
+            }).then(() => {
+              // Redirect về danh sách phiếu
+              window.location.href = '/kltn/view/page/manage/receipts/';
+            });
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Lỗi khi tạo phiếu',
+              html: `
+                <div style="text-align: left; padding: 10px;">
+                  <div style="background: #f8d7da; padding: 12px; border-radius: 6px; border: 1px solid #f5c6cb;">
+                    ${(data && data.message) ? data.message : 'Có lỗi xảy ra khi tạo phiếu nhập'}
+                  </div>
+                </div>
+              `,
+              confirmButtonText: 'Đóng',
+              confirmButtonColor: '#dc3545'
+            });
+          }
+        }).catch(err => {
+          try { Swal.close(); } catch(e){}
+          Swal.fire({ 
+            icon: 'error', 
+            title: 'Lỗi kết nối', 
+            html: `
+              <div style="text-align: left; padding: 10px;">
+                <div style="background: #f8d7da; padding: 12px; border-radius: 6px; border: 1px solid #f5c6cb;">
+                  ${err.message || 'Không thể kết nối tới server'}
+                </div>
+              </div>
+            `,
+            confirmButtonText: 'Đóng',
+            confirmButtonColor: '#dc3545'
+          });
+        });
     }
   </script>
 </body>

@@ -53,10 +53,10 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-
 
     <div class="filters">
       <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên vai trò...">
-      <select id="filter-role">
+      <!-- <select id="filter-role">
         <option value="">Lọc theo...</option>
         <option value="active">Tất cả</option>
-      </select>
+      </select> -->
       <a href="index.php?page=roles/createRoles" class="btn-create"><i class="fa-solid fa-plus"></i> Thêm vai trò</a>
     </div>
   </div>

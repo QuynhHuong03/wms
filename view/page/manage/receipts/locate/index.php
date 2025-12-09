@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // Receipt locate page: left shows receipt info, right shows warehouse locations
 // URL: receipts/locate/index.php?id=<transaction_id>
 
@@ -76,6 +76,7 @@ if (!empty($receipt['details'])) {
 	<meta charset="UTF-8">
 	<title>Xếp hàng cho phiếu <?= htmlspecialchars($receipt['transaction_id']) ?></title>
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 		<style>
 		:root {
 			--bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -375,10 +376,12 @@ if (!empty($receipt['details'])) {
 			background: white;
 			border: 1px solid var(--border);
 			border-radius: 16px;
-			padding: 24px 28px;
+			padding: 20px 24px;
 			min-width: 400px;
 			max-width: 560px;
 			width: 92%;
+			max-height: 85vh;
+			overflow-y: auto;
 			box-shadow: var(--shadow-lg);
 			animation: slideUp 0.3s ease;
 		}
@@ -722,19 +725,17 @@ if (!empty($receipt['details'])) {
 				const btn = ev.target.closest('.btn-recommend');
 				if (!btn) return;
 				
-				// Kiểm tra quyền: Chỉ quản lý mới được xếp hàng
-				if (!isManager) {
-					alert('⚠️ Chỉ quản lý mới được xếp hàng!\n\nNhân viên chỉ có thể xác nhận hoàn tất khi quản lý đã xếp hàng xong.');
-					return;
-				}
-				
-				// Kiểm tra quyền: Chỉ quản lý mới được xếp hàng
-				if (!isManager) {
-					alert('⚠️ Chỉ quản lý mới được xếp hàng!\n\nNhân viên chỉ có thể xác nhận hoàn tất khi quản lý đã xếp hàng xong.');
-					return;
-				}
-				
-				const productId = btn.getAttribute('data-product-id');
+			// Kiểm tra quyền: Chỉ quản lý mới được xếp hàng
+			if (!isManager) {
+				Swal.fire({
+					icon: 'warning',
+					title: 'Chỉ quản lý mới được xếp hàng!',
+					text: 'Nhân viên chỉ có thể xác nhận hoàn tất khi quản lý đã xếp hàng xong.',
+					confirmButtonText: 'OK',
+					confirmButtonColor: '#667eea'
+				});
+				return;
+			}				const productId = btn.getAttribute('data-product-id');
 				const quantity = parseInt(btn.getAttribute('data-quantity') || '1', 10);
 				const unit = btn.getAttribute('data-unit') || 'cái';
 				
@@ -1379,16 +1380,25 @@ if (!empty($receipt['details'])) {
 				const el = ev.target.closest('.bin');
 				if (!el) return;
 				
-				// Không cho xếp hàng nếu đã hoàn tất
-				const receiptStatus = <?= (int)$status ?>;
-				if (receiptStatus === 3) {
-					alert('Phiếu đã hoàn tất, không thể xếp hàng nữa');
-					return;
-				}
-				
-				// Kiểm tra quyền: Chỉ quản lý mới được xếp hàng
+			// Không cho xếp hàng nếu đã hoàn tất
+			const receiptStatus = <?= (int)$status ?>;
+			if (receiptStatus === 3) {
+				Swal.fire({
+					icon: 'warning',
+					title: 'Phiếu đã hoàn tất, không thể xếp hàng nữa',
+					confirmButtonText: 'OK',
+					confirmButtonColor: '#667eea'
+				});
+				return;
+			}				// Kiểm tra quyền: Chỉ quản lý mới được xếp hàng
 				if (!isManager) {
-					alert('⚠️ Chỉ quản lý mới được xếp hàng!\n\nNhân viên chỉ có thể xác nhận hoàn tất sau khi quản lý xếp hàng xong.');
+					Swal.fire({
+						icon: 'warning',
+						title: 'Chỉ quản lý mới được xếp hàng!',
+						text: 'Nhân viên chỉ có thể xác nhận hoàn tất sau khi quản lý xếp hàng xong.',
+						confirmButtonText: 'OK',
+						confirmButtonColor: '#667eea'
+					});
 					return;
 				}
 				
@@ -1601,17 +1611,25 @@ if (!empty($receipt['details'])) {
 								})();
 								// Reload warehouse layout to show updated capacity %
 								loadLocations('<?= htmlspecialchars($warehouseId) ?>');
-								alert('Đã lưu phân bổ vào Bin');
+								Swal.fire({ icon: 'success', title: 'Đã lưu phân bổ vào Bin', confirmButtonText: 'OK', confirmButtonColor: '#667eea' });
 							} else {
 								// qty == 0: chỉ cập nhật trạng thái bin, reload sơ đồ để thấy màu/số lượng mới
 								loadLocations('<?= htmlspecialchars($warehouseId) ?>');
-								alert('Đã cập nhật trạng thái Bin');
+								Swal.fire({ icon: 'success', title: 'Đã cập nhật trạng thái Bin', confirmButtonText: 'OK', confirmButtonColor: '#667eea' });
 							}
 							modalClose();
 						} else {
 							alert('Lỗi lưu: ' + (data.message || '')); 
 						}
-				} catch(err){ alert('Lỗi kết nối: ' + err.message); }
+				} catch(err){ 
+				Swal.fire({
+					icon: 'error',
+					title: 'Lỗi kết nối',
+					text: err.message,
+					confirmButtonText: 'OK',
+					confirmButtonColor: '#667eea'
+				});
+			}
 			});
 
 			// Close modal when clicking backdrop
@@ -1619,15 +1637,29 @@ if (!empty($receipt['details'])) {
 
 			// Complete button handler
 			document.getElementById('btnComplete')?.addEventListener('click', async () => {
-				if (!confirm('Xác nhận hoàn tất phiếu này?')) return;
+				const result = await Swal.fire({
+					title: 'Xác nhận hoàn tất phiếu này?',
+					icon: 'question',
+					showCancelButton: true,
+					confirmButtonText: 'OK',
+					cancelButtonText: 'Cancel',
+					confirmButtonColor: '#3085d6',
+					cancelButtonColor: '#aaa'
+				});
+				if (!result.isConfirmed) return;
 				try {
 					const res = await fetch('receipts/locate/process.php', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'complete_receipt', id:'<?= htmlspecialchars($receipt['transaction_id']) ?>' })});
 					const data = await res.json();
 					if (data && data.success) {
-						alert('Phiếu đã chuyển sang trạng thái Đã hoàn tất\n' + 
-						      'Đã lưu: ' + data.inventory_inserted + ' tồn kho, ' + 
-						      data.batch_locations_inserted + ' batch locations, ' + 
-						      data.movements_inserted + ' movements');
+						await Swal.fire({
+							icon: 'success',
+							title: 'Phiếu đã chuyển sang trạng thái Đã hoàn tất',
+							html: 'Đã lưu: ' + data.inventory_inserted + ' tồn kho, ' + 
+							      data.batch_locations_inserted + ' batch locations, ' + 
+							      data.movements_inserted + ' movements',
+							confirmButtonText: 'OK',
+							confirmButtonColor: '#667eea'
+						});
 						
 						// Reload sơ đồ kho để cập nhật % capacity và màu bin
 						await loadLocations('<?= htmlspecialchars($warehouseId) ?>');
@@ -1637,9 +1669,23 @@ if (!empty($receipt['details'])) {
 							location.reload();
 						}, 1000);
 					} else {
-						alert('Không thể hoàn tất: ' + (data.message||''));
+						Swal.fire({
+							icon: 'error',
+							title: 'Không thể hoàn tất',
+							text: data.message || '',
+							confirmButtonText: 'OK',
+							confirmButtonColor: '#667eea'
+						});
 					}
-				} catch(err) { alert('Lỗi kết nối: ' + err.message); }
+				} catch(err) { 
+					Swal.fire({
+						icon: 'error',
+						title: 'Lỗi kết nối',
+						text: err.message,
+						confirmButtonText: 'OK',
+						confirmButtonColor: '#667eea'
+					});
+				}
 			});
 
 			// Delete allocation handler
@@ -2074,9 +2120,9 @@ if (!empty($receipt['details'])) {
 	<!-- ML Recommendations Modal -->
 	<div id="mlModal" class="modal" aria-hidden="true">
 		<div class="backdrop"></div>
-		<div class="panel" style="max-width:700px">
-			<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-				<h3 style="margin:0;display:flex;align-items:center;gap:10px">
+		<div class="panel" style="max-width:900px;max-height:80vh;overflow-y:auto;">
+			<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;position:sticky;top:0;background:white;z-index:10;padding-bottom:8px;border-bottom:1px solid #e5e7eb">
+				<h3 style="margin:0;display:flex;align-items:center;gap:10px;font-size:18px">
 					<i class="fa fa-brain" style="color:#8b5cf6"></i>
 					<span>Gợi ý vị trí tối ưu</span>
 				</h3>
@@ -2084,7 +2130,7 @@ if (!empty($receipt['details'])) {
 					<i class="fa fa-times"></i>
 				</button>
 			</div>
-			<div id="mlContent" style="min-height:200px">
+			<div id="mlContent" style="min-height:150px;max-height:calc(80vh - 100px);overflow-y:auto">
 				<div style="text-align:center;padding:40px;color:#6b7280">
 					<i class="fa fa-spinner fa-spin" style="font-size:32px;color:#8b5cf6"></i>
 					<p style="margin-top:12px">Đang phân tích...</p>

@@ -359,7 +359,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv_inventory') {
 </head>
 <body>
   <div class="container">
-    <h2>Tồn kho (Inventory)</h2>
+    <h2>Thống kê tồn kho</h2>
     <div class="card">
       <div class="stats-grid">
         <div class="stat-item">

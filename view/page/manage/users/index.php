@@ -1,7 +1,9 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 include_once(__DIR__ . '/../../../../controller/cUsers.php');
+include_once(__DIR__ . '/../../../../controller/cWarehouse.php');
 $p = new CUsers();
+$cWarehouse = new CWarehouse();
 
 // Lấy danh sách người dùng
 if (isset($_POST['btnTK']) && !empty($_POST['txtTK'])) {
@@ -9,6 +11,9 @@ if (isset($_POST['btnTK']) && !empty($_POST['txtTK'])) {
 } else {
     $tblNV = $p->getAllUsers();
 }
+
+// Lấy danh sách kho
+$warehouses = $cWarehouse->getAllWarehouses();
 ?>
 
 <style>
@@ -360,6 +365,18 @@ body {
         <option value="manager">Quản lý</option>
         <option value="staff">Nhân viên</option>
       </select>
+      <select id="filter-warehouse">
+        <option value="">Lọc theo kho</option>
+        <?php 
+if ($warehouses && is_array($warehouses)) {
+  foreach ($warehouses as $w) {
+    $warehouseId = $w['warehouse_id'] ?? '';
+    $warehouseName = $w['warehouse_name'] ?? '';
+    echo "<option value='{$warehouseId}'>{$warehouseName}</option>";
+  }
+}
+        ?>
+      </select>
       <a href="index.php?page=users/createUsers" class="btn-create"><i class="fa-solid fa-plus"></i> Thêm người dùng</a>
     </div>
   </div>
@@ -389,11 +406,23 @@ if ($tblNV && is_array($tblNV)) {
     $roleName = trim(mb_strtolower($roleNameRaw, 'UTF-8'));
 
     $roleClass = 'role-staff';
-    if ($roleName === 'admin') $roleClass = 'role-admin';
-    elseif (in_array($roleName, ['quản lý','quan ly','manager'])) $roleClass = 'role-manager';
+    $roleStandard = 'staff'; // Giá trị chuẩn hóa cho filter
+    
+    if ($roleName === 'admin') {
+      $roleClass = 'role-admin';
+      $roleStandard = 'admin';
+    } elseif (strpos($roleName, 'ql_') === 0 || strpos($roleName, 'quản lý') !== false || strpos($roleName, 'quan ly') !== false || $roleName === 'manager') {
+      $roleClass = 'role-manager';
+      $roleStandard = 'manager';
+    } elseif (strpos($roleName, 'nv_') === 0 || strpos($roleName, 'nhân viên') !== false || strpos($roleName, 'nhan vien') !== false || $roleName === 'staff') {
+      $roleClass = 'role-staff';
+      $roleStandard = 'staff';
+    }
 
+    $warehouseId = $r['warehouse_id'] ?? '';
+    
     echo "
-      <tr data-role='$roleName'>
+      <tr data-role='$roleStandard' data-warehouse='$warehouseId'>
         <td>{$r['user_id']}</td>
         <td>{$r['name']}</td>
         <td>{$r['email']}</td>
@@ -401,7 +430,7 @@ if ($tblNV && is_array($tblNV)) {
         <td>{$r['phone']}</td>
         <td><span class='$roleClass'>{$roleNameRaw}</span></td>
         <td><span class='status $statusClass'>$statusText</span></td>
-        <td>" . ($r['warehouse_id'] ?? '') . "</td>
+        <td>$warehouseId</td>
         <td>
           <a href='index.php?page=users/updateUsers&id={$r['user_id']}' class='btn btn-edit'>
             <i class='fa-solid fa-pen'></i>
@@ -459,25 +488,31 @@ if ($tblNV && is_array($tblNV)) {
         window.history.replaceState({}, '', newUrl);
     }
 
-  // --- Bộ lọc vai trò và tìm kiếm ---
+  // --- Bộ lọc vai trò, kho và tìm kiếm ---
   const roleFilter = document.getElementById('filter-role');
+  const warehouseFilter = document.getElementById('filter-warehouse');
   const searchInput = document.getElementById('searchInput');
   const rows = document.querySelectorAll('#user-table tbody tr');
 
   function applyFilters() {
     const roleValue = roleFilter.value.toLowerCase();
+    const warehouseValue = warehouseFilter.value;
     const searchValue = searchInput.value.toLowerCase();
 
     rows.forEach(row => {
       const rowRole = row.getAttribute('data-role').toLowerCase();
+      const rowWarehouse = row.getAttribute('data-warehouse');
       const rowName = row.children[1].textContent.toLowerCase();
-      const matchRole = !roleValue || rowRole.includes(roleValue);
+      
+      const matchRole = !roleValue || rowRole === roleValue;
+      const matchWarehouse = !warehouseValue || rowWarehouse === warehouseValue;
       const matchName = !searchValue || rowName.includes(searchValue);
-      row.style.display = (matchRole && matchName) ? '' : 'none';
+      row.style.display = (matchRole && matchWarehouse && matchName) ? '' : 'none';
     });
   }
 
   roleFilter.addEventListener('change', applyFilters);
+  warehouseFilter.addEventListener('change', applyFilters);
   searchInput.addEventListener('input', applyFilters);
 
   // --- Modal Xóa ---

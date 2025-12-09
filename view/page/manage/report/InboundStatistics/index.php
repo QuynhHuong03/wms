@@ -598,6 +598,33 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv_receipts') {
               elseif (isset($r['supplier_name'])) $supplier_name = $r['supplier_name'];
               elseif (isset($r['vendor'])) $supplier_name = $r['vendor'];
               $items = normalize_items($r['items'] ?? ($r['details'] ?? []));
+              
+              // Nếu không có thông tin nhà cung cấp trên phiếu, lấy từ sản phẩm
+              if ((empty($supplier_name) || $supplier_name === 'Không rõ') && !empty($items)) {
+                foreach ($items as $it) {
+                  $pid = $it['product_id'] ?? $it['productId'] ?? ($it['_id'] ?? null);
+                  if (!$pid) continue;
+                  // Chuẩn hóa pid thành string
+                  if (is_object($pid)) {
+                    if (method_exists($pid, '__toString')) $pid = (string)$pid;
+                    elseif (isset($pid->{'$oid'})) $pid = (string)$pid->{'$oid'};
+                    else $pid = json_encode($pid);
+                  } elseif (is_array($pid)) {
+                    if (isset($pid['$oid'])) $pid = $pid['$oid']; else $pid = json_encode($pid);
+                  }
+                  if (!$pid) continue;
+                  try {
+                    $prodInfo = $mProduct->getProductById($pid);
+                    if ($prodInfo && !empty($prodInfo['supplier'])) {
+                      $supplier_name = $prodInfo['supplier'];
+                      break; // Tìm thấy thì dừng
+                    }
+                  } catch (Throwable $e) {
+                    // Bỏ qua lỗi tra cứu
+                  }
+                }
+              }
+              
               $unique = [];
               foreach ($items as $it) {
                 $pidc = (string)($it['product_id'] ?? $it['productId'] ?? ($it['_id'] ?? ''));

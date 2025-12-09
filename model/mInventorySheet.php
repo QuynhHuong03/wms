@@ -132,8 +132,8 @@ class MInventorySheet {
             $query['warehouse_id'] = $filters['warehouse_id'];
         }
 
-        if (!empty($filters['status'])) {
-            $query['status'] = $filters['status'];
+        if (!empty($filters['status']) && $filters['status'] !== '') {
+            $query['status'] = (int)$filters['status'];
         }
 
         if (!empty($filters['sheet_code'])) {

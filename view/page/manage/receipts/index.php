@@ -86,7 +86,13 @@
       <label>Loại phiếu nhập</label>
       <select name="type" id="type" required onchange="toggleFields()" style="font-size:15px;font-weight:600;">
         <option value="">-- Chọn loại phiếu --</option>
-        <option value="purchase">Nhập từ nhà cung cấp (Bên ngoài)</option>
+        <?php 
+        // Chỉ cho phép nhập từ nhà cung cấp nếu là kho tổng
+        $isMainWarehouse = (strpos($warehouse_id, 'TONG') !== false || $warehouse_id === 'WH01');
+        if ($isMainWarehouse): 
+        ?>
+          <option value="purchase">Nhập từ nhà cung cấp (Bên ngoài)</option>
+        <?php endif; ?>
         <option value="transfer">Nhập điều chuyển nội bộ (Từ kho khác)</option>
       </select>
       <div id="type-description" style="margin-top:8px;padding:10px;border-radius:6px;font-size:13px;display:none;"></div>
@@ -595,6 +601,8 @@
       const currentWarehouseId = "<?= $warehouse_id ?>";
       const exportSelect = document.getElementById("export_id");
       
+      console.log("🔍 loadExports - Source:", sourceWarehouseId, "Destination:", currentWarehouseId);
+      
       if (!sourceWarehouseId) {
         document.getElementById("export-box").style.display = "none";
         exportSelect.removeAttribute("required");
@@ -605,9 +613,13 @@
       document.getElementById("export-box").style.display = "block";
       exportSelect.setAttribute("required", "required");
       
-      fetch(`receipts/process.php?action=get_exports&source_warehouse=${sourceWarehouseId}&destination_warehouse=${currentWarehouseId}`)
+      const url = `receipts/process.php?action=get_exports&source_warehouse=${sourceWarehouseId}&destination_warehouse=${currentWarehouseId}`;
+      console.log("📡 Fetching exports from:", url);
+      
+      fetch(url)
         .then(res => res.json())
         .then(data => {
+          console.log("📦 Exports response:", data);
           const select = document.getElementById("export_id");
           select.innerHTML = '<option value="">-- Chọn phiếu xuất --</option>';
           

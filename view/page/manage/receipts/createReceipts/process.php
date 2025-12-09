@@ -323,7 +323,13 @@ try {
         // Nếu có lỗi validation, trả về thông báo
         if (!empty($errors)) {
             $_SESSION['flash_receipt_error'] = implode(', ', $errors);
-            echo "<script>alert('" . addslashes(implode('\\n', $errors)) . "'); window.history.back();</script>";
+            $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+            if ($isAjax) {
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode(["success" => false, "message" => implode('; ', $errors)]);
+            } else {
+                echo "<script>alert('" . addslashes(implode('\\n', $errors)) . "'); window.history.back();</script>";
+            }
             exit;
         }
         
@@ -384,7 +390,13 @@ try {
                                     $lookupProductName = $found['product_name'] ?? ($found['name'] ?? '');
                                 } else {
                                     $_SESSION['flash_receipt_error'] = "Không tìm thấy sản phẩm với SKU: " . ($p['sku'] ?? '');
-                                    echo "<script>alert('Không tìm thấy sản phẩm với SKU: " . addslashes($p['sku'] ?? '') . "'); window.history.back();</script>";
+                                    $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+                                    if ($isAjax) {
+                                        header('Content-Type: application/json; charset=UTF-8');
+                                        echo json_encode(["success" => false, "message" => "Không tìm thấy sản phẩm với SKU: " . ($p['sku'] ?? '')]);
+                                    } else {
+                                        echo "<script>alert('Không tìm thấy sản phẩm với SKU: " . addslashes($p['sku'] ?? '') . "'); window.history.back();</script>";
+                                    }
                                     exit;
                                 }
                             }
@@ -399,14 +411,26 @@ try {
                 if ($qty <= 0) {
                     $productName = $p['product_name'] ?? $lookupProductName ?? 'Unknown';
                     $_SESSION['flash_receipt_error'] = "Số lượng của sản phẩm '$productName' phải lớn hơn 0";
-                    echo "<script>alert('Số lượng của sản phẩm \"$productName\" phải lớn hơn 0'); window.history.back();</script>";
+                    $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+                    if ($isAjax) {
+                        header('Content-Type: application/json; charset=UTF-8');
+                        echo json_encode(["success" => false, "message" => "Số lượng của sản phẩm '$productName' phải lớn hơn 0"]);
+                    } else {
+                        echo "<script>alert('Số lượng của sản phẩm \"$productName\" phải lớn hơn 0'); window.history.back();</script>";
+                    }
                     exit;
                 }
 
                 if ($price <= 0) {
                     $productName = $p['product_name'] ?? $lookupProductName ?? 'Unknown';
                     $_SESSION['flash_receipt_error'] = "Giá nhập của sản phẩm '$productName' phải lớn hơn 0";
-                    echo "<script>alert('Giá nhập của sản phẩm \"$productName\" phải lớn hơn 0'); window.history.back();</script>";
+                    $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+                    if ($isAjax) {
+                        header('Content-Type: application/json; charset=UTF-8');
+                        echo json_encode(["success" => false, "message" => "Giá nhập của sản phẩm '$productName' phải lớn hơn 0"]);
+                    } else {
+                        echo "<script>alert('Giá nhập của sản phẩm \"$productName\" phải lớn hơn 0'); window.history.back();</script>";
+                    }
                     exit;
                 }
 
@@ -579,12 +603,24 @@ try {
             // Phiếu xuất sẽ được cập nhật khi HOÀN TẤT xếp kho (qua locate/process.php complete_receipt)
             
             $_SESSION['flash_receipt'] = 'Tạo phiếu thành công.';
-            echo "<script>alert('Tạo phiếu thành công!'); window.location.href = '../index.php?page=receipts';</script>";
+            $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+            if ($isAjax) {
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode(["success" => true, "message" => 'Tạo phiếu thành công.', "receipt_id" => $receiptId]);
+            } else {
+                echo "<script>alert('Tạo phiếu thành công!'); window.location.href = '../index.php?page=receipts';</script>";
+            }
             exit;
         } else {
             $msg = is_array($result) ? ($result[1] ?? 'Lưu phiếu thất bại') : 'Lưu phiếu thất bại';
             $_SESSION['flash_receipt_error'] = $msg;
-            echo "<script>alert('" . addslashes($msg) . "'); window.location.href = '../../index.php';</script>";
+            $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+            if ($isAjax) {
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode(["success" => false, "message" => $msg]);
+            } else {
+                echo "<script>alert('" . addslashes($msg) . "'); window.location.href = '../../index.php';</script>";
+            }
             exit;
         }
     }

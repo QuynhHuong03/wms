@@ -114,25 +114,13 @@ function __resolve_sku_by_product_id($productId) {
     .container {
       max-width: 1400px;
       margin: 0 auto;
-      padding: 24px;
+      padding: 20px;
     }
-
-    /* header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 25px;
-      padding: 24px 32px;
-      background: linear-gradient(90deg, var(--bg-grad-start), var(--bg-grad-end));
-      box-shadow: var(--shadow-lg);
-      animation: slideDown 0.5s ease;
-      color: #fff;
-    } */
 
     header {
       background: var(--bg-secondary);
       border-radius: 16px;
-      padding: 24px 32px;
+      padding: 10px 32px;
       margin-bottom: 24px;
       box-shadow: var(--shadow-md);
     }
@@ -708,7 +696,7 @@ function __resolve_sku_by_product_id($productId) {
         <div class="kpi-desc">Yêu cầu chờ</div>
       </div>
       <div class="card" style="border-left: 4px solid var(--danger);">
-        <div class="kpi-title">URGENT</div>
+        <div class="kpi-title">Khẩn cấp</div>
         <div class="kpi-value" style="color: var(--danger);"><?= number_format($data['urgentRequests'] ?? 0) ?></div>
         <div class="kpi-desc">Cần xử lý ngay!</div>
       </div>

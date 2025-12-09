@@ -596,7 +596,7 @@ function buildUrl($overrides = []) {
                     $itemsCount = isset($item['items']) && is_array($item['items']) ? count($item['items']) : 0;
             ?>
                     <tr>
-                        <td><strong><?= h($sheetCode) ?></strong><br><small><?= $itemsCount ?> mặt hàng</small></td>
+                        <td><?= h($sheetCode) ?></td>
                         <td><?= h($createdAt) ?></td>
                         <td><?= h($createdBy) ?></td>
                         <td><?= h($countDate) ?></td>

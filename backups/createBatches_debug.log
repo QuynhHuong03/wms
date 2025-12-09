@@ -256,3 +256,244 @@ Receipt details count: 1
 Updated receipt details with persisted product ids for receipt IR0012
 Using batches from receipt details for product 69034550de544e1ede0649f7: 1 batches
 Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T13:58:01+01:00 receipt=IR0021
+Receipt details count: 1
+Updated receipt details with persisted product ids for receipt IR0021
+No batches found for product 68e2122fcb36532a2f0fbefd in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T14:20:46+01:00 receipt=IR0020
+Receipt details count: 2
+Attempting addProduct with payload: {"sku":"","product_name":"Acer Nitro V","barcode":"BAR10031","purchase_price":0,"baseUnit":"cái","conversionUnits":[{"unit":"thùng","factor":5,"dimensions":{"width":20,"depth":30,"height":25},"weight":10,"volume":15000}],"package_dimensions":{"width":20,"depth":30,"height":5},"package_weight":2,"volume_per_unit":3000,"model":"SA-A266BZI","description":"Thêm mới","min_stock":10,"status":1,"stackable":true,"max_stack_height":30,"image":"","category":{"id":"DM001","name":"Laptop"},"supplier":{"id":"4","name":"HP"}}
+addProduct returned: "6938222e3767cc9cf905dd5d"
+Created product for temp item: sku= barcode=BAR10031 id=6938222e3767cc9cf905dd5d
+Updated receipt details with persisted product ids for receipt IR0020
+No batches found for product 69381b393767cc9cf905dd5a in receipt or export
+No batches found for product 6938222e3767cc9cf905dd5d in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T14:30:37+01:00 receipt=IR0020
+Receipt details count: 2
+Updated receipt details with persisted product ids for receipt IR0020
+No batches found for product 69381b393767cc9cf905dd5a in receipt or export
+No batches found for product 6938222e3767cc9cf905dd5d in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T14:34:02+01:00 receipt=IR0020
+Receipt details count: 2
+Updated receipt details with persisted product ids for receipt IR0020
+No batches found for product 69381b393767cc9cf905dd5a in receipt or export
+No batches found for product 6938222e3767cc9cf905dd5d in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T14:34:27+01:00 receipt=IR0020
+Receipt details count: 2
+Updated receipt details with persisted product ids for receipt IR0020
+No batches found for product 69381b393767cc9cf905dd5a in receipt or export
+No batches found for product 6938222e3767cc9cf905dd5d in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T14:34:39+01:00 receipt=IR0020
+Receipt details count: 2
+Updated receipt details with persisted product ids for receipt IR0020
+No batches found for product 69381b393767cc9cf905dd5a in receipt or export
+No batches found for product 6938222e3767cc9cf905dd5d in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T14:34:48+01:00 receipt=IR0020
+Receipt details count: 2
+Updated receipt details with persisted product ids for receipt IR0020
+No batches found for product 69381b393767cc9cf905dd5a in receipt or export
+No batches found for product 6938222e3767cc9cf905dd5d in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T14:34:55+01:00 receipt=IR0020
+Receipt details count: 2
+Updated receipt details with persisted product ids for receipt IR0020
+No batches found for product 69381b393767cc9cf905dd5a in receipt or export
+No batches found for product 6938222e3767cc9cf905dd5d in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T14:35:03+01:00 receipt=IR0020
+Receipt details count: 2
+Updated receipt details with persisted product ids for receipt IR0020
+No batches found for product 69381b393767cc9cf905dd5a in receipt or export
+No batches found for product 6938222e3767cc9cf905dd5d in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T14:35:10+01:00 receipt=IR0020
+Receipt details count: 2
+Updated receipt details with persisted product ids for receipt IR0020
+No batches found for product 69381b393767cc9cf905dd5a in receipt or export
+No batches found for product 6938222e3767cc9cf905dd5d in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T14:35:16+01:00 receipt=IR0020
+Receipt details count: 2
+Updated receipt details with persisted product ids for receipt IR0020
+No batches found for product 69381b393767cc9cf905dd5a in receipt or export
+No batches found for product 6938222e3767cc9cf905dd5d in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T14:35:23+01:00 receipt=IR0020
+Receipt details count: 2
+Updated receipt details with persisted product ids for receipt IR0020
+No batches found for product 69381b393767cc9cf905dd5a in receipt or export
+No batches found for product 6938222e3767cc9cf905dd5d in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T14:35:30+01:00 receipt=IR0020
+Receipt details count: 2
+Updated receipt details with persisted product ids for receipt IR0020
+No batches found for product 69381b393767cc9cf905dd5a in receipt or export
+No batches found for product 6938222e3767cc9cf905dd5d in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T15:12:08+01:00 receipt=IR0022
+Loaded batch info from export for 2 products
+Receipt details count: 2
+Updated receipt details with persisted product ids for receipt IR0022
+Using batches from receipt details for product 6920d8e439e3eda99908f192: 1 batches
+Using batches from receipt details for product 6938222e3767cc9cf905dd5d: 1 batches
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T15:18:12+01:00 receipt=IR0022
+Loaded batch info from export for 2 products
+Receipt details count: 2
+Updated receipt details with persisted product ids for receipt IR0022
+Using batches from receipt details for product 6920d8e439e3eda99908f192: 1 batches
+Using batches from receipt details for product 6938222e3767cc9cf905dd5d: 1 batches
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T15:18:20+01:00 receipt=IR0022
+Loaded batch info from export for 2 products
+Receipt details count: 2
+Updated receipt details with persisted product ids for receipt IR0022
+Using batches from receipt details for product 6920d8e439e3eda99908f192: 1 batches
+Using batches from receipt details for product 6938222e3767cc9cf905dd5d: 1 batches
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T15:18:30+01:00 receipt=IR0022
+Loaded batch info from export for 2 products
+Receipt details count: 2
+Updated receipt details with persisted product ids for receipt IR0022
+Using batches from receipt details for product 6920d8e439e3eda99908f192: 1 batches
+Using batches from receipt details for product 6938222e3767cc9cf905dd5d: 1 batches
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T15:19:08+01:00 receipt=IR0022
+Loaded batch info from export for 2 products
+Receipt details count: 2
+Updated receipt details with persisted product ids for receipt IR0022
+Using batches from receipt details for product 6920d8e439e3eda99908f192: 1 batches
+Using batches from receipt details for product 6938222e3767cc9cf905dd5d: 1 batches
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T19:04:41+01:00 receipt=IR0023
+Receipt details count: 1
+Updated receipt details with persisted product ids for receipt IR0023
+No batches found for product 6920d8e439e3eda99908f192 in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T19:10:27+01:00 receipt=IR0024
+Receipt details count: 1
+Updated receipt details with persisted product ids for receipt IR0024
+No batches found for product 68dd78e5dfe97d5c520ac055 in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T19:13:34+01:00 receipt=IR0018
+Receipt details count: 1
+Updated receipt details with persisted product ids for receipt IR0018
+No batches found for product 68e206b1cb36532a2f0fbefc in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T19:15:30+01:00 receipt=IR0025
+Receipt details count: 1
+Updated receipt details with persisted product ids for receipt IR0025
+No batches found for product 68ffe2030000000000000004 in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T19:27:23+01:00 receipt=IR0026
+Receipt details count: 1
+Updated receipt details with persisted product ids for receipt IR0026
+No batches found for product 691df11bc6f7cbe4b60b733a in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T19:29:44+01:00 receipt=IR0002
+Receipt details count: 1
+Updated receipt details with persisted product ids for receipt IR0002
+No batches found for product 68f112a3836555952e05dce4 in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T19:29:58+01:00 receipt=IR0002
+Receipt details count: 1
+Updated receipt details with persisted product ids for receipt IR0002
+No batches found for product 68f112a3836555952e05dce4 in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T19:40:32+01:00 receipt=IR0018
+Receipt details count: 1
+Updated receipt details with persisted product ids for receipt IR0018
+No batches found for product 68e206b1cb36532a2f0fbefc in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T19:57:22+01:00 receipt=IR0023
+Receipt details count: 1
+Updated receipt details with persisted product ids for receipt IR0023
+No batches found for product 6920d8e439e3eda99908f192 in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T20:00:08+01:00 receipt=IR0021
+Receipt details count: 1
+Updated receipt details with persisted product ids for receipt IR0021
+No batches found for product 68e2122fcb36532a2f0fbefd in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T20:28:39+01:00 receipt=IR0027
+Receipt details count: 1
+Updated receipt details with persisted product ids for receipt IR0027
+No batches found for product 68ffe2030000000000000005 in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T20:31:38+01:00 receipt=IR0028
+Receipt details count: 1
+Updated receipt details with persisted product ids for receipt IR0028
+No batches found for product 68e2122fcb36532a2f0fbefd in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T20:33:52+01:00 receipt=IR0029
+Receipt details count: 1
+Updated receipt details with persisted product ids for receipt IR0029
+No batches found for product 68ffe2030000000000000006 in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T20:34:03+01:00 receipt=IR0030
+Receipt details count: 1
+Updated receipt details with persisted product ids for receipt IR0030
+No batches found for product 68ffe2030000000000000007 in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T20:35:59+01:00 receipt=IR0024
+Receipt details count: 1
+Updated receipt details with persisted product ids for receipt IR0024
+No batches found for product 68dd78e5dfe97d5c520ac055 in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T20:38:32+01:00 receipt=IR0031
+Receipt details count: 1
+Updated receipt details with persisted product ids for receipt IR0031
+No batches found for product 68ffe2030000000000000007 in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T20:38:51+01:00 receipt=IR0025
+Receipt details count: 1
+Updated receipt details with persisted product ids for receipt IR0025
+No batches found for product 68ffe2030000000000000004 in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-09T23:49:05+01:00 receipt=IR0017
+Receipt details count: 1
+Updated receipt details with persisted product ids for receipt IR0017
+No batches found for product 68dd78e5dfe97d5c520ac055 in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.

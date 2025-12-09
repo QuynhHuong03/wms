@@ -44,14 +44,27 @@ try {
             
             // Lấy danh sách phiếu xuất có status=1 (Đã xuất kho) từ kho nguồn đến kho hiện tại
             $filter = [
-                'transaction_type' => 'export', // Dùng transaction_type thay vì type
-                'status' => 1, // Chỉ lấy phiếu đã xuất kho
-                'inventory_deducted' => true,
+                'transaction_type' => 'export',
                 'warehouse_id' => $sourceWarehouse,
-                'destination_warehouse_id' => $destinationWarehouse
+                'destination_warehouse_id' => $destinationWarehouse,
+                '$or' => [
+                    ['status' => 1],
+                    ['status' => '1']
+                ]
             ];
             
             error_log("Query filter: " . json_encode($filter));
+            error_log("Source: $sourceWarehouse, Dest: $destinationWarehouse");
+            
+            // Debug: Lấy tất cả phiếu xuất để kiểm tra
+            $allExports = $db->transactions->find(['transaction_type' => 'export'], ['limit' => 10])->toArray();
+            error_log("Total exports in DB: " . count($allExports));
+            foreach ($allExports as $exp) {
+                error_log("Export: " . ($exp['transaction_id'] ?? 'NO_ID') . 
+                         " | warehouse_id: '" . ($exp['warehouse_id'] ?? 'NULL') . 
+                         "' | destination: '" . ($exp['destination_warehouse_id'] ?? 'NULL') . 
+                         "' | status: " . ($exp['status'] ?? 'NULL'));
+            }
             
             $exports = $db->transactions->find($filter, [
                 'sort' => ['created_at' => -1],

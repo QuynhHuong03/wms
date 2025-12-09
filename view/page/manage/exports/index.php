@@ -525,8 +525,16 @@ if ($con) {
   }
 
   function printExport(exportId) {
-    // Có thể tạo trang in riêng hoặc mở cửa sổ mới
-    window.open('index.php?page=exports/print&id=' + exportId, '_blank');
+    // Mở trang chi tiết phiếu xuất trong cửa sổ mới để in
+    const printWindow = window.open('index.php?page=exports/detail&id=' + exportId, '_blank');
+    // Tự động in khi trang đã tải xong
+    if (printWindow) {
+      printWindow.onload = function() {
+        setTimeout(function() {
+          printWindow.print();
+        }, 500);
+      };
+    }
   }
   
   let currentExportId = null;

@@ -1,13 +1,16 @@
 <?php
 include_once(__DIR__ . "/../../../../controller/cProduct.php");
 include_once(__DIR__ . "/../../../../controller/cSupplier.php");
+include_once(__DIR__ . "/../../../../controller/cCategories.php");
 require_once(__DIR__ . '/../../../../vendor/picqer/php-barcode-generator/src/BarcodeGeneratorPNG.php');
 
 $cProduct = new CProduct();
 $cSupplier = new CSupplier();
+$cCategories = new CCategories();
 
 $products = $cProduct->getAllProducts();
 $suppliers = $cSupplier->getAllSuppliers();
+$categories = $cCategories->getAllCategories();
 
 $barcodeGenerator = new Picqer\Barcode\BarcodeGeneratorPNG();
 ?>
@@ -68,7 +71,7 @@ body {
 
 .filters input,
 .filters select {
-    padding: 10px 12px;
+    padding: 10px 20px;
     border-radius: 8px;
     border: 1px solid #d1d5db;
     font-size: 0.95rem;
@@ -103,10 +106,14 @@ body {
 
 /* Action buttons container */
 .category-list-container td:last-child {
-  display: flex;
-  gap: 6px;
-  justify-content: center;
-  align-items: center;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.category-list-container td:last-child .btn {
+  display: inline-flex;
+  margin: 0 3px;
+  vertical-align: middle;
 }
 
 /* Smaller action icons inside tables */
@@ -169,6 +176,15 @@ body {
         <option value="">Lọc theo trạng thái</option>
         <option value="1">Có sẵn</option>
         <option value="0">Hết hàng</option>
+      </select>
+
+      <select id="filter-category">
+        <option value="">Lọc theo loại sản phẩm</option>
+        <?php foreach ($categories as $c): ?>
+          <option value="<?= htmlspecialchars($c['category_name']) ?>">
+            <?= htmlspecialchars($c['category_name']) ?>
+          </option>
+        <?php endforeach; ?>
       </select>
 
       <select id="filter-supplier">
@@ -342,8 +358,9 @@ function formatCurrency($amount) {
 
           $dataSupplier = htmlspecialchars($supplier_id, ENT_QUOTES);
           $dataSupplierName = htmlspecialchars($supplier, ENT_QUOTES);
+          $dataCategory = htmlspecialchars($type, ENT_QUOTES);
           echo "
-            <tr data-status='{$status}' data-supplier='{$dataSupplier}' data-supplier-name='{$dataSupplierName}'>
+            <tr data-status='{$status}' data-supplier='{$dataSupplier}' data-supplier-name='{$dataSupplierName}' data-category='{$dataCategory}'>
               <td>{$counter}</td>
               <td>{$imageTag}</td>
               <td>{$name}</td>
@@ -477,6 +494,7 @@ function formatCurrency($amount) {
 <script>
   const statusFilter = document.getElementById('filter-status');
   const searchInput = document.getElementById('searchInput');
+  const categoryFilter = document.getElementById('filter-category');
   const supplierFilter = document.getElementById('filter-supplier');
   const rows = document.querySelectorAll('#category-table tbody tr');
   const paginationContainer = document.getElementById('pagination');
@@ -488,22 +506,25 @@ function formatCurrency($amount) {
 
   function applyFilters() {
     const statusValue = (statusFilter.value || '').toString().trim();
+    const categoryValue = (categoryFilter.value || '').toString().trim();
     const supplierValue = (supplierFilter.value || '').toString().trim();
     const supplierText = (supplierFilter.options[supplierFilter.selectedIndex] || {}).text ? supplierFilter.options[supplierFilter.selectedIndex].text.toString().trim() : '';
     const searchValue = searchInput.value.toLowerCase();
     // mark rows with data-filtered instead of directly hiding; pagination will handle display
     rowsArray.forEach(row => {
       const rowStatus = (row.dataset.status || '').toString().trim();
+      const rowCategory = (row.dataset.category || '').toString().trim();
       const rowSupplier = (row.dataset.supplier || '').toString().trim();
       const rowSupplierName = (row.dataset.supplierName || '').toString().trim();
       const rowName = row.children[2].textContent.toLowerCase();
       const rowSKU = row.children[3].textContent.toLowerCase();
 
       const matchStatus = !statusValue || rowStatus === statusValue;
+      const matchCategory = !categoryValue || rowCategory === categoryValue;
       const matchSupplier = !supplierValue || rowSupplier === supplierValue || rowSupplierName === supplierValue || rowSupplier === supplierText || rowSupplierName === supplierText;
       const matchSearch = !searchValue || rowName.includes(searchValue) || rowSKU.includes(searchValue);
 
-      row.dataset.filtered = (matchStatus && matchSupplier && matchSearch) ? '1' : '0';
+      row.dataset.filtered = (matchStatus && matchCategory && matchSupplier && matchSearch) ? '1' : '0';
     });
 
     // reset to first page whenever filters change
@@ -513,6 +534,7 @@ function formatCurrency($amount) {
 
   statusFilter.addEventListener('change', applyFilters);
   searchInput.addEventListener('input', applyFilters);
+  categoryFilter.addEventListener('change', applyFilters);
   supplierFilter.addEventListener('change', applyFilters);
 
   // --- Pagination functions ---
