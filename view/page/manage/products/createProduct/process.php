@@ -157,7 +157,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnAdd"])) {
     // --- Thêm vào DB ---
     $result = $cProduct->addProduct($productData);
     if ($result) {
-        echo "<script>alert('✅ Thêm sản phẩm thành công!'); window.location.href='../../index.php?page=products';</script>";
+        // Try to fetch the inserted product by SKU to return its full details to parent window
+        $created = $cProduct->getProductBySKU($sku);
+        $jsProduct = json_encode($created, JSON_UNESCAPED_UNICODE);
+        echo "<script>
+            try {
+                var prod = $jsProduct;
+                // Notify parent window (the receipts modal) about the new product
+                if (window.parent && window.parent !== window) {
+                    // Post message only to same-origin parent
+                    try { window.parent.postMessage({type: 'wms:new_product_created', product: prod}, window.location.origin); } catch(e) { window.parent.postMessage({type: 'wms:new_product_created', product: prod}, '*'); }
+                }
+            } catch(e) {}
+            // Redirect with success message
+            window.location.href='../../index.php?page=products&msg=success';
+        </script>";
     } else {
         echo "<script>alert('❌ Thêm sản phẩm thất bại!'); history.back();</script>";
     }

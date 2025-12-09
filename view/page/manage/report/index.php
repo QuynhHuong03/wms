@@ -10,7 +10,18 @@ $roleId = isset($user['role_id']) ? intval($user['role_id']) : null;
 $warehouseId = isset($user['warehouse_id']) ? $user['warehouse_id'] : null;
 
 $cDashboard = new CDashboard();
-$data = $cDashboard->getDashboardData($roleId, $warehouseId);
+// Determine role-based warehouse visibility:
+$isGlobalViewer = in_array($roleId, [1,2]); // Admin (1) and Warehouse Manager (2) can view all
+
+// Decide which warehouse the dashboard should show: prefer explicit GET 'warehouse' when allowed
+$requestedWarehouse = isset($_GET['warehouse']) ? trim($_GET['warehouse']) : '';
+if (!$isGlobalViewer) {
+  // Branch staff can only view their own warehouse
+  $requestedWarehouse = $warehouseId;
+}
+
+// Load dashboard data with the effective warehouse filter (empty = all warehouses)
+$data = $cDashboard->getDashboardData($roleId, $requestedWarehouse ?: null);
 // Build warehouse options used by selects.
 // If user is Admin (roleId == 1) prefer the already computed summary (which may include per-warehouse totals).
 // For Managers/Staff prefer the full raw list so they can select other branches.
@@ -49,10 +60,27 @@ function __load_raw_warehouses_options() {
   return $opts;
 }
 
-if ($roleId == 1 && !empty($data['warehousesSummary']) && is_array($data['warehousesSummary'])) {
-  $warehouseOptions = $data['warehousesSummary'];
+// Build warehouse options according to role
+if ($isGlobalViewer) {
+  // Admin/Manager: show all warehouses (prefer precomputed summary if available)
+  if (!empty($data['warehousesSummary']) && is_array($data['warehousesSummary'])) {
+    $warehouseOptions = $data['warehousesSummary'];
+  } else {
+    $warehouseOptions = __load_raw_warehouses_options();
+  }
 } else {
-  $warehouseOptions = __load_raw_warehouses_options();
+  // Branch staff: only show their own warehouse as single option
+  $warehouseOptions = [];
+  if ($warehouseId) {
+    // Try to find the human-readable name from raw list
+    $raw = __load_raw_warehouses_options();
+    $found = null;
+    foreach ($raw as $w) {
+      if (($w['warehouse_id'] ?? '') === $warehouseId) { $found = $w; break; }
+    }
+    if ($found) $warehouseOptions[] = $found;
+    else $warehouseOptions[] = ['warehouse_id' => $warehouseId, 'name' => $warehouseId];
+  }
 }
 ?>
 
@@ -527,7 +555,7 @@ if ($roleId == 1 && !empty($data['warehousesSummary']) && is_array($data['wareho
                 <option value="year" <?= $inout_period === 'year' ? 'selected' : '' ?>>Năm</option>
               </select>
               <select id="inout_warehouse" onchange="onChartFilterChange('inout')" style="padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text)">
-                <option value="">Tất cả kho</option>
+                <?php if ($isGlobalViewer): ?><option value="">Tất cả kho</option><?php endif; ?>
                 <?php foreach ($warehouseOptions as $wsOpt): ?>
                   <option value="<?= htmlspecialchars($wsOpt['warehouse_id']) ?>" <?= $inout_wh == $wsOpt['warehouse_id'] ? 'selected' : '' ?>><?= htmlspecialchars($wsOpt['name']) ?></option>
                 <?php endforeach; ?>
@@ -544,7 +572,7 @@ if ($roleId == 1 && !empty($data['warehousesSummary']) && is_array($data['wareho
           <div style="width:100%;display:flex;justify-content:flex-end;margin-bottom:8px;">
             <?php $cat_wh = $_GET['category_warehouse'] ?? ''; ?>
               <select id="category_warehouse" onchange="onChartFilterChange('category')" style="padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text)">
-                <option value="">Tất cả kho</option>
+                <?php if ($isGlobalViewer): ?><option value="">Tất cả kho</option><?php endif; ?>
                 <?php foreach ($warehouseOptions as $wsOpt): ?>
                   <option value="<?= htmlspecialchars($wsOpt['warehouse_id']) ?>" <?= $cat_wh == $wsOpt['warehouse_id'] ? 'selected' : '' ?>><?= htmlspecialchars($wsOpt['name']) ?></option>
                 <?php endforeach; ?>
@@ -895,7 +923,7 @@ if ($roleId == 1 && !empty($data['warehousesSummary']) && is_array($data['wareho
       type: 'doughnut',
       data: {
         labels: categoryData.labels,
-        datasets: [{
+          datasets: [{
           data: categoryData.values,
           backgroundColor: [
             'rgba(30, 144, 255, 0.8)',
@@ -904,8 +932,8 @@ if ($roleId == 1 && !empty($data['warehousesSummary']) && is_array($data['wareho
             'rgba(239, 68, 68, 0.8)',
             'rgba(168, 85, 247, 0.8)'
           ],
-          borderWidth: 2,
-          borderColor: '#0e1422'
+          borderWidth: 0,
+          borderColor: 'transparent'
         }]
       },
       options: {

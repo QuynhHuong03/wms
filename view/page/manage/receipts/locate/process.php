@@ -1,5 +1,12 @@
 <?php
+// Force JSON responses and suppress HTML error output which breaks AJAX
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
+error_reporting(E_ALL);
 header('Content-Type: application/json; charset=utf-8');
+// Start output buffering to capture any accidental output
+if (ob_get_level() === 0) ob_start();
+
 include_once(__DIR__ . "/../../../../../controller/cReceipt.php");
 include_once(__DIR__ . "/../../../../../controller/clocation.php");
 include_once(__DIR__ . "/../../../../../model/mLocation.php");
@@ -717,6 +724,31 @@ try {
             $mInventoryMovement = new MInventoryMovement();
             $cBatch = new CBatch();
 
+            // Ensure batches exist for this receipt. If none, attempt to create them from receipt details.
+            $batches = $cBatch->getBatchesByTransaction($id);
+            error_log("🔍 Found " . count($batches) . " batches for transaction $id");
+            if (empty($batches) || count($batches) === 0) {
+                error_log("ℹ️ No batches found for transaction $id — creating from receipt details...");
+                try {
+                    $createRes = $cBatch->createBatchFromReceipt($arrRc);
+                    error_log('ℹ️ createBatchFromReceipt result: ' . json_encode($createRes, JSON_UNESCAPED_UNICODE));
+                } catch (\Throwable $e) {
+                    error_log('⚠️ createBatchFromReceipt failed: ' . $e->getMessage());
+                }
+                // Re-fetch batches after creation attempt
+                $batches = $cBatch->getBatchesByTransaction($id);
+                error_log("🔍 After create attempt found " . count($batches) . " batches for transaction $id");
+            }
+
+            // Build quick lookup map product_id (string) => batch_code
+            $batchesByProduct = [];
+            foreach ($batches as $batch) {
+                $p = $batch['product_id'] ?? null;
+                if ($p !== null) {
+                    $batchesByProduct[(string)$p] = $batch['batch_code'] ?? null;
+                }
+            }
+
             // Ghi tất cả allocations vào database inventory khi hoàn tất
             $inv = new MInventory();
             $insertedCount = 0;
@@ -796,13 +828,22 @@ try {
                         error_log("🔍 Found " . count($batches) . " batches for transaction $id");
                         error_log("🔍 Looking for product: $productId");
                         
-                        $batchCode = null;
-                        foreach ($batches as $batch) {
-                            error_log("🔍 Batch: " . ($batch['batch_code'] ?? 'no-code') . " - Product: " . ($batch['product_id'] ?? 'no-product'));
-                            if (($batch['product_id'] ?? '') === $productId) {
-                                $batchCode = $batch['batch_code'] ?? null;
-                                error_log("✅ Found matching batch: $batchCode");
-                                break;
+                        // Prefer lookup from prebuilt map
+                        $batchCode = $batchesByProduct[(string)$productId] ?? null;
+                        if ($batchCode) {
+                            error_log("✅ Found matching batch from map: $batchCode for product $productId");
+                        } else {
+                            // Fallback: scan batches (handles possible non-standard product_id types)
+                            foreach ($batches as $batch) {
+                                $bCode = $batch['batch_code'] ?? 'no-code';
+                                $bProd = $batch['product_id'] ?? null;
+                                $bProdStr = is_object($bProd) ? (string)$bProd : (string)$bProd;
+                                error_log("🔍 Fallback Batch: " . $bCode . " - Product: " . $bProdStr);
+                                if ($bProdStr === (string)$productId) {
+                                    $batchCode = $batch['batch_code'] ?? null;
+                                    error_log("✅ Found matching batch (fallback): $batchCode");
+                                    break;
+                                }
                             }
                         }
 
@@ -866,6 +907,9 @@ try {
                                         );
                                         
                                         // ⭐ BƯỚC 2: Thêm vị trí mới thực tế (nếu chưa tồn tại)
+                                        // Store quantity as integer and save unit info (use base_unit if available)
+                                        $unitToSave = $a['base_unit'] ?? ($a['input_unit'] ?? 'cái');
+                                        $inputQtyForLocation = (int)($a['input_qty'] ?? $qtyAlloc);
                                         $batchesCol->updateOne(
                                             ['batch_code' => $batchCode],
                                             [
@@ -875,14 +919,38 @@ try {
                                                         'zone_id' => $zoneId,
                                                         'rack_id' => $rackId,
                                                         'bin_id' => $binId,
-                                                        'quantity' => $qtyAlloc
+                                                        'quantity' => (int)$qtyAlloc,
+                                                        'input_qty' => $inputQtyForLocation,
+                                                        'unit' => $unitToSave
                                                     ]
                                                 ]
                                             ]
                                         );
                                         
+                                        // Recompute batch totals from batch_locations to avoid double-counting
+                                        try {
+                                            $batchLocCol = $con->selectCollection('batch_locations');
+                                            $agg = $batchLocCol->aggregate([
+                                                ['$match' => ['batch_code' => $batchCode]],
+                                                ['$group' => ['_id' => null, 'total' => ['$sum' => '$quantity']]]
+                                            ])->toArray();
+                                            $totalQty = !empty($agg) ? (int)($agg[0]['total'] ?? 0) : 0;
+
+                                            // Set both imported and remaining to the aggregated total (imported = total stored for now)
+                                            $batchesCol->updateOne(
+                                                ['batch_code' => $batchCode],
+                                                ['$set' => [
+                                                    'quantity_imported' => $totalQty,
+                                                    'quantity_remaining' => $totalQty,
+                                                    'updated_at' => new MongoDB\BSON\UTCDateTime()
+                                                ]]
+                                            );
+
+                                            error_log("✅ Removed PENDING location and set batch totals for $batchCode = $totalQty");
+                                        } catch (\Throwable $e) {
+                                            error_log("⚠️ Failed to recompute/update batch totals for $batchCode: " . $e->getMessage());
+                                        }
                                         $p->dongKetNoi($con);
-                                        error_log("✅ Removed PENDING location and added real location in batches collection");
                                     }
                                 } catch (\Throwable $e) {
                                     error_log("⚠️ Failed to update batch location in batches: " . $e->getMessage());

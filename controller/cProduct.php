@@ -16,8 +16,9 @@ class CProduct {
 
 	// Thêm sản phẩm mới
 	public function addProduct($data) {
-		$p = new MProduct();
-		return $p->addProduct($data);
+        $p = new MProduct();
+        // Return inserted id (string) on success, false on failure
+        return $p->addProduct($data);
 	}
 
     // Xóa sản phẩm
@@ -68,5 +69,11 @@ class CProduct {
     public function getStockByWarehouses($productId) {
         $p = new MProduct();
         return $p->getStockByWarehouses($productId);
+    }
+
+    // Lấy sản phẩm theo SKU
+    public function getProductBySKU($sku) {
+        $p = new MProduct();
+        return $p->getProductBySKU($sku);
     }
 }

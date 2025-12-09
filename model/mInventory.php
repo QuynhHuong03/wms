@@ -449,7 +449,17 @@ class MInventory {
             foreach ($result as $item) {
                 $productId = $item['_id'] ?? '';
                 $qty = (float)($item['totalQty'] ?? 0);
-                if ($productId) {
+                // Normalize productId to scalar string for consistent keys
+                if (is_object($productId)) {
+                    if (method_exists($productId, '__toString')) $productId = (string)$productId;
+                    elseif (isset($productId->{'$oid'})) $productId = (string)$productId->{'$oid'};
+                    else $productId = json_encode($productId);
+                } elseif (is_array($productId)) {
+                    if (isset($productId['$oid'])) $productId = $productId['$oid']; else $productId = json_encode($productId);
+                } else {
+                    $productId = (string)$productId;
+                }
+                if ($productId !== '') {
                     $stockByProduct[$productId] = $qty;
                 }
             }

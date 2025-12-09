@@ -146,7 +146,20 @@ class MBatch {
     public function getBatchesByTransaction($transaction_id) {
         if (!$this->col) return new ArrayObject([]);
         try {
-            return $this->col->find(['transaction_id' => $transaction_id], ['sort' => ['import_date' => -1]]);
+            // Support both string IDs and MongoDB ObjectId stored in the documents.
+            $filter = ['transaction_id' => $transaction_id];
+
+            // If caller passed a 24-hex string, try matching both string and ObjectId forms
+            if (is_string($transaction_id) && preg_match('/^[0-9a-fA-F]{24}$/', $transaction_id)) {
+                try {
+                    $objId = new MongoDB\BSON\ObjectId($transaction_id);
+                    $filter = ['$or' => [ ['transaction_id' => $transaction_id], ['transaction_id' => $objId] ]];
+                } catch (\Exception $e) {
+                    // ignore conversion error and use original string filter
+                }
+            }
+
+            return $this->col->find($filter, ['sort' => ['import_date' => -1]]);
         } catch (\Exception $e) {
             error_log('getBatchesByTransaction error: ' . $e->getMessage());
             return new ArrayObject([]);

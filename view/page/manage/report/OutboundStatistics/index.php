@@ -1,5 +1,10 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
+// Role-based warehouse visibility: Admin (1) and Warehouse Manager (2) can view all warehouses
+$user = $_SESSION['login'] ?? null;
+$roleId = isset($user['role_id']) ? intval($user['role_id']) : null;
+$userWarehouse = $user['warehouse_id'] ?? ($user['warehouse'] ?? '');
+$isGlobalViewer = in_array($roleId, [1,2]);
 include_once(__DIR__ . '/../../../../../model/mReceipt.php');
 include_once(__DIR__ . '/../../../../../model/mProduct.php');
 include_once(__DIR__ . '/../../../../../model/mWarehouse.php');
@@ -30,6 +35,10 @@ if ($debugMode) {
 $to = $_GET['to'] ?? date('Y-m-d');
 $from = $_GET['from'] ?? date('Y-m-d', strtotime('-29 days'));
 $warehouse = $_GET['warehouse'] ?? '';
+if (!$isGlobalViewer) {
+  // branch staff forced to their own warehouse
+  $warehouse = $userWarehouse;
+}
 
 $cursor = $mReceipt->getReceiptsByDateRange($from, $to);
 
@@ -111,6 +120,17 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv_receipts') {
       $pidc = (string)($it['product_id'] ?? $it['productId'] ?? ($it['_id'] ?? ''));
       $skuc = (string)($it['sku'] ?? ($it['product_sku'] ?? ''));
       $pnamec = (string)($it['product_name'] ?? ($it['name'] ?? ''));
+      // If SKU missing on the item, try to lookup product by id to get SKU
+      if (($skuc === '' || $skuc === null) && $pidc !== '' && isset($mProduct)) {
+        try {
+          $prodInfo = $mProduct->getProductById($pidc);
+          if ($prodInfo && !empty($prodInfo['sku'])) {
+            $skuc = (string)$prodInfo['sku'];
+          }
+        } catch (Throwable $e) {
+          // ignore lookup errors
+        }
+      }
       $key = '';
       if ($pidc !== '') $key = preg_replace('/[^A-Za-z0-9]/', '', $pidc);
       elseif ($skuc !== '') $key = preg_replace('/[^A-Za-z0-9]/', '', $skuc);
@@ -120,8 +140,13 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv_receipts') {
       $totalValue += ($qty * $price);
       $skuCell = trim($skuc);
       $nameCell = trim($pnamec);
-      $qtyCell = ($qty + 0);
-      $priceCell = ($price + 0);
+      // Format qty/price to avoid scientific notation in Excel
+      if (intval($qty) == $qty) {
+        $qtyCell = (string)intval($qty);
+      } else {
+        $qtyCell = number_format($qty, 2, '.', '');
+      }
+      $priceCell = number_format($price, 2, '.', '');
       $productCells[] = $skuCell;
       $productCells[] = $nameCell;
       $productCells[] = $qtyCell;
@@ -130,7 +155,14 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv_receipts') {
     $productCount = count($uniqueProducts);
     $note = $r['note'] ?? ($r['notes'] ?? '');
     while (count($productCells) < ($maxItems * 4)) $productCells[] = '';
-    $row = [$tid, $created_at, $warehouse_id, $productCount, $totalUnits, round($totalValue,2), $note];
+    // Format totals for CSV to avoid scientific notation
+    if (intval($totalUnits) == $totalUnits) {
+      $totalUnitsOut = (string)intval($totalUnits);
+    } else {
+      $totalUnitsOut = number_format($totalUnits, 2, '.', '');
+    }
+    $totalValueOut = number_format($totalValue, 2, '.', '');
+    $row = [$tid, $created_at, $warehouse_id, $productCount, $totalUnitsOut, $totalValueOut, $note];
     fputcsv($out, array_merge($row, $productCells));
   }
   fclose($out);
@@ -452,13 +484,21 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv_receipts') {
         <input type="date" name="to" value="<?= htmlspecialchars($to) ?>">
         <label>Kho:</label>
         <select name="warehouse">
-          <option value="">-- Tất cả kho --</option>
-          <?php foreach ($mWarehouse->getAllWarehouses() as $w): $wid = $w['warehouse_id'] ?? ($w['_id']['$oid'] ?? ($w['id'] ?? '')); ?>
+          <?php if ($isGlobalViewer): ?>
+            <option value="">-- Tất cả kho --</option>
+          <?php endif; ?>
+          <?php
+            // show either all warehouses (for global viewers) or only the user's warehouse
+            $wareList = $mWarehouse->getAllWarehouses();
+            if (!$isGlobalViewer) {
+              $wareList = array_filter($wareList, fn($w) => (($w['warehouse_id'] ?? ($w['_id']['$oid'] ?? ($w['id'] ?? ''))) == $userWarehouse));
+            }
+            foreach ($wareList as $w): $wid = $w['warehouse_id'] ?? ($w['_id']['$oid'] ?? ($w['id'] ?? '')); ?>
             <option value="<?= htmlspecialchars($wid) ?>" <?= $warehouse == $wid ? 'selected' : '' ?>><?= htmlspecialchars($w['warehouse_name'] ?? $w['name'] ?? $wid) ?></option>
           <?php endforeach; ?>
         </select>
         <button type="submit">Xem báo cáo</button>
-        <a href="<?= '/kltn/view/page/manage/report/OutboundStatistics/index.php?export=csv_receipts&from=' . rawurlencode($from) . '&to=' . rawurlencode($to) ?>"><button type="button" class="btn-export">Xuất file</button></a>
+        <a href="<?= '/kltn/view/page/manage/report/OutboundStatistics/index.php?export=csv_receipts&from=' . rawurlencode($from) . '&to=' . rawurlencode($to) . (isset($warehouse) && $warehouse !== '' ? '&warehouse=' . rawurlencode($warehouse) : '') ?>"><button type="button" class="btn-export">Xuất file</button></a>
       </form>
       
       <div class="summary">

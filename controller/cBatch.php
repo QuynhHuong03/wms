@@ -159,7 +159,7 @@ class CBatch {
                         'source_location' => $source_location, // ⭐ Vị trí cũ ở kho nguồn
                         'created_at' => new MongoDB\BSON\UTCDateTime(),
                         'unit_price' => $detail['unit_price'] ?? 0,
-                        'unit' => $detail['unit'] ?? 'cái'
+                        'unit' => (isset($detail['unit']) && trim($detail['unit']) !== '') ? trim($detail['unit']) : 'cái'
                     ];
 
                     $result = $this->mBatch->insertBatch($batchData);
@@ -193,7 +193,7 @@ class CBatch {
                     'source_warehouse_id' => $source_warehouse_id,
                     'created_at' => new MongoDB\BSON\UTCDateTime(),
                     'unit_price' => $detail['unit_price'] ?? 0,
-                    'unit' => $detail['unit'] ?? 'cái'
+                    'unit' => (isset($detail['unit']) && trim($detail['unit']) !== '') ? trim($detail['unit']) : 'cái'
                 ];
 
                 $result = $this->mBatch->insertBatch($batchData);

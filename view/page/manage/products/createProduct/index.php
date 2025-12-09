@@ -5,6 +5,28 @@ include_once(__DIR__ . '/../../../../../controller/cSupplier.php');
 $categories = (new CCategories())->getAllCategories();
 $suppliers = (new CSupplier())->getAllSuppliers();
 
+// If prefilled supplier_id provided, find its name for readonly display
+$prefilledSupplierName = '';
+if (!empty($_GET['prefill']) && !empty($_GET['supplier_id'])) {
+  foreach ($suppliers as $s) {
+    if (($s['supplier_id'] ?? '') == ($_GET['supplier_id'] ?? '')) { $prefilledSupplierName = $s['supplier_name'] ?? $s['name'] ?? ''; break; }
+  }
+}
+
+// Prefill support: allow opening this form with ?prefill=1&... params
+$prefill = [];
+if (isset($_GET['prefill']) && $_GET['prefill']) {
+  $prefill['product_name'] = $_GET['product_name'] ?? '';
+  $prefill['sku'] = $_GET['sku'] ?? '';
+  $prefill['barcode'] = $_GET['barcode'] ?? '';
+  $prefill['base_unit'] = $_GET['base_unit'] ?? '';
+  $prefill['purchase_price'] = $_GET['purchase_price'] ?? ($_GET['price'] ?? '');
+  $prefill['description'] = $_GET['description'] ?? $_GET['note'] ?? '';
+  $prefill['supplier_id'] = $_GET['supplier_id'] ?? '';
+  $prefill['category_id'] = $_GET['category_id'] ?? '';
+  $prefill['min_stock'] = $_GET['min_stock'] ?? 0;
+}
+
 // Đơn vị có sẵn
 $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', 'chai', 'tuýp'];
 ?>
@@ -128,7 +150,7 @@ $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', '
   <div class="container">
     <h2><i class="fa-solid fa-boxes-stacked"></i> Thêm sản phẩm mới</h2>
 
-    <form id="createProductForm" action="products/createProduct/process.php" method="post" enctype="multipart/form-data" novalidate>
+    <form id="createProductForm" action="/kltn/view/page/manage/products/createProduct/process.php" method="post" enctype="multipart/form-data" novalidate>
 
       <div class="form-group">
         <label for="image">Hình ảnh sản phẩm</label>
@@ -137,19 +159,19 @@ $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', '
 
       <div class="form-group">
         <label for="barcode">Barcode</label>
-        <input type="text" id="barcode" name="barcode" placeholder="Barcode..." required>
+        <input type="text" id="barcode" name="barcode" placeholder="Barcode..." value="<?= htmlspecialchars($prefill['barcode'] ?? '') ?>" <?= isset($prefill['barcode']) && $prefill['barcode'] !== '' ? '' : '' ?> >
         <span class="error-message"></span>
       </div>
 
       <div class="form-group">
         <label for="product_name">Tên sản phẩm</label>
-        <input type="text" id="product_name" name="product_name" required>
+        <input type="text" id="product_name" name="product_name" required value="<?= htmlspecialchars($prefill['product_name'] ?? '') ?>">
         <span class="error-message"></span>
       </div>
 
       <div class="form-group">
         <label for="model">Model</label>
-        <input type="text" id="model" name="model" placeholder="Nhập model sản phẩm (VD: XS-2024)" required>
+        <input type="text" id="model" name="model" placeholder="Nhập model sản phẩm (VD: XS-2024)" required value="<?= htmlspecialchars($prefill['model'] ?? '') ?>">
         <span class="error-message"></span>
       </div>
 
@@ -158,7 +180,9 @@ $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', '
         <select id="category_id" name="category_id" required>
           <option value="">-- Chọn loại sản phẩm --</option>
           <?php foreach ($categories as $cat): ?>
-            <option value="<?= $cat['category_id']; ?>">
+            <option value="<?= $cat['category_id']; ?>" 
+                    data-code="<?= $cat['category_code'] ?? $cat['category_id']; ?>"
+                    <?= (isset($prefill['category_id']) && $prefill['category_id'] == $cat['category_id']) ? 'selected' : '' ?>>
               <?= $cat['name'] ?? $cat['category_name'] ?? $cat['category_id']; ?>
             </option>
           <?php endforeach; ?>
@@ -168,14 +192,19 @@ $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', '
 
       <div class="form-group">
         <label for="supplier_id">Nhà cung cấp</label>
-        <select id="supplier_id" name="supplier_id" required>
-          <option value="">-- Chọn nhà cung cấp --</option>
-          <?php foreach ($suppliers as $sup): ?>
-            <option value="<?= $sup['supplier_id']; ?>">
-              <?= $sup['supplier_name'] ?? $sup['name'] ?? $sup['supplier_id']; ?>
-            </option>
-          <?php endforeach; ?>
-        </select>
+        <?php if (!empty($prefill['supplier_id'])): ?>
+          <input type="hidden" id="supplier_id" name="supplier_id" value="<?= htmlspecialchars($prefill['supplier_id']) ?>">
+          <input type="text" readonly value="<?= htmlspecialchars($prefilledSupplierName ?: $prefill['supplier_id']) ?>" style="background:#f3f4f6;padding:9px;border-radius:6px;border:1px solid #e5e7eb;">
+        <?php else: ?>
+          <select id="supplier_id" name="supplier_id">
+            <option value="">-- Chọn nhà cung cấp --</option>
+            <?php foreach ($suppliers as $sup): ?>
+              <option value="<?= $sup['supplier_id']; ?>" <?= (isset($prefill['supplier_id']) && $prefill['supplier_id'] == $sup['supplier_id']) ? 'selected' : '' ?>>
+                <?= $sup['supplier_name'] ?? $sup['name'] ?? $sup['supplier_id']; ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        <?php endif; ?>
         <span class="error-message"></span>
       </div>
 
@@ -184,7 +213,7 @@ $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', '
         <select id="base_unit" name="base_unit" required>
           <option value="">-- Chọn đơn vị --</option>
           <?php foreach ($unitOptions as $u): ?>
-            <option value="<?= $u; ?>"><?= ucfirst($u); ?></option>
+            <option value="<?= $u; ?>" <?= (isset($prefill['base_unit']) && $prefill['base_unit'] == $u) ? 'selected' : '' ?>><?= ucfirst($u); ?></option>
           <?php endforeach; ?>
         </select>
         <p class="hint">Đơn vị chính là đơn vị nhỏ nhất (ví dụ: cái, chiếc)</p>
@@ -193,17 +222,12 @@ $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', '
 
       <div class="form-group">
         <label for="min_stock">Tồn kho tối thiểu</label>
-        <input type="number" id="min_stock" name="min_stock" min="0" value="0" required>
-        <span class="error-message"></span>
+        <input type="number" id="min_stock" name="min_stock" value="<?= htmlspecialchars($prefill['min_stock'] ?? 0) ?>" min="0" step="1">
+        <p class="hint">Số lượng tối thiểu cần có trong kho</p>
       </div>
 
-      <div class="form-group">
-        <label for="status">Trạng thái</label>
-        <select id="status" name="status">
-          <option value="1">Hoạt động</option>
-          <option value="0">Ngừng hoạt động</option>
-        </select>
-      </div>
+      <!-- status default to active -->
+      <input type="hidden" id="status" name="status" value="1">
 
       <!-- Thông tin kích thước đơn vị chính -->
       <div class="conversion-box">
@@ -212,25 +236,25 @@ $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', '
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
           <div>
             <label>Chiều rộng (cm)</label>
-            <input type="number" step="0.01" id="package_width" name="package_width" placeholder="VD: 8" value="0">
+            <input type="number" step="0.01" id="package_width" name="package_width" placeholder="VD: 8" value="<?= htmlspecialchars($prefill['package_width'] ?? 0) ?>">
           </div>
           <div>
             <label>Chiều sâu (cm)</label>
-            <input type="number" step="0.01" id="package_depth" name="package_depth" placeholder="VD: 2" value="0">
+            <input type="number" step="0.01" id="package_depth" name="package_depth" placeholder="VD: 2" value="<?= htmlspecialchars($prefill['package_depth'] ?? 0) ?>">
           </div>
           <div>
             <label>Chiều cao (cm)</label>
-            <input type="number" step="0.01" id="package_height" name="package_height" placeholder="VD: 15" value="0">
+            <input type="number" step="0.01" id="package_height" name="package_height" placeholder="VD: 15" value="<?= htmlspecialchars($prefill['package_height'] ?? 0) ?>">
           </div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
           <div>
             <label>Trọng lượng (kg)</label>
-            <input type="number" step="0.01" name="package_weight" placeholder="VD: 0.25" value="0">
+            <input type="number" step="0.01" name="package_weight" placeholder="VD: 0.25" value="<?= htmlspecialchars($prefill['package_weight'] ?? 0) ?>">
           </div>
           <div>
             <label>Thể tích (cm³) - Tự động tính</label>
-            <input type="number" step="0.01" id="volume_per_unit" name="volume_per_unit" value="0" readonly style="background: #f0f0f0;">
+            <input type="number" step="0.01" id="volume_per_unit" name="volume_per_unit" value="<?= htmlspecialchars($prefill['volume_per_unit'] ?? 0) ?>" readonly style="background: #f0f0f0;">
           </div>
         </div>
       </div>
@@ -438,13 +462,11 @@ $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', '
     // --- Client-side validation for required fields ---
     const form = document.getElementById('createProductForm');
     const requiredFields = [
-      { id: 'barcode', label: 'Barcode' },
       { id: 'model', label: 'Model' },
       { id: 'product_name', label: 'Tên sản phẩm' },
       { id: 'category_id', label: 'Loại sản phẩm' },
-      { id: 'supplier_id', label: 'Nhà cung cấp' },
       { id: 'base_unit', label: 'Đơn vị chính' },
-      { id: 'min_stock', label: 'Tồn kho tối thiểu' }
+      { id: 'min_stock', label: 'Tồn kho tối thiểu', type: 'number', min: 0 }
     ];
 
     function showError(el, msg) {
@@ -479,6 +501,35 @@ $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', '
       }
     }
 
+    // Barcode validation: optional but if present must be alphanumeric (3-64 chars)
+    const barcodeEl = document.getElementById('barcode');
+    // validateBarcodeField: returns a Promise<boolean> to allow async server uniqueness check
+    async function validateBarcodeField() {
+      if (!barcodeEl) return true;
+      const val = (barcodeEl.value || '').toString().trim();
+      if (val === '') { clearError(barcodeEl); return true; }
+      const re = /^[A-Za-z0-9\-_.]{3,64}$/;
+      if (!re.test(val)) { showError(barcodeEl, 'Mã vạch không hợp lệ (chỉ chữ, số, - _ . , 3-64 ký tự)'); return false; }
+
+      // Check uniqueness via server endpoint
+      try {
+        const resp = await fetch(`/kltn/view/page/manage/receipts/get_barcode_or_batch.php?barcode=${encodeURIComponent(val)}`);
+        const data = await resp.json();
+        if (data && data.success && data.product && data.product._id) {
+          // barcode exists in DB
+          showError(barcodeEl, 'Mã vạch đã tồn tại trong hệ thống');
+          return false;
+        }
+      } catch (err) {
+        // ignore network errors but don't block user
+        console.warn('Barcode uniqueness check failed', err);
+      }
+
+      clearError(barcodeEl);
+      return true;
+    }
+    if (barcodeEl) barcodeEl.addEventListener('blur', () => { validateBarcodeField(); });
+
     // clear errors on input/change and wire up save button enable
     const saveBtn = document.getElementById('saveBtn');
     requiredFields.forEach(f => {
@@ -491,13 +542,6 @@ $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', '
         const val = (el.value || '').toString().trim();
         if (val === '' || val === null) {
           showError(el, 'Trường này là bắt buộc');
-        } else if (f.id === 'min_stock') {
-          const num = Number(val);
-          if (Number.isNaN(num) || num < 0) {
-            showError(el, `${f.label} phải là số >= 0.`);
-          } else {
-            clearError(el);
-          }
         } else {
           clearError(el);
         }
@@ -534,9 +578,13 @@ $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', '
     const cancelModalBtn = document.getElementById('cancelModalBtn');
     let isConfirmed = false;
 
-    form.addEventListener('submit', function(e) {
+    form.addEventListener('submit', async function(e) {
       // prevent submission while button visually disabled
       if (saveBtn.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return false; }
+
+      // validate barcode if present
+      const okBarcode = await validateBarcodeField();
+      if (!okBarcode) { e.preventDefault(); return false; }
 
       let hasError = false;
       // validate required
@@ -570,6 +618,129 @@ $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', '
     confirmAddBtn && confirmAddBtn.addEventListener('click', function(){ isConfirmed = true; confirmModal.style.display = 'none'; saveBtn.click(); });
     cancelModalBtn && cancelModalBtn.addEventListener('click', function(){ confirmModal.style.display = 'none'; isConfirmed = false; });
     window.addEventListener('click', function(e){ if (e.target === confirmModal) { confirmModal.style.display = 'none'; isConfirmed = false; } });
+
+    // If this form is loaded inside an iframe (embedded in receipts modal),
+    // intercept the submit and send the product data to the parent window
+    // as a temporary product instead of saving to DB.
+    (function(){
+      const inIframe = (window.parent && window.parent !== window);
+      if (!inIframe) return; // only change behaviour when embedded
+
+      form.addEventListener('submit', function(e){
+        // Prevent normal server submission when embedded
+        e.preventDefault();
+
+        // Collect main product fields to send to parent
+        const product_name = (document.getElementById('product_name').value || '').trim();
+        // SKU sẽ được tự động sinh ở backend khi lưu vào database
+        // Không cần tự sinh ở đây
+        const sku = ''; // Để trống, backend sẽ tự sinh
+
+        // Generate a temporary id
+        const tempId = 'new_' + Date.now();
+
+        // Build conversionUnits array from conversion container
+        const conversionUnits = [];
+        document.querySelectorAll('.conversion-item').forEach(item => {
+          const unit = item.querySelector('[name="conversion_unit[]"]')?.value || '';
+          const factor = parseFloat(item.querySelector('[name="conversion_factor[]"]')?.value) || 0;
+          const width = parseFloat(item.querySelector('.conversion-width')?.value) || 0;
+          const depth = parseFloat(item.querySelector('.conversion-depth')?.value) || 0;
+          const height = parseFloat(item.querySelector('.conversion-height')?.value) || 0;
+          const weight = parseFloat(item.querySelector('[name="conversion_weight[]"]')?.value) || 0;
+          const volume = parseFloat(item.querySelector('.conversion-volume')?.value) || 0;
+          if (unit && factor > 0) {
+            conversionUnits.push({ unit: unit, factor: factor, dimensions: { width: width, depth: depth, height: height }, weight: weight, volume: volume });
+          }
+        });
+
+        // Safely resolve select/hidden elements for category and supplier
+        const categoryEl = document.getElementById('category_id');
+        const supplierEl = document.getElementById('supplier_id');
+        const categoryIdVal = categoryEl ? (categoryEl.value || '') : '';
+        let categoryNameVal = '';
+        let categoryCodeVal = '';
+        if (categoryEl) {
+          if (categoryEl.tagName === 'SELECT') {
+            const selectedOption = categoryEl.selectedOptions && categoryEl.selectedOptions[0];
+            categoryNameVal = selectedOption ? selectedOption.text : '';
+            categoryCodeVal = selectedOption ? (selectedOption.getAttribute('data-code') || '') : '';
+          } else {
+            categoryNameVal = categoryEl.value || '';
+          }
+        }
+        const supplierIdVal = supplierEl ? (supplierEl.value || '') : '';
+        let supplierNameVal = '';
+        if (supplierEl) {
+          if (supplierEl.tagName === 'SELECT') {
+            supplierNameVal = (supplierEl.selectedOptions && supplierEl.selectedOptions[0]) ? supplierEl.selectedOptions[0].text : '';
+          } else {
+            // Hidden input: tìm readonly input text bên cạnh để lấy tên
+            const readonlyInput = supplierEl.parentElement.querySelector('input[readonly][type="text"]');
+            supplierNameVal = readonlyInput ? readonlyInput.value : (supplierEl.getAttribute('data-name') || supplierIdVal);
+          }
+        }
+
+        const prod = {
+          _id: tempId,
+          product_name: product_name,
+          sku: sku,
+          barcode: (document.getElementById('barcode')?.value || '').trim(),
+          model: (document.getElementById('model').value || '').trim(),
+          category: {
+            id: categoryIdVal,
+            name: categoryNameVal,
+            code: categoryCodeVal,
+            category_code: categoryCodeVal
+          },
+          baseUnit: (document.getElementById('base_unit').value || '').trim() || 'Cái',
+          purchase_price: parseFloat(document.getElementById('purchase_price')?.value || 0) || 0,
+          conversionUnits: conversionUnits,
+          package_dimensions: {
+            width: parseFloat(document.getElementById('package_width').value) || 0,
+            depth: parseFloat(document.getElementById('package_depth').value) || 0,
+            height: parseFloat(document.getElementById('package_height').value) || 0
+          },
+          package_weight: parseFloat(document.querySelector('input[name="package_weight"]')?.value) || 0,
+          volume_per_unit: parseFloat(document.getElementById('volume_per_unit').value) || 0,
+          supplier: {
+            id: supplierIdVal,
+            name: supplierNameVal
+          },
+          supplier_id: supplierIdVal,
+          supplier_name: supplierNameVal,
+          min_stock: parseFloat(document.getElementById('min_stock')?.value || 0) || 0,
+          status: parseInt(document.getElementById('status')?.value || 1),
+          description: (document.getElementById('description')?.value || '').trim(),
+          stackable: document.getElementById('stackable')?.value === '1' || document.getElementById('stackable')?.value === 'true',
+          max_stack_height: parseInt(document.getElementById('max_stack_height')?.value || 0) || 0,
+          is_new: 1
+        };
+
+        // Post message to parent using same-origin target
+        try {
+          window.parent.postMessage({ type: 'wms:new_product_created', product: prod }, window.location.origin);
+        } catch(err) {
+          try { window.parent.postMessage({ type: 'wms:new_product_created', product: prod }, '*'); } catch(e){}
+        }
+
+        // Show a friendly inline confirmation inside the iframe
+        const msg = document.createElement('div');
+        msg.style.padding = '12px';
+        msg.style.background = '#e6ffed';
+        msg.style.border = '1px solid #b7f5c8';
+        msg.style.borderRadius = '8px';
+        msg.style.color = '#065f46';
+        msg.style.marginTop = '12px';
+        msg.textContent = 'Sản phẩm đã được thêm tạm vào phiếu (không lưu vào cơ sở dữ liệu).';
+        form.parentNode.insertBefore(msg, form.nextSibling);
+
+        // Optionally disable the save button to avoid duplicate sends
+        try { saveBtn.disabled = true; saveBtn.classList.add('is-disabled'); } catch(e){}
+
+        return false;
+      });
+    })();
   </script>
 </body>
 </html>

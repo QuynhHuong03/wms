@@ -50,7 +50,7 @@ $statusClass = isset($statusClassMap[$status]) ? $statusClassMap[$status] : 'pen
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Chi tiết phiếu nhập kho</title>
+  <title>Chi tiết phiếu nhập hàng</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
@@ -91,7 +91,7 @@ $statusClass = isset($statusClassMap[$status]) ? $statusClassMap[$status] : 'pen
 <body>
 <div class="receipt-detail-container">
   <div class="header">
-    <h2><i class="fa-solid fa-file-circle-info"></i> Chi tiết phiếu nhập kho</h2>
+    <h2><i class="fa-solid fa-file-circle-info"></i> Chi tiết phiếu nhập hàng</h2>
   </div>
 
   <div class="info">
@@ -146,22 +146,35 @@ $statusClass = isset($statusClassMap[$status]) ? $statusClassMap[$status] : 'pen
             
             // Lấy thông tin sản phẩm để hiển thị đơn vị, quy đổi và kích thước
             $productInfo = $cProduct->getProductById($item['product_id']);
-            $baseUnit = $productInfo['baseUnit'] ?? 'cái';
-            $conversionUnits = $productInfo['conversionUnits'] ?? [];
-            
-            // Lấy kích thước sản phẩm - kiểm tra nhiều nguồn dữ liệu
+            // Đơn vị cơ bản: ưu tiên dữ liệu từ productInfo, nếu không có dùng dữ liệu lưu trong chi tiết (manual-add)
+            $baseUnit = $productInfo['baseUnit'] ?? $item['baseUnit'] ?? ($item['temp']['baseUnit'] ?? 'cái');
+            $conversionUnits = $productInfo['conversionUnits'] ?? ($item['conversionUnits'] ?? ($item['temp']['conversionUnits'] ?? []));
+
+            // Lấy kích thước sản phẩm - kiểm tra nhiều nguồn dữ liệu (DB -> detail -> temp)
             $dimensions = [];
-            
-            // Nguồn 1: Từ thông tin sản phẩm trong database
             if (isset($productInfo['dimensions']) && is_array($productInfo['dimensions'])) {
               $dimensions = $productInfo['dimensions'];
-            }
-            // Nguồn 2: Có thể lưu trực tiếp trong productInfo (không nested)
-            elseif (isset($productInfo['width']) || isset($productInfo['depth']) || isset($productInfo['height'])) {
+            } elseif (isset($productInfo['width']) || isset($productInfo['depth']) || isset($productInfo['height'])) {
               $dimensions = [
                 'width' => $productInfo['width'] ?? 0,
                 'depth' => $productInfo['depth'] ?? 0,
                 'height' => $productInfo['height'] ?? 0
+              ];
+            } elseif (!empty($item['package_dimensions']) && is_array($item['package_dimensions'])) {
+              $dimensions = $item['package_dimensions'];
+            } elseif (!empty($item['temp']) && is_array($item['temp']) && !empty($item['temp']['package_dimensions']) && is_array($item['temp']['package_dimensions'])) {
+              $dimensions = $item['temp']['package_dimensions'];
+            } elseif (isset($item['width']) || isset($item['depth']) || isset($item['height'])) {
+              $dimensions = [
+                'width' => $item['width'] ?? 0,
+                'depth' => $item['depth'] ?? 0,
+                'height' => $item['height'] ?? 0
+              ];
+            } elseif (!empty($item['temp']) && (isset($item['temp']['width']) || isset($item['temp']['depth']) || isset($item['temp']['height']))) {
+              $dimensions = [
+                'width' => $item['temp']['width'] ?? 0,
+                'depth' => $item['temp']['depth'] ?? 0,
+                'height' => $item['temp']['height'] ?? 0
               ];
             }
             
@@ -233,29 +246,58 @@ $statusClass = isset($statusClassMap[$status]) ? $statusClassMap[$status] : 'pen
     if (!empty($receipt['details'])) {
       foreach ($receipt['details'] as $item) {
         $productInfo = $cProduct->getProductById($item['product_id']);
-        $dimensions = $productInfo['dimensions'] ?? [];
+
+        // Determine dimensions: DB -> detail -> temp
+        $dimensions = [];
+        if (isset($productInfo['dimensions']) && is_array($productInfo['dimensions'])) {
+          $dimensions = $productInfo['dimensions'];
+        } elseif (!empty($productInfo['width']) || !empty($productInfo['depth']) || !empty($productInfo['height'])) {
+          $dimensions = [
+            'width' => $productInfo['width'] ?? 0,
+            'depth' => $productInfo['depth'] ?? 0,
+            'height' => $productInfo['height'] ?? 0
+          ];
+        } elseif (!empty($item['package_dimensions']) && is_array($item['package_dimensions'])) {
+          $dimensions = $item['package_dimensions'];
+        } elseif (!empty($item['temp']) && is_array($item['temp']) && !empty($item['temp']['package_dimensions']) && is_array($item['temp']['package_dimensions'])) {
+          $dimensions = $item['temp']['package_dimensions'];
+        } elseif (isset($item['width']) || isset($item['depth']) || isset($item['height'])) {
+          $dimensions = [
+            'width' => $item['width'] ?? 0,
+            'depth' => $item['depth'] ?? 0,
+            'height' => $item['height'] ?? 0
+          ];
+        } elseif (!empty($item['temp']) && (isset($item['temp']['width']) || isset($item['temp']['depth']) || isset($item['temp']['height']))) {
+          $dimensions = [
+            'width' => $item['temp']['width'] ?? 0,
+            'depth' => $item['temp']['depth'] ?? 0,
+            'height' => $item['temp']['height'] ?? 0
+          ];
+        }
+
         $width = isset($dimensions['width']) ? floatval($dimensions['width']) : 0;
         $depth = isset($dimensions['depth']) ? floatval($dimensions['depth']) : 0;
         $height = isset($dimensions['height']) ? floatval($dimensions['height']) : 0;
-        
+
         if ($width > 0 && $depth > 0 && $height > 0) {
           $productVolume = $width * $depth * $height;
           $quantity = $item['quantity'] ?? 0;
-          
-          // Quy đổi về đơn vị cơ bản nếu cần
-          $selectedUnit = $item['unit'] ?? ($productInfo['baseUnit'] ?? 'cái');
-          $baseUnit = $productInfo['baseUnit'] ?? 'cái';
+
+          // Quy đổi về đơn vị cơ bản nếu cần (fallback to item/temp when DB missing)
+          $selectedUnit = $item['unit'] ?? ($productInfo['baseUnit'] ?? ($item['baseUnit'] ?? ($item['temp']['baseUnit'] ?? 'cái')));
+          $baseUnit = $productInfo['baseUnit'] ?? ($item['baseUnit'] ?? ($item['temp']['baseUnit'] ?? 'cái'));
           $totalQty = $quantity;
-          
-          if ($selectedUnit !== $baseUnit && !empty($productInfo['conversionUnits'])) {
-            foreach ($productInfo['conversionUnits'] as $conv) {
+
+          $convUnits = $productInfo['conversionUnits'] ?? ($item['conversionUnits'] ?? ($item['temp']['conversionUnits'] ?? []));
+          if ($selectedUnit !== $baseUnit && !empty($convUnits)) {
+            foreach ($convUnits as $conv) {
               if ($conv['unit'] === $selectedUnit) {
                 $totalQty = $quantity * ($conv['factor'] ?? 1);
                 break;
               }
             }
           }
-          
+
           $totalVolume += $productVolume * $totalQty;
         } else {
           $productWithoutDimension++;
@@ -363,7 +405,50 @@ function confirmAction(action, id) {
     cancelButtonColor: '#6c757d',
   }).then((result) => {
     if (result.isConfirmed) {
-      window.location.href = `receipts/approve/process.php?action=${action}&id=${encodeURIComponent(id)}`;
+      // Load approval form fragment via AJAX and show in modal
+      const url = `receipts/approve/process.php?action=${action}&id=${encodeURIComponent(id)}&ajax=1`;
+      fetch(url, { credentials: 'same-origin' })
+        .then(res => res.text())
+        .then(html => {
+          Swal.fire({
+            title: 'Nhập thông tin sản phẩm mới trước khi duyệt',
+            html: html,
+            width: '70%',
+            showCancelButton: true,
+            showConfirmButton: false,
+            didOpen: () => {
+              const container = Swal.getHtmlContainer();
+              if (!container) return;
+              const form = container.querySelector('form#approve-new-products-form');
+              if (form) {
+                form.addEventListener('submit', function(e) {
+                  e.preventDefault();
+                  const fd = new FormData(form);
+                  // send POST with ajax=1
+                  const postUrl = `receipts/approve/process.php?action=${action}&id=${encodeURIComponent(id)}&ajax=1`;
+                  fetch(postUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                    .then(r => r.json())
+                    .then(data => {
+                      if (data.success) {
+                        Swal.fire({ icon: 'success', title: 'Đã duyệt', text: data.message || '' }).then(()=>{
+                          // reload current page to show updated status
+                          window.location.reload();
+                        });
+                      } else {
+                        Swal.fire({ icon: 'error', title: 'Lỗi', text: data.message || 'Không thể duyệt phiếu' });
+                      }
+                    })
+                    .catch(err => {
+                      Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Lỗi kết nối' });
+                    });
+                });
+              }
+            }
+          });
+        })
+        .catch(err => {
+          Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Không thể tải form duyệt' });
+        });
     }
   });
 }

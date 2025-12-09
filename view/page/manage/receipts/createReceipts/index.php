@@ -567,11 +567,107 @@
     
     // --- Thêm sản phẩm thủ công ---
     function addManualProduct() {
-      const code = prompt('Nhập mã SKU, mã vạch hoặc mã lô:');
-      if (code && code.trim() !== '') {
-        fetchProduct(code.trim());
-      }
+      // Open the product create form in an iframe modal so it can postMessage the new product back
+      const supplierId = document.getElementById('supplier_id') ? document.getElementById('supplier_id').value : '';
+      const prefill = supplierId ? ('?prefill=1&supplier_id=' + encodeURIComponent(supplierId)) : '';
+      openCreateProductModal('/kltn/view/page/manage/products/createProduct/index.php' + prefill);
     }
+
+    // Create iframe modal and listen for new product postMessage
+    function openCreateProductModal(src) {
+      // Prevent multiple modals
+      if (document.getElementById('productCreateModal')) return;
+      const modal = document.createElement('div');
+      modal.id = 'productCreateModal';
+      modal.style.position = 'fixed';
+      modal.style.left = 0;
+      modal.style.top = 0;
+      modal.style.width = '100%';
+      modal.style.height = '100%';
+      modal.style.background = 'rgba(0,0,0,0.5)';
+      modal.style.display = 'flex';
+      modal.style.alignItems = 'center';
+      modal.style.justifyContent = 'center';
+      modal.style.zIndex = 9999;
+
+      const frameWrap = document.createElement('div');
+      frameWrap.style.width = '90%';
+      frameWrap.style.maxWidth = '1100px';
+      frameWrap.style.height = '85%';
+      frameWrap.style.background = '#fff';
+      frameWrap.style.borderRadius = '8px';
+      frameWrap.style.overflow = 'hidden';
+      frameWrap.style.boxShadow = '0 8px 32px rgba(0,0,0,0.2)';
+
+      const closeBtn = document.createElement('button');
+      closeBtn.textContent = 'Đóng';
+      closeBtn.className = 'btn btn-danger';
+      closeBtn.style.position = 'absolute';
+      closeBtn.style.right = '14px';
+      closeBtn.style.top = '14px';
+      closeBtn.style.zIndex = 10001;
+      closeBtn.onclick = () => { document.body.removeChild(modal); };
+
+      const iframe = document.createElement('iframe');
+      iframe.src = src;
+      iframe.style.width = '100%';
+      iframe.style.height = '100%';
+      iframe.style.border = 'none';
+
+      frameWrap.appendChild(iframe);
+      frameWrap.appendChild(closeBtn);
+      modal.appendChild(frameWrap);
+      document.body.appendChild(modal);
+
+      // Focus to iframe
+      setTimeout(() => { try { iframe.contentWindow.focus(); } catch(e){} }, 300);
+    }
+
+    // Listen for postMessage from product create iframe
+    window.addEventListener('message', function(e) {
+      try {
+        // Basic origin check when available
+        const allowedOrigin = window.location.origin || null;
+        if (e.origin && allowedOrigin && e.origin !== allowedOrigin) {
+          // ignore messages from other origins
+          return;
+        }
+      } catch(err) {}
+
+      const data = e.data || {};
+      if (data.type === 'wms:new_product_created' && data.product) {
+        const prod = data.product;
+        // Map product fields to the shape expected by addOrUpdateRow
+        const mapped = {
+          _id: prod._id || prod.id || ('new_' + Date.now()),
+          sku: prod.sku || prod.product_name || '',
+          name: prod.product_name || prod.name || '',
+          product_name: prod.product_name || prod.name || '',
+          unit: prod.baseUnit || prod.base_unit || prod.unit || 'cái',
+          import_price: prod.purchase_price || prod.import_price || 0,
+          import_price_display: prod.purchase_price || prod.import_price || 0,
+          package_dimensions: prod.package_dimensions || prod.dimensions || {},
+          package_weight: prod.package_weight || prod.package_weight || 0,
+          volume_per_unit: prod.volume_per_unit || 0,
+          conversionUnits: prod.conversionUnits || [],
+          baseUnit: prod.baseUnit || prod.base_unit || 'cái',
+          min_stock: prod.min_stock || 0,
+          category: prod.category || {},
+          model: prod.model || '',
+          description: prod.description || '',
+          stackable: prod.stackable || false,
+          max_stack_height: prod.max_stack_height || 0,
+          image: prod.image || ''
+        };
+
+        // Close modal if open
+        const modal = document.getElementById('productCreateModal');
+        if (modal) try { document.body.removeChild(modal); } catch(e){}
+
+        // Add to receipt table
+        try { addOrUpdateRow(mapped, 'product'); } catch(e) { console.error('Failed to add product from iframe message', e); }
+      }
+    });
 
     // --- Quét bằng Camera ---
     let html5QrCode;
@@ -843,11 +939,26 @@
           `;
         }
         
+        const isTemp = (String(product._id || '').startsWith('new_') || product.is_new);
         row.innerHTML = `
           <td>
             <input type="hidden" name="products[${rowIndex}][sku]" value="${product.sku || ''}">
             <input type="hidden" name="products[${rowIndex}][product_id]" value="${product._id}">
             ${batchInputs}
+            ${ isTemp ? `<input type="hidden" name="products[${rowIndex}][is_new]" value="1">` : '' }
+            <input type="hidden" name="products[${rowIndex}][package_dimensions]" value='${JSON.stringify(product.package_dimensions || product.dimensions || {})}'>
+            <input type="hidden" name="products[${rowIndex}][package_weight]" value="${product.package_weight || 0}">
+            <input type="hidden" name="products[${rowIndex}][volume_per_unit]" value="${product.volume_per_unit || 0}">
+            <input type="hidden" name="products[${rowIndex}][conversionUnits]" value='${JSON.stringify(product.conversionUnits || [])}'>
+            <input type="hidden" name="products[${rowIndex}][baseUnit]" value="${product.baseUnit || product.base_unit || ''}">
+            <input type="hidden" name="products[${rowIndex}][min_stock]" value="${product.min_stock || 0}">
+            <input type="hidden" name="products[${rowIndex}][dimensions]" value='${JSON.stringify(product.dimensions || product.package_dimensions || {})}'>
+            <input type="hidden" name="products[${rowIndex}][category]" value='${JSON.stringify(product.category || {})}'>
+            <input type="hidden" name="products[${rowIndex}][model]" value="${product.model || ''}">
+            <input type="hidden" name="products[${rowIndex}][description]" value="${product.description || ''}">
+            <input type="hidden" name="products[${rowIndex}][stackable]" value="${product.stackable ? 1 : 0}">
+            <input type="hidden" name="products[${rowIndex}][max_stack_height]" value="${product.max_stack_height || 0}">
+            <input type="hidden" name="products[${rowIndex}][image]" value="${product.image || ''}">
             <strong>${product.sku || 'N/A'}</strong>
           </td>
           <td><strong>${product.name}</strong></td>

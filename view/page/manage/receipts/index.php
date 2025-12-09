@@ -72,7 +72,7 @@
     /* Modal overlay for centered popup */
     .modal-overlay {position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:2147483646;pointer-events:auto}
     .modal-overlay.show {display:flex}
-    .modal-dialog {background:#fff;padding:18px;border-radius:10px;max-width:520px;width:92%;box-shadow:0 10px 30px rgba(0,0,0,0.25);z-index:2147483647;pointer-events:auto}
+    .modal-dialog {background:#fff;padding:18px;border-radius:10px;max-width:1100px;width:90%;box-shadow:0 10px 30px rgba(0,0,0,0.25);z-index:2147483647;pointer-events:auto}
     .modal-dialog p {margin:0 0 12px 0;color:#333}
   </style>
 </head>
@@ -179,6 +179,34 @@
       <div style="text-align:right;margin-top:12px;">
         <button type="button" class="btn-confirm" onclick="confirmCancel()">Xác nhận</button>
         <button type="button" class="btn-cancel" onclick="cancelCancel()" style="margin-left:8px;">Hủy bỏ</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Modal: Full Add Product form (embedded) -->
+  <div id="newProductModal" class="modal-overlay" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="newProductModalTitle">
+      <h3 id="newProductModalTitle" style="margin-top:0;color:#333;">Thêm sản phẩm mới</h3>
+
+      <div id="fullAddFormContainer" style="display:block;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <strong>Form thêm sản phẩm đầy đủ</strong>
+          <div>
+            <button type="button" class="btn btn-cancel" onclick="closeNewProductModal()" style="margin-left:8px;">Đóng</button>
+          </div>
+        </div>
+        <iframe id="fullAddFormIframe" src="about:blank" style="width:100%;height:780px;border:0;border-radius:6px;background:#fff;"></iframe>
+          <!-- Product added confirmation modal -->
+          <div id="productAddedModal" class="modal-overlay" aria-hidden="true">
+            <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="productAddedTitle" style="max-width:420px;">
+              <h3 id="productAddedTitle" style="margin-top:0;color:#333;">Sản phẩm đã thêm</h3>
+              <p style="color:#444;margin-top:6px;">Sản phẩm mới đã được thêm vào danh sách phiếu.</p>
+              <div style="text-align:right;margin-top:12px;">
+                <button type="button" class="btn" onclick="hideProductAddedModal()">OK</button>
+              </div>
+            </div>
+          </div>
+
       </div>
     </div>
   </div>
@@ -323,33 +351,179 @@
       clearError('products-error');
     }
     
-    // Manual add modal
+    // Manual add modal: open popup to add a temporary new product (not saved to DB)
     function openManualModal(){
-      const name = prompt('Tên sản phẩm');
-      if (name === null) return;
-      const sku = prompt('Mã SP (SKU)');
-      if (sku === null) return;
-      const unit = prompt('Đơn vị (ví dụ: Cái)') || 'Cái';
-      const qtyStr = prompt('Số lượng', '1');
-      if (qtyStr === null) return;
-      const priceStr = prompt('Giá nhập', '0');
-      if (priceStr === null) return;
-      const qty = Math.max(1, parseFloat(qtyStr)||1);
-      const price = Math.max(0, parseFloat(priceStr)||0);
-      const tempId = 'manual_' + Date.now();
-      const product = { _id: tempId, sku: sku || tempId, product_name: name || sku || tempId, baseUnit: unit, conversionUnits: [], purchase_price: price };
-      // Ensure row is added and then set qty/price
-      addOrUpdateRow(product);
-      // Set the last inserted row quantities and price if needed
-      const row = document.querySelector(`#row-${rowIndex-1}`);
-      if (row) {
-        const qtyInput = row.querySelector("input[name*='[quantity]']");
-        const priceInput = row.querySelector("input[name*='[price]']");
-        if (qtyInput) qtyInput.value = qty;
-        if (priceInput) priceInput.value = price;
-        calcSubtotal(qtyInput || priceInput);
+      // Ensure supplier selected for purchase
+      const typeEl = document.getElementById('type') || document.getElementById('receipt_type');
+      const currentType = typeEl ? typeEl.value : '';
+      const supplierEl = document.getElementById('supplier_id');
+      const selectedSupplierId = supplierEl ? supplierEl.value : '';
+      if (currentType === 'purchase' && (!selectedSupplierId || selectedSupplierId === '')) {
+        showError('supplier-error', '⚠️ Vui lòng chọn nhà cung cấp trước khi thêm sản phẩm mới');
+        if (supplierEl) supplierEl.focus();
+        return;
+      }
+
+      // Build prefill params safely (inputs removed — use empty defaults)
+      const selSupplierName = supplierEl ? (supplierEl.options[supplierEl.selectedIndex]?.text || '') : '';
+      const modal = document.getElementById('newProductModal');
+      if (!modal) return;
+      modal.classList.add('show');
+
+      // Directly open full add-product form in iframe (user asked for full form immediately)
+      const iframe = document.getElementById('fullAddFormIframe');
+      const full = document.getElementById('fullAddFormContainer');
+      if (iframe) {
+        // inputs no longer exist in the receipts modal, so pass minimal prefill (supplier only)
+          const params = `?prefill=1&product_name=${encodeURIComponent('')}&sku=${encodeURIComponent('')}&barcode=${encodeURIComponent('')}&base_unit=${encodeURIComponent('')}&purchase_price=${encodeURIComponent('')}&description=${encodeURIComponent(selSupplierName ? `Supplier: ${selSupplierName}` : '')}&supplier_id=${encodeURIComponent(supplierEl ? supplierEl.value : '')}`;
+          iframe.src = '/kltn/view/page/manage/products/createProduct/index.php' + params;
+        if (full) full.style.display = 'block';
       }
     }
+
+    function closeNewProductModal(){
+      const modal = document.getElementById('newProductModal');
+      if (modal) modal.classList.remove('show');
+    }
+
+    function saveNewProductFromModal(){
+      // The simple temporary form was removed; open the full add-product iframe instead
+      openManualModal();
+      return false;
+    }
+
+    // Open full Add Product form in a new tab with prefilled params from modal
+    function openFullAddProductFormFromModal(){
+      // Open the full add-product form in the iframe with minimal prefill (supplier only)
+      const supplier_id = encodeURIComponent(document.getElementById('supplier_id') ? document.getElementById('supplier_id').value : '');
+      const note = '';
+      const params = `?prefill=1&product_name=&sku=&barcode=&base_unit=&purchase_price=&description=${encodeURIComponent(note)}&supplier_id=${supplier_id}`;
+      const url = '/kltn/view/page/manage/products/createProduct/index.php' + params;
+      const iframe = document.getElementById('fullAddFormIframe');
+      const full = document.getElementById('fullAddFormContainer');
+      if (!iframe) { window.open(url, '_blank'); return; }
+      if (full) full.style.display = 'block';
+      iframe.src = url;
+    }
+
+    function backToSimpleModal(){
+      const full = document.getElementById('fullAddFormContainer');
+      const iframe = document.getElementById('fullAddFormIframe');
+      if (iframe) iframe.src = 'about:blank';
+      if (full) full.style.display = 'none';
+    }
+
+    function showProductAddedModal(){
+      const m = document.getElementById('productAddedModal');
+      if (m) m.classList.add('show');
+    }
+    function hideProductAddedModal(){
+      const m = document.getElementById('productAddedModal');
+      if (m) m.classList.remove('show');
+    }
+
+    // Listen for messages from iframe (createProduct) when a product is created
+    window.addEventListener('message', async function(e) {
+      try {
+        const data = e.data || {};
+            // Security: only accept messages from same origin
+            const allowedOrigin = window.location.origin;
+            if (e.origin !== allowedOrigin) {
+              console.warn('Ignored postMessage from unknown origin', e.origin);
+              return;
+            }
+
+        if (data && data.type === 'wms:new_product_created' && data.product) {
+          const prod = data.product;
+          // If barcode present, verify it doesn't already exist as a different product
+          if (prod && prod.barcode) {
+            try {
+              const resp = await fetch(`/kltn/view/page/manage/receipts/get_barcode_or_batch.php?barcode=${encodeURIComponent(prod.barcode)}`);
+              const j = await resp.json();
+              if (j && j.success && j.product && j.product._id) {
+                // existing product in DB
+                const existingId = j.product._id;
+                if (existingId && existingId !== prod._id && !(existingId === prod._id)) {
+                  showError('products-error', `⚠️ Mã vạch "${prod.barcode}" đã tồn tại trong hệ thống. Vui lòng dùng mã khác.`);
+                  return;
+                }
+              }
+            } catch (err) {
+              console.warn('Barcode uniqueness check failed in parent', err);
+            }
+          }
+            // Also ensure barcode is not already present in current receipt rows
+            if (prod && prod.barcode) {
+              try {
+                const existingBarcodeInputs = document.querySelectorAll(`input[name^="products"][name$="[barcode]"]`);
+                for (let i = 0; i < existingBarcodeInputs.length; i++) {
+                  const val = (existingBarcodeInputs[i].value || '').toString().trim();
+                  if (val && val === prod.barcode) {
+                    showError('products-error', `⚠️ Mã vạch "${prod.barcode}" đã được thêm vào danh sách.`);
+                    return;
+                  }
+                }
+              } catch (err) { console.warn('Local barcode check failed', err); }
+            }
+          // Preserve full product payload from iframe, but normalize common keys
+          const productObj = Object.assign({}, prod || {});
+          productObj._id = productObj._id || productObj.id || productObj['_id'] || ('new_' + Date.now());
+          productObj.sku = productObj.sku || productObj.SKU || productObj.sku || '';
+          productObj.barcode = productObj.barcode || productObj.bar_code || productObj.barcode || '';
+          productObj.product_name = productObj.product_name || productObj.name || productObj.productName || '';
+          productObj.baseUnit = productObj.baseUnit || productObj.base_unit || productObj.unit || 'Cái';
+          productObj.purchase_price = productObj.purchase_price || productObj.purchasePrice || productObj.import_price || 0;
+          productObj.conversionUnits = productObj.conversionUnits || productObj.conversion_units || productObj.conversions || [];
+          productObj.package_dimensions = productObj.package_dimensions || productObj.packageDimensions || productObj.dimensions || productObj.package_dims || {};
+          productObj.package_weight = productObj.package_weight || productObj.packageWeight || productObj.weight || 0;
+          productObj.volume_per_unit = productObj.volume_per_unit || productObj.volumePerUnit || productObj.volume || 0;
+          productObj.min_stock = typeof productObj.min_stock !== 'undefined' ? productObj.min_stock : (productObj.minStock || 0);
+          productObj.model = productObj.model || '';
+          productObj.description = productObj.description || productObj.note || '';
+          productObj.image = productObj.image || productObj.images || '';
+          productObj.is_new = productObj.is_new || 0; // Giữ nguyên flag is_new từ iframe
+          // category might be provided as object or id/name pair
+          if (!productObj.category && (productObj.category_id || productObj.categoryName || productObj.category_name)) {
+            productObj.category = { id: productObj.category_id || '', name: productObj.category_name || productObj.categoryName || '' };
+          }
+          // stacking info
+          productObj.stackable = typeof productObj.stackable !== 'undefined' ? productObj.stackable : (productObj.is_stackable || false);
+          productObj.max_stack_height = productObj.max_stack_height || productObj.maxStackHeight || 0;
+
+          // Supplier: lấy từ dropdown nếu chưa có trong productObj
+          if (!productObj.supplier && !productObj.supplier_id && !productObj.supplier_name) {
+            const supplierEl = document.getElementById('supplier_id');
+            if (supplierEl && supplierEl.value) {
+              const selectedOption = supplierEl.options[supplierEl.selectedIndex];
+              productObj.supplier_id = supplierEl.value;
+              productObj.supplier_name = selectedOption ? selectedOption.text : '';
+              productObj.supplier = {
+                id: supplierEl.value,
+                name: selectedOption ? selectedOption.text : ''
+              };
+            }
+          }
+
+          // Add directly into the receipt table with all provided details preserved
+          try { addOrUpdateRow(productObj); } catch(err) { console.error('addOrUpdateRow failed', err); }
+
+          // Close modal after adding and scroll to the product table
+           try { 
+             backToSimpleModal(); 
+             closeNewProductModal(); 
+             showProductAddedModal(); 
+             
+             // Scroll to the product table to show the newly added product
+             setTimeout(() => {
+               const productTable = document.getElementById('productTable');
+               if (productTable) {
+                 productTable.scrollIntoView({ behavior: 'smooth', block: 'center' });
+               }
+             }, 300);
+           } catch(e) {}
+        }
+      } catch(err) { console.error('message handler error', err); }
+    });
 
     let exportProducts = {}; // Lưu danh sách sản phẩm từ phiếu xuất
 
@@ -786,14 +960,54 @@
           console.log(`📦 Batches for ${product.product_name}:`, batches);
         }
 
+        // If this is a temporarily created new product, add hidden inputs to mark it as new
+        let newHiddenInputs = '';
+        if (product.is_new) {
+          const pd = product.package_dimensions || {};
+          const pdJson = JSON.stringify(pd).replace(/'/g, "&apos;");
+          const convJson = JSON.stringify(product.conversionUnits || []).replace(/'/g, "&apos;");
+          const catId = (product.category && product.category.id) ? product.category.id : (product.category_id || '');
+          const catName = (product.category && product.category.name) ? product.category.name : (product.category_name || '');
+          newHiddenInputs = `
+            <input type="hidden" name="products[${rowIndex}][is_new]" value="1">
+            <input type="hidden" name="products[${rowIndex}][sku]" value="${product.sku}">
+            <input type="hidden" name="products[${rowIndex}][barcode]" value="${product.barcode || ''}">
+            <input type="hidden" name="products[${rowIndex}][note]" value='${(product.note||'').replace(/'/g, "&apos;")}'>
+            <input type="hidden" name="products[${rowIndex}][supplier_id]" value='${product.supplier_id || (product.supplier && product.supplier.id) || ''}'>
+            <input type="hidden" name="products[${rowIndex}][supplier_name]" value='${((product.supplier && product.supplier.name) || product.supplier_name||'').replace(/'/g, "&apos;")}'>
+            <input type="hidden" name="products[${rowIndex}][package_dimensions]" value='${pdJson}'>
+            <input type="hidden" name="products[${rowIndex}][package_weight]" value='${product.package_weight || 0}'>
+            <input type="hidden" name="products[${rowIndex}][volume_per_unit]" value='${product.volume_per_unit || 0}'>
+            <input type="hidden" name="products[${rowIndex}][conversionUnits]" value='${convJson}'>
+            <input type="hidden" name="products[${rowIndex}][category_id]" value='${catId}'>
+            <input type="hidden" name="products[${rowIndex}][category_name]" value='${(catName||'').replace(/'/g, "&apos;")}'>
+            <input type="hidden" name="products[${rowIndex}][category]" value='${JSON.stringify(product.category || (catId ? {id:catId, name:catName} : {})).replace(/'/g, "&apos;")}'>
+            <input type="hidden" name="products[${rowIndex}][dimensions]" value='${JSON.stringify(product.dimensions || {}).replace(/'/g, "&apos;")}'>
+            <input type="hidden" name="products[${rowIndex}][width]" value='${(product.dimensions && product.dimensions.width) || (product.width || 0)}'>
+            <input type="hidden" name="products[${rowIndex}][depth]" value='${(product.dimensions && product.dimensions.depth) || (product.depth || 0)}'>
+            <input type="hidden" name="products[${rowIndex}][height]" value='${(product.dimensions && product.dimensions.height) || (product.height || 0)}'>
+            <input type="hidden" name="products[${rowIndex}][weight]" value='${(product.dimensions && product.dimensions.weight) || (product.weight || 0)}'>
+            <input type="hidden" name="products[${rowIndex}][volume]" value='${(product.dimensions && product.dimensions.volume) || (product.volume || 0)}'>
+            <input type="hidden" name="products[${rowIndex}][stackable]" value='${product.stackable ? 1 : 0}'>
+            <input type="hidden" name="products[${rowIndex}][max_stack_height]" value='${product.max_stack_height || 0}'>
+            <input type="hidden" name="products[${rowIndex}][model]" value='${(product.model||'').replace(/'/g, "&apos;")}'>
+            <input type="hidden" name="products[${rowIndex}][min_stock]" value='${product.min_stock || 0}'>
+            <input type="hidden" name="products[${rowIndex}][status]" value='${product.status || 1}'>
+            <input type="hidden" name="products[${rowIndex}][description]" value='${(product.description||'').replace(/'/g, "&apos;")}'>
+            <input type="hidden" name="products[${rowIndex}][baseUnit]" value='${(product.baseUnit||'').replace(/'/g, "&apos;")}'>
+            <input type="hidden" name="products[${rowIndex}][purchase_price]" value='${product.purchase_price || 0}'>
+          `;
+        }
+
         row.innerHTML = `
           <td>
             <input type="hidden" name="products[${rowIndex}][product_id]" value="${product._id}">
             <input type="hidden" name="products[${rowIndex}][product_name]" value="${product.product_name}">
+            ${newHiddenInputs}
             <input type="hidden" name="products[${rowIndex}][batches]" value='${batchesJson}'>
             ${product.sku || product._id}
           </td>
-          <td>${product.product_name}</td>
+          <td>${product.product_name} ${product.is_new ? '<span class="new-badge" style="color:#fff;background:#28a745;padding:2px 6px;border-radius:4px;font-size:11px;margin-left:6px;">NEW</span>' : ''}</td>
           <td class="batch-column">${batchDisplay}</td>
           <td>
             <select name="products[${rowIndex}][unit]" class="unit-select" onchange="updateByUnit(this)" ${unitSelectDisabled}>

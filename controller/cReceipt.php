@@ -79,6 +79,32 @@ class CReceipt {
                 $detailItem['batches'] = $d['batches'];
             }
 
+            // Nếu frontend gửi sản phẩm tạm (is_new), giữ nguyên các trường tạm để không lookup DB
+            if (!empty($d['is_new'])) {
+                $detailItem['is_new'] = true;
+                // Preserve any temp metadata sent from frontend so we can create product on approval
+                $detailItem['temp'] = is_array($d['temp']) ? $d['temp'] : [];
+                // Copy some commonly used top-level temp fields if provided
+                if (!empty($d['sku'])) $detailItem['temp']['sku'] = $d['sku'];
+                if (!empty($d['barcode'])) $detailItem['temp']['barcode'] = $d['barcode'];
+                if (!empty($d['supplier_id'])) {
+                    $detailItem['supplier_id'] = $d['supplier_id'];
+                    $detailItem['temp']['supplier_id'] = $d['supplier_id'];
+                    $detailItem['temp']['supplier_name'] = $d['supplier_name'] ?? ($d['temp']['supplier_name'] ?? '');
+                }
+                if (!empty($d['conversionUnits'])) $detailItem['temp']['conversionUnits'] = $d['conversionUnits'];
+                if (!empty($d['package_dimensions'])) $detailItem['temp']['package_dimensions'] = $d['package_dimensions'];
+                if (!empty($d['package_weight'])) $detailItem['temp']['package_weight'] = $d['package_weight'];
+                if (!empty($d['volume_per_unit'])) $detailItem['temp']['volume_per_unit'] = $d['volume_per_unit'];
+                if (!empty($d['model'])) $detailItem['temp']['model'] = $d['model'];
+                if (!empty($d['min_stock'])) $detailItem['temp']['min_stock'] = $d['min_stock'];
+                if (!empty($d['status'])) $detailItem['temp']['status'] = $d['status'];
+                if (!empty($d['purchase_price'])) $detailItem['temp']['purchase_price'] = $d['purchase_price'];
+                if (!empty($d['category_id'])) $detailItem['temp']['category_id'] = $d['category_id'];
+                if (!empty($d['category_name'])) $detailItem['temp']['category_name'] = $d['category_name'];
+                if (!empty($d['description'])) $detailItem['temp']['description'] = $d['description'];
+            }
+
             $cleanDetails[] = $detailItem;
             $total += $subtotal;
         }
@@ -115,21 +141,25 @@ class CReceipt {
 
     // Duyệt phiếu
     public function approveReceipt($id, $approver) {
+        // First attempt to create products/batches. Only mark as approved if that succeeds.
+        try {
+            $batchOk = $this->createBatchesFromReceipt($id);
+        } catch (Throwable $e) {
+            error_log('approveReceipt: createBatchesFromReceipt threw: ' . $e->getMessage());
+            $batchOk = false;
+        }
+
+        if (!$batchOk) {
+            error_log('approveReceipt: batch creation failed, aborting approval for ' . $id);
+            return false;
+        }
+
         $data = [
             'status' => 1,
             'approved_by' => $approver,
             'approved_at' => new MongoDB\BSON\UTCDateTime()
         ];
-        $ok = $this->mReceipt->updateReceipt($id, $data);
-        if ($ok) {
-            // Ensure batches are created when approving via this method
-            try {
-                $this->createBatchesFromReceipt($id);
-            } catch (Throwable $e) {
-                error_log('approveReceipt: createBatchesFromReceipt failed: ' . $e->getMessage());
-            }
-        }
-        return $ok;
+        return $this->mReceipt->updateReceipt($id, $data);
     }
 
     // Từ chối phiếu
@@ -154,14 +184,25 @@ class CReceipt {
             $data['approved_at'] = new MongoDB\BSON\UTCDateTime();
         }
         
-        $result = $this->mReceipt->updateReceipt($id, $data);
-        
-        // ✅ Tự động tạo lô hàng khi duyệt phiếu (status = 1)
-        if ($result && (int)$status === 1) {
-            $this->createBatchesFromReceipt($id);
+        // If approving (status 1), try to create products/batches first and only update status if successful
+        if ((int)$status === 1) {
+            try {
+                $ok = $this->createBatchesFromReceipt($id);
+            } catch (Throwable $e) {
+                error_log('updateReceiptStatus: createBatchesFromReceipt failed: ' . $e->getMessage());
+                $ok = false;
+            }
+            if (!$ok) return false;
+            // now mark approved
+            if ($approver) {
+                $data['approved_by'] = $approver;
+                $data['approved_at'] = new MongoDB\BSON\UTCDateTime();
+            }
+            return $this->mReceipt->updateReceipt($id, $data);
         }
-        
-        return $result;
+
+        // For non-approve statuses, just update
+        return $this->mReceipt->updateReceipt($id, $data);
     }
 
     // ✅ Tạo lô hàng từ phiếu nhập đã duyệt
@@ -251,9 +292,142 @@ class CReceipt {
                 $details = is_array($receipt['details']) ? $receipt['details'] : json_decode(json_encode($receipt['details']), true);
             }
             file_put_contents($logFile, "Receipt details count: " . count($details) . "\n", FILE_APPEND);
+            // --- Persist temporary products (is_new) into products collection before creating batches ---
+            if (!class_exists('CProduct')) include_once(__DIR__ . '/cProduct.php');
+            $cprod = new CProduct();
+
+            foreach ($details as &$detail) {
+                $productId = $detail['product_id'] ?? null;
+
+                // If this detail was a frontend temporary product, attempt to create a DB product
+                if (!empty($detail['is_new']) && (!isset($productId) || strpos((string)$productId, 'new_') === 0)) {
+                    $temp = is_array($detail['temp']) ? $detail['temp'] : [];
+                    $barcode = trim($temp['barcode'] ?? '');
+                    $sku = trim($temp['sku'] ?? '');
+                    $name = $detail['product_name'] ?? $temp['product_name'] ?? '';
+
+                    $existing = null;
+                    if ($barcode !== '') {
+                        try { $existing = $cprod->getProductByBarcode($barcode); } catch (Throwable $e) { $existing = null; }
+                    }
+                    if (!$existing && $sku !== '') {
+                        try { $existing = $cprod->getProductBySKU($sku); } catch (Throwable $e) { $existing = null; }
+                    }
+
+                    if ($existing && !empty($existing['_id'])) {
+                        // Use existing product
+                        $newProductId = $existing['_id'];
+                        file_put_contents($logFile, "Using existing product for temp item: sku={$sku} barcode={$barcode} id={$newProductId}\n", FILE_APPEND);
+                    } else {
+                        // Build product payload
+                        // Prefer dimensions provided on the receipt detail (manual-add), otherwise use temp
+                        $pkgDims = [];
+                        if (!empty($detail['package_dimensions'])) $pkgDims = $detail['package_dimensions'];
+                        elseif (!empty($detail['dimensions'])) $pkgDims = $detail['dimensions'];
+                        elseif (!empty($temp['package_dimensions'])) $pkgDims = $temp['package_dimensions'];
+                        elseif (!empty($temp['dimensions'])) $pkgDims = $temp['dimensions'];
+                        if (is_string($pkgDims) && $pkgDims !== '') {
+                            $decoded = json_decode($pkgDims, true);
+                            if (is_array($decoded)) $pkgDims = $decoded;
+                        }
+                        if (!is_array($pkgDims)) $pkgDims = [];
+
+                        $newProduct = [
+                            // Let MProduct->addProduct set sku if empty (it will use category code + id)
+                            'sku' => $sku ?: '',
+                            'product_name' => $name,
+                            'barcode' => $barcode,
+                            'purchase_price' => $temp['purchase_price'] ?? $detail['unit_price'] ?? 0,
+                            'baseUnit' => $temp['baseUnit'] ?? $detail['unit'] ?? 'Cái',
+                            'conversionUnits' => $temp['conversionUnits'] ?? [],
+                            'package_dimensions' => $pkgDims,
+                            'package_weight' => $temp['package_weight'] ?? ($temp['weight'] ?? 0),
+                            'volume_per_unit' => $temp['volume_per_unit'] ?? 0,
+                            'model' => $temp['model'] ?? '',
+                            'description' => $temp['description'] ?? '',
+                            'min_stock' => isset($temp['min_stock']) ? (int)$temp['min_stock'] : 0,
+                            'status' => isset($temp['status']) ? (int)$temp['status'] : 1,
+                            'stackable' => isset($temp['stackable']) ? (bool)$temp['stackable'] : false,
+                            'max_stack_height' => isset($temp['max_stack_height']) ? (int)$temp['max_stack_height'] : 1,
+                            'image' => $temp['image'] ?? '',
+                        ];
+
+                        // Category and supplier - hỗ trợ cả object và id/name riêng
+                        if (!empty($temp['category']) && is_array($temp['category'])) {
+                            $newProduct['category'] = $temp['category'];
+                        } elseif (!empty($temp['category_id']) || !empty($temp['category_name'])) {
+                            $newProduct['category'] = [
+                                'id' => $temp['category_id'] ?? null,
+                                'name' => $temp['category_name'] ?? null
+                            ];
+                        }
+                        
+                        if (!empty($temp['supplier']) && is_array($temp['supplier'])) {
+                            $newProduct['supplier'] = $temp['supplier'];
+                        } elseif (!empty($detail['supplier_id']) || !empty($temp['supplier_id'])) {
+                            $newProduct['supplier'] = [
+                                'id' => $detail['supplier_id'] ?? ($temp['supplier_id'] ?? null),
+                                'name' => $temp['supplier_name'] ?? null
+                            ];
+                        }
+
+                        // Try to add product
+                        try {
+                            // Log the product payload we're about to insert (helpful for debugging)
+                            file_put_contents($logFile, "Attempting addProduct with payload: " . json_encode($newProduct, JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND);
+                            // Expect addProduct to return inserted id (string) or false
+                            $insertedId = $cprod->addProduct($newProduct);
+                            file_put_contents($logFile, "addProduct returned: " . json_encode($insertedId) . "\n", FILE_APPEND);
+                        } catch (Throwable $e) {
+                            $insertedId = false;
+                            file_put_contents($logFile, "Error adding product for temp item: " . $e->getMessage() . "\n", FILE_APPEND);
+                        }
+
+                        if ($insertedId) {
+                            $newProductId = (string)$insertedId;
+                        } else {
+                            // As a fallback try to look up by barcode/sku
+                            $newProductId = null;
+                            if (!empty($barcode)) {
+                                $found = $cprod->getProductByBarcode($barcode);
+                                if ($found && !empty($found['_id'])) $newProductId = $found['_id'];
+                            }
+                            if (empty($newProductId) && !empty($sku)) {
+                                $found2 = $cprod->getProductBySKU($sku);
+                                if ($found2 && !empty($found2['_id'])) $newProductId = $found2['_id'];
+                            }
+                        }
+
+                        if (empty($newProductId)) {
+                            // Failed to create product -> log and abort batch creation
+                            file_put_contents($logFile, "Failed to create product for temp item (sku={$sku}, barcode={$barcode}). Aborting batch creation.\n", FILE_APPEND);
+                            return false;
+                        }
+                        file_put_contents($logFile, "Created product for temp item: sku={$sku} barcode={$barcode} id={$newProductId}\n", FILE_APPEND);
+                    }
+
+                    // Update detail to reference new product id
+                    $detail['product_id'] = $newProductId;
+                    // remove temp flags now that persisted
+                    unset($detail['is_new']);
+                    unset($detail['temp']);
+                }
+            }
+            unset($detail);
+
+            // Persist any updated details (with created product ids)
+            try {
+                $this->mReceipt->updateReceipt($receipt['transaction_id'] ?? $receiptId, ['details' => $details]);
+                file_put_contents($logFile, "Updated receipt details with persisted product ids for receipt " . ($receipt['transaction_id'] ?? $receiptId) . "\n", FILE_APPEND);
+            } catch (Throwable $e) {
+                file_put_contents($logFile, "Failed to update receipt details after product creation: " . $e->getMessage() . "\n", FILE_APPEND);
+                return false;
+            }
+
+            // Now build detailData for batch creation using possibly-updated details
             foreach ($details as $detail) {
                 $productId = $detail['product_id'] ?? null;
-                
+
                 $detailData = [
                     'product_id' => $productId,
                     'product_name' => $detail['product_name'] ?? '',
@@ -278,16 +452,11 @@ class CReceipt {
                 $receiptData['details'][] = $detailData;
             }
 
-            // Tạo lô hàng cho từng sản phẩm trong phiếu
-            $batchResult = $this->cBatch->createBatchFromReceipt($receiptData);
+            // ✅ Không tạo lô hàng tự động khi duyệt phiếu nhập
+            // Lô hàng sẽ được tạo riêng biệt sau khi duyệt
+            file_put_contents($logFile, "Receipt approved successfully. Products created. Batches not auto-created.\n", FILE_APPEND);
+            return true;
             
-            if ($batchResult['success']) {
-                error_log("✅ Đã tạo lô hàng cho phiếu $receiptId: " . json_encode($batchResult['batches']));
-                return true;
-            } else {
-                error_log("❌ Lỗi tạo lô hàng cho phiếu $receiptId: " . $batchResult['message']);
-                return false;
-            }
         } catch (\Exception $e) {
             error_log("createBatchesFromReceipt error: " . $e->getMessage());
             return false;

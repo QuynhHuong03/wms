@@ -160,7 +160,8 @@ class CDashboard {
 					'totalQty' => 0,
 					'totalValue' => 0,
 					'lowStockCount' => 0,
-					'totalWarehouses' => 1,
+					// For manager dashboard, show system-wide active warehouses count
+					'totalWarehouses' => $this->getTotalWarehouses(),
 					'warehouseUtilization' => 0,
 					'receiptExportChart' => ['labels'=>[], 'receipts'=>[], 'exports'=>[]],
 					'categoryDistribution' => ['labels'=>[], 'values'=>[]],
@@ -178,13 +179,14 @@ class CDashboard {
 				'totalQty' => $ws['total_qty'],
 				'totalValue' => $ws['total_value'],
 				'lowStockCount' => $ws['low_stock_count'],
-				'totalWarehouses' => 1,
+				'totalWarehouses' => $this->getTotalWarehouses(),
 				'warehouseUtilization' => $ws['utilization'],
-				'receiptExportChart' => $this->getReceiptExportChartData(),
-				'categoryDistribution' => $this->getCategoryDistribution(),
-				'stockStatusChart' => $this->getStockStatusChart(),
-				'recentTransactions' => $this->getRecentTransactions(10),
-				'topProducts' => $this->getTopMovingProducts(10),
+				// Pass warehouseId to chart and list builders so manager/staff see per-warehouse data
+				'receiptExportChart' => $this->getReceiptExportChartData($warehouseId),
+				'categoryDistribution' => $this->getCategoryDistribution($warehouseId),
+				'stockStatusChart' => $this->getStockStatusChart($warehouseId),
+				'recentTransactions' => $this->getRecentTransactions(10, $warehouseId),
+				'topProducts' => $this->getTopMovingProducts(10, $warehouseId),
 				'alerts' => $this->getSystemAlerts(),
 				'lowStockProducts' => $this->getLowStockProducts(10),
 				'warehousesSummary' => [$ws]
@@ -248,12 +250,40 @@ class CDashboard {
 	private function getTotalWarehouses() {
 		try {
 			$warehouses = $this->mWarehouse->getAllWarehouses();
-			$active = 0;
-			foreach ($warehouses as $w) {
-				if (isset($w['status']) && $w['status'] == 1) {
-					$active++;
+			// Debug: log warehouse ids and status values to help diagnose dashboard count issues
+			try {
+				$dbgFile = __DIR__ . '/../backups/dashboard_warehouses_debug.log';
+				$lines = [];
+				$lines[] = "--- getTotalWarehouses called: " . date(DATE_ATOM);
+				$lines[] = "warehouses_count=" . (is_array($warehouses) ? count($warehouses) : 'not-array');
+				if (is_array($warehouses)) {
+					foreach ($warehouses as $w) {
+						$wid = $w['warehouse_id'] ?? ($w['id'] ?? ($w['_id']['$oid'] ?? ($w['_id'] ?? '')));
+						$s = $w['status'] ?? ($w['is_active'] ?? ($w['active'] ?? 'NULL'));
+						$lines[] = "wid=" . (string)$wid . " status=" . json_encode($s);
+					}
 				}
+				@file_put_contents($dbgFile, implode("\n", $lines) . "\n\n", FILE_APPEND);
+			} catch (\Exception $e) { /* ignore logging failures */ }
+			$active = 0;
+			$hasStatusField = false;
+			foreach ($warehouses as $w) {
+				// status may be stored in different fields/shapes
+				$s = $w['status'] ?? ($w['is_active'] ?? ($w['active'] ?? null));
+				if ($s !== null) $hasStatusField = true;
+				$isActive = false;
+				if (is_numeric($s)) {
+					if (intval($s) === 1) $isActive = true;
+				} elseif (is_bool($s)) {
+					if ($s === true) $isActive = true;
+				} elseif (is_string($s)) {
+					$sl = strtolower($s);
+					if (in_array($sl, ['1', 'true', 'active', 'on', 'yes'], true)) $isActive = true;
+				}
+				if ($isActive) $active++;
 			}
+			// If no status field was present at all, assume all warehouses are active
+			if (!$hasStatusField) return count(is_array($warehouses) ? $warehouses : []);
 			return $active;
 		} catch (\Exception $e) {
 			return 0;
@@ -349,7 +379,7 @@ class CDashboard {
 
 	// ============ Chart Data ============
 
-	private function getReceiptExportChartData() {
+	private function getReceiptExportChartData($warehouseFilter = null) {
 		try {
 			// Debug logging to help trace reload/loop issues
 			$logFile = dirname(__DIR__) . '/backups/dashboard_chart_debug.log';
@@ -359,7 +389,10 @@ class CDashboard {
 			
 			// Support per-chart filters via GET params: inout_period, inout_warehouse
 			$period = array_key_exists('inout_period', $_GET) ? $_GET['inout_period'] : (array_key_exists('period', $_GET) ? $_GET['period'] : '7d');
-			$warehouseFilter = array_key_exists('inout_warehouse', $_GET) ? $_GET['inout_warehouse'] : null;
+			// Allow explicit parameter; fall back to GET param when not provided
+			if ($warehouseFilter === null) {
+				$warehouseFilter = array_key_exists('inout_warehouse', $_GET) ? $_GET['inout_warehouse'] : null;
+			}
 			$data = ['labels' => [], 'receipts' => [], 'exports' => []];
 			
 			if ($period === '7d') {
@@ -372,7 +405,8 @@ class CDashboard {
 					foreach ($receipts as $r) {
 						$tt = $r['transaction_type'] ?? ($r['type'] ?? null);
 						if ($tt === 'goods_request') continue;
-						if ($warehouseFilter && isset($r['warehouse_id']) && $r['warehouse_id'] != $warehouseFilter) continue;
+							// Skip receipts not belonging to the warehouse when filter provided
+							if ($warehouseFilter && isset($r['warehouse_id']) && (string)$r['warehouse_id'] != (string)$warehouseFilter) continue;
 						if ($tt === 'export') $exportCount++; else $receiptCount++;
 					}
 					@file_put_contents($logFile, "7d-bin: start={$start} receipt={$receiptCount} export={$exportCount}\n", FILE_APPEND);
@@ -484,12 +518,14 @@ class CDashboard {
 		}
 	}
 
-	private function getCategoryDistribution() {
+	private function getCategoryDistribution($warehouseFilter = null) {
 		try {
 			$categories = $this->mCategories->getAllCategories();
 			$products = $this->mProduct->getAllProducts();
-			// Optional warehouse filter for category distribution
-			$warehouseFilter = array_key_exists('category_warehouse', $_GET) ? $_GET['category_warehouse'] : null;
+			// Allow explicit parameter; fall back to GET param when not provided
+			if ($warehouseFilter === null) {
+				$warehouseFilter = array_key_exists('category_warehouse', $_GET) ? $_GET['category_warehouse'] : null;
+			}
 			$catCount = [];
 			foreach ($categories as $cat) {
 				// category record may be array or object; normalize to string name
@@ -555,10 +591,17 @@ class CDashboard {
 		}
 	}
 
-	private function getStockStatusChart() {
+	// Public wrapper to expose category distribution for AJAX calls
+	public function fetchCategoryDistribution($warehouseFilter = null) {
+		return $this->getCategoryDistribution($warehouseFilter);
+	}
+
+	private function getStockStatusChart($warehouseFilter = null) {
 		try {
-			// Optional warehouse-level stock view via GET param 'stock_warehouse'
-			$warehouseFilter = array_key_exists('stock_warehouse', $_GET) ? $_GET['stock_warehouse'] : null;
+			// Allow explicit parameter; fall back to GET param when not provided
+			if ($warehouseFilter === null) {
+				$warehouseFilter = array_key_exists('stock_warehouse', $_GET) ? $_GET['stock_warehouse'] : null;
+			}
 			$products = $this->mProduct->getAllProducts();
 			$stockByProduct = null;
 			if ($warehouseFilter && method_exists($this->mInventory, 'getProductsStockByWarehouse')) {
@@ -573,8 +616,21 @@ class CDashboard {
 			foreach ($products as $p) {
 				// Use warehouse-specific qty when available
 				$pid = $p['_id'] ?? ($p['product_id'] ?? null);
-				if ($stockByProduct !== null && $pid) {
-					$qty = isset($stockByProduct[$pid]) ? intval($stockByProduct[$pid]) : 0;
+				// Normalize pid to a scalar string so it can be used as array key safely
+				$pidKey = $pid;
+				if (is_object($pidKey)) {
+					if (method_exists($pidKey, '__toString')) $pidKey = (string)$pidKey;
+					elseif (isset($pidKey->{'$oid'})) $pidKey = (string)$pidKey->{'$oid'};
+					else $pidKey = json_encode($pidKey);
+				} elseif (is_array($pidKey)) {
+					if (isset($pidKey['$oid'])) $pidKey = $pidKey['$oid'];
+					else $pidKey = json_encode($pidKey);
+				} else {
+					$pidKey = (string)$pidKey;
+				}
+
+				if ($stockByProduct !== null && $pidKey !== '') {
+					$qty = isset($stockByProduct[$pidKey]) ? intval($stockByProduct[$pidKey]) : 0;
 				} else {
 					$qty = isset($p['quantity']) ? intval($p['quantity']) : 0;
 				}
@@ -602,21 +658,25 @@ class CDashboard {
 
 	// ============ Recent Activities ============
 
-	private function getRecentTransactions($limit = 10) {
+	private function getRecentTransactions($limit = 10, $warehouseFilter = null) {
 		try {
+			// Allow optional warehouse filter to return only transactions for that warehouse
 			$receipts = $this->mReceipt->getAllReceiptsWithUserInfo([]);
 			$result = [];
 			$count = 0;
 			
 			foreach ($receipts as $r) {
+				// If warehouse filter provided, skip any receipts that belong to another warehouse
+				if ($warehouseFilter && isset($r['warehouse_id']) && (string)$r['warehouse_id'] !== (string)$warehouseFilter) continue;
 				if ($count >= $limit) break;
-				
+
 				$result[] = [
 					'transaction_id' => $r['transaction_id'] ?? '',
 					'type' => $r['transaction_type'] ?? 'receipt',
 					'created_at' => $r['created_at'] ?? null,
 					'created_by' => $r['creator_name'] ?? ($r['created_by'] ?? ''),
-					'status' => $r['status'] ?? 0
+					'status' => $r['status'] ?? 0,
+					'warehouse_id' => $r['warehouse_id'] ?? null
 				];
 				$count++;
 			}
@@ -627,12 +687,14 @@ class CDashboard {
 		}
 	}
 
-	private function getTopMovingProducts($limit = 10) {
+	private function getTopMovingProducts($limit = 10, $warehouseFilter = null) {
 		try {
 			// Đếm số lượng di chuyển dựa trên trường 'details' hoặc 'items'
 			$receipts = $this->mReceipt->getAllReceipts([]);
 			$productCount = [];
 			foreach ($receipts as $r) {
+				// If warehouse filter provided, skip receipts from other warehouses
+				if ($warehouseFilter && isset($r['warehouse_id']) && (string)$r['warehouse_id'] !== (string)$warehouseFilter) continue;
 				// Normalize MongoDB document to PHP array
 				$ra = json_decode(json_encode($r), true);
 				$list = [];

@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 include_once(__DIR__ . '/../../../../controller/cDashboard.php');
 include_once(__DIR__ . '/../../../../model/mProduct.php');
+include_once(__DIR__ . '/../../../../model/mWarehouse.php');
 
 // Lấy thông tin user từ session
 $user = $_SESSION['login'] ?? null;
@@ -12,6 +13,40 @@ $warehouseId = isset($user['warehouse_id']) ? $user['warehouse_id'] : null;
 
 $cDashboard = new CDashboard();
 $data = $cDashboard->getDashboardData($roleId, $warehouseId);
+$isGlobalViewer = in_array($roleId, [1,2]); // Admin and Warehouse Manager
+$userWarehouse = $warehouseId;
+$warehouseName = '';
+try {
+  $mw = new MWarehouse();
+  $raw = $mw->getAllWarehouses();
+  if (is_array($raw)) {
+    foreach ($raw as $w) {
+      $wid = $w['warehouse_id'] ?? ($w['id'] ?? ($w['_id']['$oid'] ?? ($w['_id'] ?? '')));
+      if ($wid == $userWarehouse) {
+        $warehouseName = $w['warehouse_name'] ?? $w['name'] ?? $wid;
+        break;
+      }
+    }
+  }
+} catch (Exception $e) {
+  // ignore lookup failures
+}
+
+// Build warehouse options according to role
+$warehouseOptions = [];
+try {
+  if (isset($raw) && is_array($raw)) {
+    foreach ($raw as $w) {
+      $wid = $w['warehouse_id'] ?? ($w['id'] ?? ($w['_id']['$oid'] ?? ($w['_id'] ?? '')));
+      if (!$wid) continue;
+      $name = $w['warehouse_name'] ?? $w['name'] ?? $wid;
+      if (!$isGlobalViewer && $wid != $userWarehouse) continue;
+      $warehouseOptions[] = ['warehouse_id' => $wid, 'name' => $name];
+    }
+  }
+} catch (Exception $e) {
+  // ignore
+}
 
 // Helper function to resolve SKU by product ID
 function __resolve_sku_by_product_id($productId) {
@@ -150,7 +185,7 @@ function __resolve_sku_by_product_id($productId) {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 20px;
-      margin-bottom: 32px;
+      margin-bottom: 12px;
       animation: fadeUp 0.6s ease;
     }
     
@@ -218,12 +253,31 @@ function __resolve_sku_by_product_id($productId) {
       margin-top: 8px;
       line-height: 1.4;
     }
+    /* Compact table used for dense dashboard cards */
+    .compact-table th,
+    .compact-table td {
+      padding: 6px 8px;
+      font-size: 13px;
+    }
+    .compact-card { padding: 8px !important; min-height: 0 !important; }
+    /* Dense layout for bottom cards to remove large whitespace */
+    .dense-cards .card {
+      padding: 8px !important;
+      min-height: 0 !important;
+    }
+    .dense-cards .card h3 { margin-bottom: 6px !important; }
+    /* Alerts and recent table tighter spacing */
+    #alerts { margin-bottom: 6px; }
+    #alerts li { margin-bottom: 6px; padding: 6px 8px; }
+    .recent-table th { padding: 6px 8px; font-weight: 600; }
+    .recent-table td { padding: 6px 8px; font-weight: 400; }
+    #alerts { margin-bottom: 6px; }
 
     .grid-2 {
       display: grid;
       grid-template-columns: 2fr 1fr;
       gap: 24px;
-      margin-bottom: 24px;
+      margin-bottom: 5px;
     }
 
     .charts {
@@ -253,7 +307,7 @@ function __resolve_sku_by_product_id($productId) {
       width: 100%;
       border-collapse: collapse;
       font-size: 14px;
-      margin-top: 16px;
+      margin-top: 8px;
     }
     th, td {
       padding: 14px 16px;
@@ -533,6 +587,12 @@ function __resolve_sku_by_product_id($productId) {
       background: linear-gradient(90deg, var(--accent), var(--purple));
       border-radius: 2px;
     }
+    /* Compact recent transactions table: keep header label bold, table content normal weight */
+    .recent-table { margin: 4px 0 0 0; width:100%; border-collapse: collapse; }
+    .recent-table th { font-weight: 600; font-size: 12px; color: var(--muted); padding: 6px 8px; text-align: left; }
+    .recent-table td { font-weight: 400; padding: 6px 8px; font-size: 13px; color: var(--text); }
+    .recent-table td a { font-weight: 400; }
+    .recent-table thead th + th, .recent-table thead th + th + th { white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -573,6 +633,43 @@ function __resolve_sku_by_product_id($productId) {
 
     <!-- KPI Cards -->
     <section class="kpis">
+      <?php
+        // Compute a role-aware display value for active warehouses.
+        // Admin (1) and Manager (2) see the system-wide count from $data.
+        // Staff (others) should see 1 if they belong to an active warehouse, otherwise 0.
+        $displayWarehouseCount = intval($data['totalWarehouses'] ?? 0);
+        $showWarehouseKpi = false;
+        if (in_array($roleId, [1,2], true)) {
+          $showWarehouseKpi = true;
+          // Use controller-provided value (system-wide)
+          $displayWarehouseCount = intval($data['totalWarehouses'] ?? $displayWarehouseCount);
+        } else {
+          // For non-global users, only show the KPI when the user is assigned to a warehouse
+            if (!empty($userWarehouse)) {
+            $showWarehouseKpi = true;
+            // check raw warehouses list (if available) to see if the warehouse is active
+            $isActive = false;
+            if (isset($raw) && is_array($raw)) {
+              foreach ($raw as $w) {
+                $wid = $w['warehouse_id'] ?? ($w['id'] ?? ($w['_id']['$oid'] ?? ($w['_id'] ?? '')));
+                if ((string)$wid === (string)$userWarehouse) {
+                  $s = $w['status'] ?? ($w['is_active'] ?? ($w['active'] ?? null));
+                  if ($s !== null) {
+                    if (is_numeric($s) && intval($s) === 1) $isActive = true;
+                    elseif (is_bool($s) && $s === true) $isActive = true;
+                    elseif (is_string($s) && in_array(strtolower($s), ['1','true','active','on','yes'], true)) $isActive = true;
+                  } else {
+                    // no explicit status field: assume active
+                    $isActive = true;
+                  }
+                  break;
+                }
+              }
+            }
+            $displayWarehouseCount = $isActive ? 1 : 0;
+          }
+        }
+      ?>
       <div class="card" style="border-left: 4px solid var(--accent);">
         <div class="kpi-title">Tổng SKU</div>
         <div class="kpi-value" style="color: var(--accent);"><?= number_format($data['totalSKU'] ?? 0) ?></div>
@@ -588,11 +685,13 @@ function __resolve_sku_by_product_id($productId) {
         <div class="kpi-value" style="color: var(--warning);"><?= number_format($data['lowStockCount'] ?? 0) ?></div>
         <div class="kpi-desc">SKU dưới ngưỡng an toàn</div>
       </div>
+      <?php if ($showWarehouseKpi): ?>
       <div class="card" style="border-left: 4px solid var(--success);">
         <div class="kpi-title">Số kho</div>
-        <div class="kpi-value" style="color: var(--success);"><?= number_format($data['totalWarehouses'] ?? 0) ?></div>
+        <div class="kpi-value" style="color: var(--success);"><?= number_format($displayWarehouseCount) ?></div>
         <div class="kpi-desc">Kho hoạt động</div>
       </div>
+      <?php endif; ?>
       <div class="card" style="border-left: 4px solid var(--success);">
         <div class="kpi-title">Nhập hôm nay</div>
         <div class="kpi-value" style="color: var(--success);"><?= number_format($data['receiptsToday'] ?? 0) ?></div>
@@ -617,16 +716,58 @@ function __resolve_sku_by_product_id($productId) {
 
     <!-- Main Charts -->
     <section class="grid-2">
-      <div class="card" style="padding: 24px;">
-        <h3 style="margin:0 0 20px 0; color: var(--text); font-size: 18px; font-weight: 700;">Thống kê nhập - xuất</h3>
-        <div class="charts">
-          <canvas id="chartInOut"></canvas>
-          <canvas id="chartGroups"></canvas>
+      <div>
+        <div class="card" style="padding: 24px; margin-bottom: 14px;">
+          <h3 style="margin:0 0 12px 0; color: var(--text); font-size: 18px; font-weight: 700;">Thống kê nhập - xuất</h3>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px;flex-wrap:wrap;">
+            <div class="muted">Tần suất nhập và xuất</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <?php $inout_period = $_GET['inout_period'] ?? ($_GET['period'] ?? '7d'); ?>
+              <?php $inout_wh = array_key_exists('inout_warehouse', $_GET) ? $_GET['inout_warehouse'] : ($isGlobalViewer ? '' : $userWarehouse); ?>
+              <select id="inout_period" onchange="onChartFilterChange('inout')" style="padding:6px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text)">
+                <option value="7d" <?= $inout_period === '7d' ? 'selected' : '' ?>>7 ngày</option>
+                <option value="week" <?= $inout_period === 'week' ? 'selected' : '' ?>>Tuần</option>
+                <option value="month" <?= $inout_period === 'month' ? 'selected' : '' ?>>Tháng</option>
+                <option value="quarter" <?= $inout_period === 'quarter' ? 'selected' : '' ?>>Quý</option>
+                <option value="year" <?= $inout_period === 'year' ? 'selected' : '' ?>>Năm</option>
+              </select>
+              <select id="inout_warehouse" onchange="onChartFilterChange('inout')" style="padding:6px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text)">
+                <?php if ($isGlobalViewer): ?><option value="">Tất cả kho</option><?php endif; ?>
+                <?php foreach ($warehouseOptions as $wsOpt): ?>
+                  <option value="<?= htmlspecialchars($wsOpt['warehouse_id']) ?>" <?= $inout_wh == $wsOpt['warehouse_id'] ? 'selected' : '' ?>><?= htmlspecialchars($wsOpt['name']) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+          </div>
+          <div style="width:100%">
+            <canvas id="chartInOut"></canvas>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 24px;">
+          <h3 style="margin:0 0 12px 0; color: var(--text); font-size: 18px; font-weight: 700;">Phân loại sản phẩm</h3>
+          <div style="width:100%;display:flex;justify-content:flex-end;margin-bottom:12px;">
+            <?php $cat_wh = array_key_exists('category_warehouse', $_GET) ? $_GET['category_warehouse'] : ($isGlobalViewer ? '' : $userWarehouse); ?>
+            <select id="category_warehouse" style="padding:6px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text)">
+              <?php if ($isGlobalViewer): ?><option value="">Tất cả kho</option><?php endif; ?>
+              <?php foreach ($warehouseOptions as $wsOpt): ?>
+                <option value="<?= htmlspecialchars($wsOpt['warehouse_id']) ?>" <?= $cat_wh == $wsOpt['warehouse_id'] ? 'selected' : '' ?>><?= htmlspecialchars($wsOpt['name']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div style="width:100%;display:flex;justify-content:center;">
+            <canvas id="chartGroups"></canvas>
+          </div>
+          <?php if (!$isGlobalViewer): ?>
+            <div style="width:100%;display:flex;justify-content:center;margin-top:8px;">
+              <div class="muted">Kho hiện tại: <?= htmlspecialchars($warehouseName ?: $userWarehouse) ?></div>
+            </div>
+          <?php endif; ?>
         </div>
       </div>
-      <div class="card" style="padding: 24px;">
-        <h3 style="margin:0 0 16px 0; color: var(--text); font-size: 18px; font-weight: 700;">Cảnh báo & Hoạt động gần đây</h3>
-        <ul id="alerts" style="padding-left:18px;margin:6px 0;">
+      <div class="card compact-card" style="padding: 12px;">
+        <h3 style="margin:0 0 8px 0; color: var(--text); font-size: 18px; font-weight: 700;">Cảnh báo & Hoạt động gần đây</h3>
+        <ul id="alerts" style="padding-left:14px;margin:4px 0;">
           <?php if (isset($data['alerts']) && !empty($data['alerts'])): ?>
             <?php foreach ($data['alerts'] as $alert): ?>
               <li style="color: <?= $alert['type'] == 'danger' ? 'var(--danger)' : ($alert['type'] == 'warning' ? 'var(--warning)' : ($alert['type'] == 'info' ? 'var(--accent)' : 'var(--success)')) ?>; margin-bottom: 10px; cursor: pointer;">
@@ -644,9 +785,18 @@ function __resolve_sku_by_product_id($productId) {
             <li>Không có cảnh báo</li>
           <?php endif; ?>
         </ul>
-        <hr style="border:none;border-top:1px dashed var(--border)">
-        <div class="muted" style="margin-bottom: 8px;">Phiếu gần nhất</div>
-        <table>
+        <div style="font-weight:700;margin:2px 0 6px 0;">Phiếu gần nhất</div>
+        <?php
+          $recentList = $data['recentTransactions'] ?? [];
+          if (!$isGlobalViewer && !empty($recentList)) {
+            $recentList = array_values(array_filter($recentList, function($t) use ($userWarehouse) {
+              $twh = $t['warehouse_id'] ?? $t['warehouse'] ?? null;
+              if ($twh === null || $twh === '') return true; // keep if no warehouse info
+              return (string)$twh === (string)$userWarehouse;
+            }));
+          }
+        ?>
+        <table class="recent-table">
           <thead><tr><th>Mã</th><th>Loại</th><th>Ngày</th><th>Người tạo</th><?php if ($roleId == 1): ?><th>Thao tác</th><?php endif; ?></tr></thead>
           <tbody>
             <?php if (isset($data['recentTransactions']) && !empty($data['recentTransactions'])): ?>
@@ -698,11 +848,11 @@ function __resolve_sku_by_product_id($productId) {
     </section>
 
     <!-- Bottom sections -->
-    <section style="margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:24px">
+    <section class="dense-cards" style="margin-top:4px;display:grid;grid-template-columns:1fr 1fr;gap:6px">
       <div class="card" style="padding: 24px;">
         <h3 style="margin-top:0; margin-bottom: 16px;font-size:18px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:10px;">
           <span style="font-size:24px;">🔥</span>
-          <span>Top sản phẩm xuất nhiều</span>
+          <span>Top sản phẩm xuất nhiều<?php if (!$isGlobalViewer) echo ' - Kho: ' . htmlspecialchars($warehouseName ?: $userWarehouse); ?></span>
         </h3>
         <table>
           <thead><tr><th>SKU</th><th>Tên sản phẩm</th><th>Số lượng</th></tr></thead>
@@ -739,30 +889,32 @@ function __resolve_sku_by_product_id($productId) {
           </tbody>
         </table>
       </div>
-      <div class="card" style="padding: 24px;">
+      <div class="card compact-card" style="padding: 16px;">
         <h3 style="margin-top:0; margin-bottom: 16px;font-size:18px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:10px;">
           <span style="font-size:24px;">⚠️</span>
           <span>Sản phẩm sắp hết hàng</span>
         </h3>
-        <table>
-          <thead><tr><th>SKU</th><th>Tên</th><th>Tồn kho</th><th>Min</th></tr></thead>
-          <tbody>
-            <?php if (isset($data['lowStockProducts']) && !empty($data['lowStockProducts'])): ?>
-              <?php foreach ($data['lowStockProducts'] as $product): ?>
-                <tr>
-                  <td><?= htmlspecialchars($product['sku']) ?></td>
-                  <td><?= htmlspecialchars($product['name']) ?></td>
-                  <td style="color: <?= $product['current_stock'] == 0 ? 'var(--danger)' : 'var(--warning)' ?>; font-weight: 600;">
-                    <?= number_format($product['current_stock']) ?>
-                  </td>
-                  <td><?= number_format($product['min_stock']) ?></td>
-                </tr>
-              <?php endforeach; ?>
-            <?php else: ?>
-              <tr><td colspan="4" style="text-align:center;color:var(--success)"> Tất cả sản phẩm đều đủ hàng</td></tr>
-            <?php endif; ?>
-          </tbody>
-        </table>
+        <div class="compact-table" >
+          <table>
+            <thead><tr><th>SKU</th><th>Tên</th><th>Tồn kho</th><th>Min</th></tr></thead>
+            <tbody>
+              <?php if (isset($data['lowStockProducts']) && !empty($data['lowStockProducts'])): ?>
+                <?php foreach ($data['lowStockProducts'] as $product): ?>
+                  <tr>
+                    <td><?= htmlspecialchars($product['sku']) ?></td>
+                    <td><?= htmlspecialchars($product['name']) ?></td>
+                    <td style="color: <?= $product['current_stock'] == 0 ? 'var(--danger)' : 'var(--warning)' ?>; font-weight: 600;">
+                      <?= number_format($product['current_stock']) ?>
+                    </td>
+                    <td><?= number_format($product['min_stock']) ?></td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php else: ?>
+                <tr><td colspan="4" style="text-align:center;color:var(--success)"> Tất cả sản phẩm đều đủ hàng</td></tr>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -964,52 +1116,82 @@ function __resolve_sku_by_product_id($productId) {
 
     // Biểu đồ phân bố danh mục
     const canvasGroups = document.getElementById('chartGroups');
-    try { canvasGroups.style.height = '320px'; canvasGroups.style.width = '100%'; canvasGroups.height = 320; } catch(e){}
-    const ctx2 = canvasGroups.getContext('2d');
-    new Chart(ctx2, {
-      type: 'doughnut',
-      data: {
-        labels: categoryData.labels,
-        datasets: [{
-          data: categoryData.values,
-          backgroundColor: [
-            'rgba(30, 144, 255, 0.8)',
-            'rgba(34, 197, 94, 0.8)',
-            'rgba(245, 158, 11, 0.8)',
-            'rgba(239, 68, 68, 0.8)',
-            'rgba(168, 85, 247, 0.8)'
-          ],
-          borderWidth: 2,
-          borderColor: '#0e1422'
-        }]
-      },
-      options: {
-        responsive: false,
-        maintainAspectRatio: false,
-        // let the donut resize inside its card
-        plugins: {
-          legend: {
-            position: 'right',
-            labels: { 
-              color: '#0f172a', 
-              font: { size: 10 },
-              padding: 8,
-              boxWidth: 12
+    if (canvasGroups) {
+      try { canvasGroups.style.height = '320px'; canvasGroups.style.width = '100%'; canvasGroups.height = 320; } catch(e){}
+      const ctx2 = canvasGroups.getContext('2d');
+      // create a global chart instance so it can be updated via AJAX when warehouse filter changes
+      window.chartGroupsChart = new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+          labels: categoryData.labels,
+          datasets: [{
+            data: categoryData.values,
+            backgroundColor: [
+              'rgba(30, 144, 255, 0.8)',
+              'rgba(34, 197, 94, 0.8)',
+              'rgba(245, 158, 11, 0.8)',
+              'rgba(239, 68, 68, 0.8)',
+              'rgba(168, 85, 247, 0.8)'
+            ],
+            borderWidth: 0,
+            borderColor: 'transparent'
+          }]
+        },
+        options: {
+          responsive: false,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: { 
+                color: '#0f172a', 
+                font: { size: 10 },
+                padding: 8,
+                boxWidth: 12
+              }
+            },
+            tooltip: {
+              backgroundColor: '#ffffff',
+              borderColor: 'rgba(15,23,42,0.08)',
+              borderWidth: 1,
+              titleColor: '#0f172a',
+              bodyColor: '#0f172a',
+              titleFont: { weight: '600' },
+              bodyFont: { weight: '400' },
+              padding: 8
             }
-          },
-          tooltip: {
-            backgroundColor: '#ffffff',
-            borderColor: 'rgba(15,23,42,0.08)',
-            borderWidth: 1,
-            titleColor: '#0f172a',
-            bodyColor: '#0f172a',
-            titleFont: { weight: '600' },
-            bodyFont: { weight: '400' },
-            padding: 8
           }
         }
-      }
-    });
+      });
+
+      // Add a dynamic filter that fetches updated category distribution via AJAX and updates the chart
+      try {
+        const catSelect = document.getElementById('category_warehouse');
+        if (catSelect) {
+          catSelect.addEventListener('change', function(){
+            const wh = this.value || '';
+            const url = '/kltn/view/page/manage/ajax/category_distribution.php?warehouse=' + encodeURIComponent(wh);
+            fetch(url, { credentials: 'same-origin' })
+              .then(r => r.json())
+              .then(d => {
+                if (!d || !Array.isArray(d.labels) || !Array.isArray(d.values)) return;
+                // update chart data
+                window.chartGroupsChart.data.labels = d.labels;
+                window.chartGroupsChart.data.datasets[0].data = d.values;
+                window.chartGroupsChart.update();
+                // update the URL param without reloading
+                try {
+                  const sp = new URLSearchParams(window.location.search);
+                  if (wh) sp.set('category_warehouse', wh); else sp.delete('category_warehouse');
+                  const newUrl = window.location.pathname + (sp.toString() ? '?' + sp.toString() : '');
+                  history.replaceState({}, '', newUrl);
+                } catch(e) {}
+              })
+              .catch(err => console.error('Failed to fetch category distribution', err));
+          });
+        }
+      } catch(e) { console.error('category select bind error', e); }
+    }
 
     
 

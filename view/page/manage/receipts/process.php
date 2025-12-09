@@ -365,22 +365,30 @@ try {
                 // Support either product_id (legacy) or sku (new) from frontend
                 $productId = '';
                 $lookupProductName = '';
-                if (!empty($p['product_id'])) {
-                    $productId = $p['product_id'];
-                } elseif (!empty($p['sku'])) {
-                    // Try to resolve SKU -> product_id using CProduct
-                    if (!class_exists('CProduct')) include_once(__DIR__ . '/../../../../controller/cProduct.php');
-                    $cp = new CProduct();
-                    $found = $cp->getProductBySKU($p['sku']);
-                    if ($found && !empty($found['_id'])) {
-                        $productId = $found['_id'];
-                        $lookupProductName = $found['product_name'] ?? ($found['name'] ?? '');
-                    } else {
-                        $_SESSION['flash_receipt_error'] = "Không tìm thấy sản phẩm với SKU: " . ($p['sku'] ?? '');
-                        echo "<script>alert('Không tìm thấy sản phẩm với SKU: " . addslashes($p['sku'] ?? '') . "'); window.history.back();</script>";
-                        exit;
-                    }
-                }
+                        // Allow temporary/new products marked by frontend with is_new flag
+                        $isNewTemp = !empty($p['is_new']);
+                        if (!empty($p['product_id'])) {
+                            $productId = $p['product_id'];
+                        } elseif (!empty($p['sku'])) {
+                            if ($isNewTemp) {
+                                // For new temporary products, accept provided sku/name without resolving to DB
+                                $productId = $p['product_id'] ?? ('new_' . uniqid());
+                                $lookupProductName = $p['product_name'] ?? '';
+                            } else {
+                                // Try to resolve SKU -> product_id using CProduct
+                                if (!class_exists('CProduct')) include_once(__DIR__ . '/../../../../controller/cProduct.php');
+                                $cp = new CProduct();
+                                $found = $cp->getProductBySKU($p['sku']);
+                                if ($found && !empty($found['_id'])) {
+                                    $productId = $found['_id'];
+                                    $lookupProductName = $found['product_name'] ?? ($found['name'] ?? '');
+                                } else {
+                                    $_SESSION['flash_receipt_error'] = "Không tìm thấy sản phẩm với SKU: " . ($p['sku'] ?? '');
+                                    echo "<script>alert('Không tìm thấy sản phẩm với SKU: " . addslashes($p['sku'] ?? '') . "'); window.history.back();</script>";
+                                    exit;
+                                }
+                            }
+                        }
 
                 if (empty($productId)) continue;
 
@@ -426,6 +434,103 @@ try {
                     'unit_price' => $price,
                     'unit' => $p['unit'] ?? '' // thêm đơn vị tính nếu có
                 ];
+
+                // Nếu frontend gửi sản phẩm tạm (is_new), giữ nguyên các trường tạm để không lookup DB
+                if (!empty($p['is_new'])) {
+                    $detail['is_new'] = true;
+
+                    // Normalize package_dimensions (may be sent as JSON string or array)
+                    $packageDimensions = [];
+                    if (!empty($p['package_dimensions'])) {
+                        if (is_string($p['package_dimensions'])) {
+                            $decoded = json_decode($p['package_dimensions'], true);
+                            $packageDimensions = is_array($decoded) ? $decoded : [];
+                        } elseif (is_array($p['package_dimensions'])) {
+                            $packageDimensions = $p['package_dimensions'];
+                        }
+                    }
+
+                    // Normalize conversionUnits (may be JSON)
+                    $conversionUnits = [];
+                    if (!empty($p['conversionUnits'])) {
+                        if (is_string($p['conversionUnits'])) {
+                            $decoded = json_decode($p['conversionUnits'], true);
+                            $conversionUnits = is_array($decoded) ? $decoded : [];
+                        } elseif (is_array($p['conversionUnits'])) {
+                            $conversionUnits = $p['conversionUnits'];
+                        }
+                    }
+
+                    // Preserve as many manual-add fields as possible into temp and top-level detail
+                    $detail['temp'] = [
+                        'sku' => $p['sku'] ?? '',
+                        'barcode' => $p['barcode'] ?? '',
+                        'note' => $p['note'] ?? '',
+                        'product_name' => $p['product_name'] ?? '',
+                        'model' => $p['model'] ?? '',
+                        'description' => $p['description'] ?? '',
+                        'purchase_price' => isset($p['purchase_price']) ? (float)$p['purchase_price'] : ($p['purchase_price'] ?? 0),
+                        'min_stock' => isset($p['min_stock']) ? (int)$p['min_stock'] : ($p['min_stock'] ?? 0),
+                        'baseUnit' => $p['baseUnit'] ?? ($p['base_unit'] ?? ''),
+                        'conversionUnits' => $conversionUnits,
+                        'package_dimensions' => $packageDimensions,
+                        'package_weight' => isset($p['package_weight']) ? (float)$p['package_weight'] : ($p['package_weight'] ?? 0),
+                        'volume_per_unit' => isset($p['volume_per_unit']) ? (float)$p['volume_per_unit'] : ($p['volume_per_unit'] ?? 0),
+                        'status' => isset($p['status']) ? (int)$p['status'] : ($p['status'] ?? 1),
+                        // Additional fields copied from manual-add UI if present
+                        'category' => isset($p['category']) && is_array($p['category']) ? $p['category'] : (isset($p['category_id']) ? ['id' => $p['category_id'], 'name' => ($p['category_name'] ?? '')] : []),
+                        'supplier' => isset($p['supplier']) && is_array($p['supplier']) ? $p['supplier'] : (isset($p['supplier_id']) ? ['id' => $p['supplier_id'], 'name' => ($p['supplier_name'] ?? '')] : []),
+                        'stackable' => isset($p['stackable']) ? (bool)$p['stackable'] : ($p['stackable'] ?? false),
+                        'max_stack_height' => isset($p['max_stack_height']) ? (int)$p['max_stack_height'] : ($p['max_stack_height'] ?? 0),
+                        'image' => $p['image'] ?? ''
+                    ];
+
+                    // Also keep some of those values at top-level detail for easier access elsewhere
+                    if (!empty($detail['temp']['package_dimensions'])) $detail['package_dimensions'] = $detail['temp']['package_dimensions'];
+                    if (isset($detail['temp']['package_weight'])) $detail['package_weight'] = $detail['temp']['package_weight'];
+                    if (isset($detail['temp']['volume_per_unit'])) $detail['volume_per_unit'] = $detail['temp']['volume_per_unit'];
+                    if (!empty($detail['temp']['model'])) $detail['model'] = $detail['temp']['model'];
+                    if (!empty($detail['temp']['description'])) $detail['description'] = $detail['temp']['description'];
+                    if (!empty($detail['temp']['purchase_price'])) $detail['unit_price'] = $detail['temp']['purchase_price'];
+                    if (!empty($detail['temp']['min_stock'])) $detail['min_stock'] = (int)$detail['temp']['min_stock'];
+                    if (!empty($detail['temp']['baseUnit'])) $detail['baseUnit'] = $detail['temp']['baseUnit'];
+                    if (!empty($detail['temp']['conversionUnits'])) $detail['conversionUnits'] = $detail['temp']['conversionUnits'];
+                    // Mirror additional fields to top-level detail so detail view can read them directly
+                    if (isset($detail['temp']['stackable'])) $detail['stackable'] = $detail['temp']['stackable'];
+                    if (!empty($detail['temp']['max_stack_height'])) $detail['max_stack_height'] = $detail['temp']['max_stack_height'];
+                    if (!empty($detail['temp']['image'])) $detail['image'] = $detail['temp']['image'];
+                    if (!empty($detail['temp']['category'])) $detail['category'] = $detail['temp']['category'];
+
+                    // Ensure each temp item is explicitly associated with the chosen supplier
+                    if (!empty($supplier_id)) {
+                        $detail['supplier_id'] = $supplier_id;
+                        if (empty($detail['temp']['supplier']) || !is_array($detail['temp']['supplier'])) {
+                            // Nếu chưa có supplier từ form, lấy từ supplier_id của phiếu và tra tên từ DB
+                            $supplierName = $p['supplier_name'] ?? '';
+                            
+                            // Nếu supplier_name rỗng hoặc trùng với supplier_id, tra database
+                            if (empty($supplierName) || $supplierName === $supplier_id) {
+                                try {
+                                    include_once(__DIR__ . '/../../../../model/connect.php');
+                                    $db = (new Database())->getConnection();
+                                    $supplierDoc = $db->suppliers->findOne(['supplier_id' => $supplier_id]);
+                                    if ($supplierDoc) {
+                                        $supplierName = $supplierDoc['supplier_name'] ?? $supplierDoc['name'] ?? $supplier_id;
+                                    }
+                                } catch (\Exception $e) {
+                                    error_log('Error fetching supplier name: ' . $e->getMessage());
+                                }
+                            }
+                            
+                            $detail['temp']['supplier_id'] = $supplier_id;
+                            $detail['temp']['supplier_name'] = $supplierName;
+                            $detail['temp']['supplier'] = [
+                                'id' => $supplier_id,
+                                'name' => $supplierName
+                            ];
+                        }
+                    }
+                }
                 
                 // ⭐ Thêm batch info nếu có (cho transfer)
                 if (!empty($p['batches']) && $type === 'transfer') {

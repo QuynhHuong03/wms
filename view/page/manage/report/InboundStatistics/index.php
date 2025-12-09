@@ -1,5 +1,10 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
+// Role-based warehouse visibility
+$user = $_SESSION['login'] ?? null;
+$roleId = isset($user['role_id']) ? intval($user['role_id']) : null;
+$userWarehouse = $user['warehouse_id'] ?? ($user['warehouse'] ?? '');
+$isGlobalViewer = in_array($roleId, [1,2]);
 include_once(__DIR__ . '/../../../../../model/mReceipt.php');
 include_once(__DIR__ . '/../../../../../model/mWarehouse.php');
 include_once(__DIR__ . '/../../../../../model/mProduct.php');
@@ -11,6 +16,9 @@ $mWarehouse = new MWarehouse();
 $to = $_GET['to'] ?? date('Y-m-d');
 $from = $_GET['from'] ?? date('Y-m-d', strtotime('-29 days'));
 $warehouse = $_GET['warehouse'] ?? '';
+if (!$isGlobalViewer) {
+  $warehouse = $userWarehouse;
+}
 
 function normText($s) { return mb_strtolower(trim((string)$s)); }
 
@@ -132,6 +140,31 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv_receipts') {
     elseif (isset($r['vendor'])) $supplier_name = $r['vendor'];
 
     $items = normalize_items($r['items'] ?? ($r['details'] ?? []));
+    // If supplier not provided on receipt, try to infer from the first product's supplier
+    if ((empty($supplier_name) || $supplier_name === 'Không rõ') && !empty($items) && isset($mProduct)) {
+      foreach ($items as $it) {
+        $pid = $it['product_id'] ?? $it['productId'] ?? ($it['_id'] ?? null);
+        if (!$pid) continue;
+        // Normalize pid to scalar string
+        if (is_object($pid)) {
+          if (method_exists($pid, '__toString')) $pid = (string)$pid;
+          elseif (isset($pid->{'$oid'})) $pid = (string)$pid->{'$oid'};
+          else $pid = json_encode($pid);
+        } elseif (is_array($pid)) {
+          if (isset($pid['$oid'])) $pid = $pid['$oid']; else $pid = json_encode($pid);
+        }
+        if (!$pid) continue;
+        try {
+          $prodInfo = $mProduct->getProductById($pid);
+          if ($prodInfo && !empty($prodInfo['supplier'])) {
+            $supplier_name = $prodInfo['supplier'];
+            break;
+          }
+        } catch (Throwable $e) {
+          // ignore lookup errors
+        }
+      }
+    }
     $uniqueProducts = [];
     $totalUnits = 0.0;
     $totalValue = 0.0;
@@ -141,6 +174,20 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv_receipts') {
       $price = (float)($it['unit_price'] ?? $it['price'] ?? $it['purchase_price'] ?? $it['import_price'] ?? $it['cost'] ?? 0);
       $pidc = (string)($it['product_id'] ?? $it['productId'] ?? ($it['_id'] ?? ''));
       $skuc = (string)($it['sku'] ?? ($it['product_sku'] ?? ''));
+      // If SKU missing on the item, try to lookup product by id to get SKU
+      if (($skuc === '' || $skuc === null) && $pidc !== '' && isset($mProduct)) {
+        try {
+          $lookupSku = null;
+          // normalize pidc for getProductById (function handles ObjectId string or raw)
+          $prodInfo = $mProduct->getProductById($pidc);
+          if ($prodInfo && !empty($prodInfo['sku'])) {
+            $lookupSku = $prodInfo['sku'];
+          }
+          if ($lookupSku) $skuc = (string)$lookupSku;
+        } catch (Throwable $e) {
+          // ignore lookup errors
+        }
+      }
       $pnamec = (string)($it['product_name'] ?? ($it['name'] ?? ''));
       $key = '';
       if ($pidc !== '') $key = preg_replace('/[^A-Za-z0-9]/', '', $pidc);
@@ -149,11 +196,17 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv_receipts') {
       if ($key !== '') $uniqueProducts[$key] = true;
       $totalUnits += $qty;
       $totalValue += ($qty * $price);
-      // push 4 columns per product
+      // push 4 columns per product (format numbers to avoid Excel scientific notation)
       $productCells[] = $skuc;
       $productCells[] = $pnamec;
-      $productCells[] = $qty + 0;
-      $productCells[] = $price + 0;
+      if (intval($qty) == $qty) {
+        $qtyOut = (string)intval($qty);
+      } else {
+        $qtyOut = number_format($qty, 2, '.', '');
+      }
+      $priceOut = number_format($price, 2, '.', '');
+      $productCells[] = $qtyOut;
+      $productCells[] = $priceOut;
     }
     $productCount = count($uniqueProducts);
     $note = $r['note'] ?? ($r['notes'] ?? '');
@@ -161,7 +214,14 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv_receipts') {
     // pad product cells to maxItems * 4 (sku,name,qty,price)
     while (count($productCells) < $maxItems * 4) $productCells[] = '';
 
-    $row = [$tid, $created_at, $warehouse_id, $supplier_name, $productCount, $totalUnits, round($totalValue, 2), $note];
+    // Format totals for CSV to avoid scientific notation in Excel
+    if (intval($totalUnits) == $totalUnits) {
+      $totalUnitsOut = (string)intval($totalUnits);
+    } else {
+      $totalUnitsOut = number_format($totalUnits, 2, '.', '');
+    }
+    $totalValueOut = number_format($totalValue, 2, '.', '');
+    $row = [$tid, $created_at, $warehouse_id, $supplier_name, $productCount, $totalUnitsOut, $totalValueOut, $note];
     fputcsv($out, array_merge($row, $productCells));
   }
   fclose($out);
@@ -473,13 +533,20 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv_receipts') {
         <input type="date" name="to" value="<?= htmlspecialchars($to) ?>">
         <label>Kho:</label>
         <select name="warehouse">
-          <option value="">-- Tất cả kho --</option>
-          <?php foreach ($mWarehouse->getAllWarehouses() as $w): $wid = $w['warehouse_id'] ?? ($w['_id']['$oid'] ?? ($w['id'] ?? '')); ?>
+          <?php if ($isGlobalViewer): ?>
+            <option value="">-- Tất cả kho --</option>
+          <?php endif; ?>
+          <?php
+            $wareList = $mWarehouse->getAllWarehouses();
+            if (!$isGlobalViewer) {
+              $wareList = array_filter($wareList, fn($w) => (($w['warehouse_id'] ?? ($w['_id']['$oid'] ?? ($w['id'] ?? ''))) == $userWarehouse));
+            }
+            foreach ($wareList as $w): $wid = $w['warehouse_id'] ?? ($w['_id']['$oid'] ?? ($w['id'] ?? '')); ?>
             <option value="<?= htmlspecialchars($wid) ?>" <?= $warehouse == $wid ? 'selected' : '' ?>><?= htmlspecialchars($w['warehouse_name'] ?? $w['name'] ?? $wid) ?></option>
           <?php endforeach; ?>
         </select>
         <button type="submit">Xem báo cáo</button>
-        <a href="<?= '/kltn/view/page/manage/report/InboundStatistics/index.php?export=csv_receipts&from=' . rawurlencode($from) . '&to=' . rawurlencode($to) ?>"><button type="button" class="btn-export">Xuất file</button></a>
+        <a href="<?= '/kltn/view/page/manage/report/InboundStatistics/index.php?export=csv_receipts&from=' . rawurlencode($from) . '&to=' . rawurlencode($to) . (isset($warehouse) && $warehouse !== '' ? '&warehouse=' . rawurlencode($warehouse) : '') ?>"><button type="button" class="btn-export">Xuất file</button></a>
       </form>
       
       <div class="summary">

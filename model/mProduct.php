@@ -56,9 +56,46 @@ class MProduct {
         if ($con) {
             try {
                 $col = $con->selectCollection('products');
+                
+                // Lấy product_id lớn nhất từ trường 'id'
                 $lastItem = $col->findOne([], ['sort' => ['id' => -1]]);
                 $newId = isset($lastItem['id']) ? $lastItem['id'] + 1 : 1;
                 $data['id'] = $newId;
+                
+                // Auto-generate SKU nếu chưa có hoặc rỗng
+                if (empty($data['sku']) || trim($data['sku']) === '') {
+                    // Lấy category_code từ database
+                    $catCode = 'PROD'; // Mặc định nếu không tìm thấy category
+                    
+                    if (isset($data['category']) && is_array($data['category'])) {
+                        // Thử lấy từ category object trước
+                        if (!empty($data['category']['code'])) {
+                            $catCode = $data['category']['code'];
+                        } elseif (!empty($data['category']['category_code'])) {
+                            $catCode = $data['category']['category_code'];
+                        } elseif (!empty($data['category']['id'])) {
+                            // Nếu chỉ có id, tra database categories để lấy category_code
+                            try {
+                                $categoryId = $data['category']['id'];
+                                $categoryCol = $con->selectCollection('categories');
+                                $categoryDoc = $categoryCol->findOne(
+                                    ['category_id' => $categoryId]
+                                );
+                                if ($categoryDoc && isset($categoryDoc['category_code'])) {
+                                    $catCode = $categoryDoc['category_code'];
+                                }
+                            } catch (\Exception $e) {
+                                error_log('Error fetching category_code: ' . $e->getMessage());
+                            }
+                        }
+                    }
+                    
+                    // Xóa các ký tự không phải chữ cái/số trong category code
+                    $catCode = preg_replace('/[^A-Za-z0-9]/', '', strtoupper($catCode));
+                    
+                    // Tạo SKU = category_code + product_id
+                    $data['sku'] = $catCode . $newId;
+                }
 
                 // Bổ sung thời gian tạo / cập nhật
                 $data['created_at'] = date('Y-m-d H:i:s');
@@ -66,7 +103,15 @@ class MProduct {
 
                 $insertResult = $col->insertOne($data);
                 $p->dongKetNoi($con);
-                return $insertResult->getInsertedCount() > 0;
+                if ($insertResult->getInsertedCount() > 0) {
+                    $insertedId = $insertResult->getInsertedId();
+                    // Normalize ObjectId to string when possible
+                    if (is_object($insertedId) && method_exists($insertedId, '__toString')) {
+                        return (string)$insertedId;
+                    }
+                    return $insertedId;
+                }
+                return false;
             } catch (\Exception $e) {
                 $p->dongKetNoi($con);
                 die("Lỗi query MongoDB: " . $e->getMessage());
@@ -632,6 +677,91 @@ public function getProductByBarcode($barcode) {
             }
         }
         return [];
+    }
+
+    // 🔢 Tạo barcode tự động không trùng
+    // Format: 8 chữ số, bắt đầu từ 10000000
+    public function generateUniqueBarcode() {
+        $p = new clsKetNoi();
+        $con = $p->moKetNoi();
+        if ($con) {
+            try {
+                $col = $con->selectCollection('products');
+                
+                // Tìm barcode lớn nhất hiện tại (chỉ lấy barcode số)
+                $pipeline = [
+                    [
+                        '$project' => [
+                            'barcode' => 1,
+                            'barcodeNum' => [
+                                '$toLong' => [
+                                    '$cond' => [
+                                        ['$regexMatch' => ['input' => '$barcode', 'regex' => '^[0-9]+$']],
+                                        '$barcode',
+                                        '0'
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ],
+                    ['$sort' => ['barcodeNum' => -1]],
+                    ['$limit' => 1]
+                ];
+                
+                $result = $col->aggregate($pipeline)->toArray();
+                
+                if (!empty($result) && isset($result[0]['barcodeNum'])) {
+                    $maxBarcode = (int)$result[0]['barcodeNum'];
+                    // Nếu barcode hiện tại nhỏ hơn 10000000, bắt đầu từ 10000000
+                    $newBarcode = max($maxBarcode + 1, 10000000);
+                } else {
+                    // Không có barcode nào, bắt đầu từ 10000000
+                    $newBarcode = 10000000;
+                }
+                
+                // Kiểm tra trùng lặp (phòng trường hợp có barcode không phải số thuần)
+                $maxAttempts = 100;
+                $attempt = 0;
+                while ($attempt < $maxAttempts) {
+                    $exists = $col->findOne(['barcode' => (string)$newBarcode]);
+                    if (!$exists) {
+                        $p->dongKetNoi($con);
+                        return str_pad($newBarcode, 8, '0', STR_PAD_LEFT);
+                    }
+                    $newBarcode++;
+                    $attempt++;
+                }
+                
+                $p->dongKetNoi($con);
+                error_log("Không thể tạo barcode duy nhất sau $maxAttempts lần thử");
+                return null;
+                
+            } catch (\Exception $e) {
+                $p->dongKetNoi($con);
+                error_log("Lỗi generateUniqueBarcode: " . $e->getMessage());
+                return null;
+            }
+        }
+        return null;
+    }
+
+    // 🔍 Kiểm tra barcode có tồn tại không
+    public function isBarcodeExists($barcode) {
+        $p = new clsKetNoi();
+        $con = $p->moKetNoi();
+        if ($con) {
+            try {
+                $col = $con->selectCollection('products');
+                $exists = $col->findOne(['barcode' => $barcode]);
+                $p->dongKetNoi($con);
+                return $exists !== null;
+            } catch (\Exception $e) {
+                $p->dongKetNoi($con);
+                error_log("Lỗi isBarcodeExists: " . $e->getMessage());
+                return false;
+            }
+        }
+        return false;
     }
 }
 ?>

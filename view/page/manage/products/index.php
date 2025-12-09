@@ -11,6 +11,19 @@ $suppliers = $cSupplier->getAllSuppliers();
 
 $barcodeGenerator = new Picqer\Barcode\BarcodeGeneratorPNG();
 ?>
+<?php
+// Server-side toast fallback: render a toast immediately if msg is present
+$msg = $_GET['msg'] ?? '';
+if (in_array($msg, ['success','updated','deleted','error'])) {
+  $class = $msg === 'error' ? 'toast-notification error' : 'toast-notification';
+  if ($msg === 'success') $text = '<i class="fa-solid fa-circle-check"></i> Thêm sản phẩm thành công!';
+  elseif ($msg === 'updated') $text = '<i class="fa-solid fa-circle-check"></i> Cập nhật sản phẩm thành công!';
+  elseif ($msg === 'deleted') $text = '<i class="fa-solid fa-trash-can"></i> Xóa sản phẩm thành công!';
+  else $text = '<i class="fa-solid fa-circle-exclamation"></i> Có lỗi xảy ra.';
+  echo "<div id=\"serverToast\" class=\"{$class}\">{$text}</div>";
+  echo "<script>setTimeout(()=>{const t=document.getElementById('serverToast'); if(t){t.classList.add('hide'); setTimeout(()=>t.remove(),300);} const newUrl=window.location.pathname+'?page=products'; window.history.replaceState({},'',newUrl);},3000);</script>";
+}
+?>
 
 <style>
 body {
@@ -562,6 +575,27 @@ function formatCurrency($amount) {
   // initialize: mark all rows as filtered then paginate
   rowsArray.forEach(r => r.dataset.filtered = '1');
   paginate();
+
+  // --- Toast notification for success/error messages ---
+  const urlParams = new URLSearchParams(window.location.search);
+  const msg = urlParams.get('msg');
+  if (msg === 'success' || msg === 'updated' || msg === 'deleted' || msg === 'error') {
+    // If server already rendered a toast, don't create a duplicate
+    if (!document.getElementById('serverToast')) {
+      const toast = document.createElement('div');
+      toast.className = 'toast-notification ' + (msg === 'error' ? 'error' : '');
+      if (msg === 'success') toast.innerHTML = '<i class="fa-solid fa-circle-check"></i> Thêm sản phẩm thành công!';
+      else if (msg === 'updated') toast.innerHTML = '<i class="fa-solid fa-circle-check"></i> Cập nhật sản phẩm thành công!';
+      else if (msg === 'deleted') toast.innerHTML = '<i class="fa-solid fa-trash-can"></i> Xóa sản phẩm thành công!';
+      else toast.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Có lỗi xảy ra.';
+      document.body.appendChild(toast);
+
+      setTimeout(() => { toast.classList.add('hide'); setTimeout(() => toast.remove(), 300); }, 3000);
+
+      const newUrl = window.location.pathname + '?page=products';
+      window.history.replaceState({}, '', newUrl);
+    }
+  }
 
   // --- Modal Xóa ---
   const deleteModal = document.getElementById('deleteModal');
