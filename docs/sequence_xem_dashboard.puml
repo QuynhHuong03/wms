@@ -1,0 +1,151 @@
+@startuml
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor "Admin/QL Kho/NV Kho" as User
+boundary "GD_Chinh" as GUI_Main
+boundary "GD_Dashboard" as GUI_Dashboard
+control "Ctrl_Dashboard" as DashboardController
+control "Ctrl_Inventory" as InventoryController
+control "Ctrl_Receipt" as ReceiptController
+control "Ctrl_Export" as ExportController
+control "Ctrl_Product" as ProductController
+entity "DB_Inventory" as InventoryDB
+entity "DB_Transactions" as TransactionDB
+
+
+User -> GUI_Main: 1: Chọn "Báo cáo thống kê"
+activate User
+activate GUI_Main
+
+GUI_Main -> GUI_Dashboard: 1.1: Mở trang dashboard
+activate GUI_Dashboard
+deactivate GUI_Main
+
+GUI_Dashboard -> DashboardController: 1.2: getDashboardData(role_id, warehouse_id)
+activate DashboardController
+
+note right of DashboardController
+Filter dựa trên quyền:
+- Admin: Xem tất cả kho
+- QL Kho/NV Kho: Chỉ xem kho của mình
+end note
+
+DashboardController -> InventoryController: 1.2.1: getTotalSKU(warehouse_id)
+activate InventoryController
+
+InventoryController -> InventoryDB: aggregate count distinct product_id
+activate InventoryDB
+
+InventoryDB --> InventoryController: return count
+deactivate InventoryDB
+
+InventoryController --> DashboardController: return totalSKU
+deactivate InventoryController
+
+DashboardController -> InventoryController: 1.2.2: getTotalQuantity(warehouse_id)
+activate InventoryController
+
+InventoryController -> InventoryDB: aggregate sum(qty)
+activate InventoryDB
+
+InventoryDB --> InventoryController: return sum
+deactivate InventoryDB
+
+InventoryController --> DashboardController: return totalQty
+deactivate InventoryController
+
+DashboardController -> ProductController: 1.2.3: getLowStockProducts(warehouse_id)
+activate ProductController
+
+ProductController -> InventoryDB: find products with qty < min_stock
+activate InventoryDB
+
+InventoryDB --> ProductController: return products
+deactivate InventoryDB
+
+ProductController --> DashboardController: return lowStockList
+deactivate ProductController
+
+DashboardController -> ReceiptController: 1.2.4: getReceiptExportChart(period)
+activate ReceiptController
+
+ReceiptController -> TransactionDB: aggregate receipts/exports by date
+activate TransactionDB
+
+note right of TransactionDB
+Group theo ngày/tuần/tháng
+Count phiếu nhập và xuất
+end note
+
+TransactionDB --> ReceiptController: return chart data
+deactivate TransactionDB
+
+ReceiptController --> DashboardController: return {labels, receipts, exports}
+deactivate ReceiptController
+
+DashboardController -> ProductController: 1.2.5: getCategoryDistribution(warehouse_id)
+activate ProductController
+
+ProductController -> InventoryDB: aggregate by category
+activate InventoryDB
+
+InventoryDB --> ProductController: return distribution
+deactivate InventoryDB
+
+ProductController --> DashboardController: return {labels, values}
+deactivate ProductController
+
+DashboardController -> DashboardController: 1.2.6: generateAlerts()
+
+note right of DashboardController
+Tạo cảnh báo:
+- URGENT requests
+- Sản phẩm sắp hết
+- Kho gần đầy
+end note
+
+DashboardController -> TransactionDB: 1.2.7: getRecentTransactions(limit: 10)
+activate TransactionDB
+
+TransactionDB --> DashboardController: return recent transactions
+deactivate TransactionDB
+
+DashboardController -> ExportController: 1.2.8: getTopExportProducts(warehouse_id)
+activate ExportController
+
+ExportController -> TransactionDB: aggregate exports by product
+activate TransactionDB
+
+TransactionDB --> ExportController: return top products
+deactivate TransactionDB
+
+ExportController --> DashboardController: return topProducts
+deactivate ExportController
+
+DashboardController --> GUI_Dashboard: 1.2.9: return dashboard data
+deactivate DashboardController
+
+GUI_Dashboard -> GUI_Dashboard: 1.3: Render dashboard:\n- KPI cards (10 chỉ số)\n- Biểu đồ nhập/xuất\n- Biểu đồ phân loại\n- Cảnh báo\n- Phiếu gần nhất\n- Top sản phẩm\n- Sản phẩm sắp hết
+
+User -> GUI_Dashboard: 2: Thay đổi bộ lọc (thời gian/kho)
+
+GUI_Dashboard -> DashboardController: 2.1: getDashboardData(filters)
+activate DashboardController
+
+DashboardController -> InventoryDB: 2.1.1: Query with filters
+activate InventoryDB
+
+InventoryDB --> DashboardController: return filtered data
+deactivate InventoryDB
+
+DashboardController --> GUI_Dashboard: 2.1.2: return updated data
+deactivate DashboardController
+
+GUI_Dashboard -> GUI_Dashboard: 2.2: Cập nhật biểu đồ và bảng (AJAX)
+
+deactivate GUI_Dashboard
+deactivate User
+
+@enduml

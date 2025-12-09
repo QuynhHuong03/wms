@@ -1,0 +1,69 @@
+@startuml Xóa Sản Phẩm
+
+' Cấu hình giao diện
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor "QL Kho tổng" as Admin
+boundary "GD_Chinh" as MainGUI
+boundary "GD_DanhSachSP" as ListView
+control "Ctrl_Product" as Controller
+entity "DB_Products" as ProductDB
+
+Admin -> MainGUI: 1: Chọn "Quản lý sản phẩm"
+activate Admin
+activate MainGUI
+
+MainGUI -> ListView: 1.1: Mở danh sách sản phẩm
+activate ListView
+deactivate MainGUI
+
+ListView -> ListView: 1.2: Hiển thị danh sách
+
+Admin -> ListView: 2: Click "Xóa" trên sản phẩm
+
+ListView -> ListView: 2.1: Hiển thị modal xác nhận
+
+Admin -> ListView: 3: Click "Xác nhận xóa"
+
+ListView -> Controller: 3.1: deleteProduct(sku)
+activate Controller
+
+Controller -> ProductDB: 3.1.1: checkProductInWarehouse(sku)
+activate ProductDB
+
+ProductDB --> Controller: 3.1.2: Inventory count
+deactivate ProductDB
+
+alt Sản phẩm còn tồn kho
+    Controller --> ListView: 3.2: return "Sản phẩm còn tồn kho"
+    deactivate Controller
+    
+    ListView -> ListView: 3.2.1: Hiển thị "Không thể xóa. Sản phẩm còn tồn kho"
+    deactivate ListView
+else Sản phẩm không còn tồn kho
+    Controller -> ProductDB: 3.3.1: deleteOne({sku})
+    activate ProductDB
+    
+    ProductDB --> Controller: 3.3.2: Delete result
+    deactivate ProductDB
+    
+    alt Xóa thành công
+        Controller --> ListView: 3.4: return true
+        deactivate Controller
+        
+        ListView -> ListView: 3.4.1: Hiển thị "Xóa sản phẩm thành công"
+        
+        ListView -> ListView: 3.4.2: Chuyển hướng về danh sách sản phẩm
+        deactivate ListView
+    else Xóa thất bại
+        Controller --> ListView: 3.5: return false
+        deactivate Controller
+        ListView -> ListView: 3.5.1: Hiển thị "Xóa sản phẩm thất bại"
+    end
+end
+
+deactivate Admin
+
+@enduml

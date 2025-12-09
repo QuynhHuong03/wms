@@ -1,0 +1,104 @@
+@startuml Sua_Bin
+
+' Cấu hình giao diện
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+' Định nghĩa các đối tượng tham gia
+actor "QL Kho" as Manager
+boundary "GD_Chinh" as GUI_Main
+boundary "GD_QuanLyViTri" as GUI_Location
+boundary "GD_SuaBin" as GUI_EditBin
+control "Ctrl_Location" as LocationController
+entity "DB_Warehouse_Structure" as WarehouseDB
+
+title Sequence: Chỉnh Sửa Bin
+
+Manager -> GUI_Main: 1: Chọn "Quản lý vị trí kho"
+activate Manager
+activate GUI_Main
+
+GUI_Main -> GUI_Location: 1.1: Mở trang quản lý vị trí
+activate GUI_Location
+deactivate GUI_Main
+
+Manager -> GUI_Location: 1.2: Click "Sửa" bin B1
+
+GUI_Location -> LocationController: 1.3: getBinData(zone_id, rack_id, bin_id)
+activate LocationController
+
+' === Lấy dữ liệu bin ===
+
+LocationController -> WarehouseDB: 1.3.1: Query bin from warehouse
+activate WarehouseDB
+
+
+
+WarehouseDB --> LocationController: 1.3.2: Bin document
+deactivate WarehouseDB
+
+LocationController -> LocationController: 1.4: Parse dimensions và capacity
+
+
+
+LocationController --> GUI_Location: 1.5: Bin data
+deactivate LocationController
+
+' === Mở modal sửa ===
+
+GUI_Location -> GUI_EditBin: 1.6: Mở modal với dữ liệu
+activate GUI_EditBin
+
+GUI_EditBin -> GUI_EditBin: 1.7: Fill form fields
+
+
+
+GUI_EditBin -> GUI_EditBin: 1.8: Hiển thị form
+deactivate GUI_EditBin
+
+
+
+Manager -> GUI_EditBin: 2: Sửa thông tin và click "Lưu"
+activate GUI_EditBin
+
+' === Tính status tự động ===
+
+GUI_EditBin -> GUI_EditBin: 2.1: Calculate status from current_capacity
+
+
+
+GUI_EditBin -> LocationController: 2.2: updateBinFull(zone, rack, bin, update_data)
+activate LocationController
+
+
+
+' === Update bin trong warehouse ===
+
+LocationController -> WarehouseDB: 2.3: Update bin using arrayFilters
+activate WarehouseDB
+
+
+
+WarehouseDB --> LocationController: 2.4: Modified count = 1
+deactivate WarehouseDB
+
+alt
+
+    LocationController --> GUI_EditBin: 3: Success "Cập nhật thành công"
+    deactivate LocationController
+    
+    GUI_EditBin -> GUI_EditBin: 3.1: Hiển thị toast thông báo và reload page
+    deactivate GUI_EditBin
+
+else Update thất bại
+
+    LocationController --> GUI_EditBin: 3.2: Error "Cập nhật thất bại"
+    deactivate LocationController
+    
+    GUI_EditBin -> GUI_EditBin: 3.3: Hiển thị thông báo lỗi
+    deactivate GUI_EditBin
+
+end
+
+@enduml

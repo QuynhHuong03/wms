@@ -1,0 +1,74 @@
+@startuml Thêm Loại Sản Phẩm
+
+' Cấu hình giao diện
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor "QL Kho tổng" as Admin
+boundary "GD_Chinh" as MainGUI
+boundary "GD_DanhSachLoai" as ListView
+boundary "GD_ThemLoai" as AddView
+control "Ctrl_Categories" as Controller
+entity "DB_Categories" as CategoryDB
+
+Admin -> MainGUI: 1: Chọn "Quản lý loại sản phẩm"
+activate Admin
+activate MainGUI
+
+MainGUI -> ListView: 1.1: Mở danh sách loại sản phẩm
+activate ListView
+deactivate MainGUI
+
+ListView -> ListView: 1.2: Hiển thị danh sách
+
+Admin -> ListView: 2: Click "Thêm loại sản phẩm"
+
+ListView -> AddView: 2.1: Mở form thêm loại sản phẩm
+activate AddView
+deactivate ListView
+
+AddView -> AddView: 2.2: Hiển thị form nhập thông tin
+
+Admin -> AddView: 3: Nhập thông tin và click "Thêm"
+
+AddView -> AddView: 3.1: Hiển thị modal xác nhận
+
+Admin -> AddView: 4: Nhập thông tin
+
+AddView -> AddView: 4.1: Validate dữ liệu
+
+alt Dữ liệu không hợp lệ
+    AddView -> AddView: 4.2: Hiển thị lỗi validation
+else Dữ liệu hợp lệ
+    Admin -> AddView: 4.3: Click "Xác nhận"
+    
+    AddView -> Controller: 4.4: addCategory(name, code, description, status)
+    activate Controller
+    
+    Controller -> CategoryDB: 4.4.1: insertOne(category_data)
+    activate CategoryDB
+    
+    CategoryDB --> Controller: 4.4.2: Insert success
+    deactivate CategoryDB
+    
+    alt Thêm thành công
+        Controller --> AddView: 4.5: return true
+        deactivate Controller
+        
+        AddView -> AddView: 4.5.1: Hiển thị "Thêm loại sản phẩm thành công"
+        
+        AddView -> ListView: 4.5.2: Chuyển hướng về danh sách loại sản phẩm
+        activate ListView
+        deactivate AddView
+        deactivate ListView
+    else Thêm thất bại
+        Controller --> AddView: 4.5: return false
+        deactivate Controller
+        AddView -> AddView: 4.5.1: Hiển thị "Thêm loại sản phẩm thất bại"
+    end
+end
+
+deactivate Admin
+
+@enduml

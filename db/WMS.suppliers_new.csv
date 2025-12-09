@@ -1,0 +1,11 @@
+_id,supplier_id,supplier_name,contact,status,created_at,contact_name,country,description,tax_code
+68ffe2010000000000000001,3,ACER,acer@gmail.com,1,2025-09-18 13:23:45,Lê Minh Anh,Việt Nam,Nhà cung cấp ACER,3934832425
+68ffe2010000000000000002,4,HP,hp@gmail.com,1,2025-09-21 13:00:27,Trần Minh,Việt Nam,Nhà cung cấp HP,964365324
+68ffe2010000000000000003,5,APPLE,apple@gmail.com,1,2025-10-16 17:58:29,ABC,USA,Nhà cung cấp USA,5364785697
+68ffe2010000000000000004,6,SAMSUNG,samsung@gmail.com,1,2025-11-19 17:34:55,Samsung,Hàn Quốc,Nhà cung cấp Samsung,67984534
+68ffe2010000000000000005,7,DELL,dell@gmail.com,1,2025-11-20 09:15:12,Nguyễn Văn Dũng,Việt Nam,Nhà cung cấp DELL,7854632109
+68ffe2010000000000000006,8,LENOVO,lenovo@gmail.com,1,2025-11-20 09:20:33,Phạm Thu Hằng,Trung Quốc,Nhà cung cấp Lenovo,5643219870
+68ffe2010000000000000007,9,ASUS,asus@gmail.com,1,2025-11-20 09:25:47,Lê Quốc Bảo,Đài Loan,Nhà cung cấp ASUS,1234567890
+68ffe2010000000000000008,10,OPPO,oppo@gmail.com,1,2025-11-20 09:30:01,Trần Thu Trang,Trung Quốc,Nhà cung cấp OPPO,9081726354
+68ffe2010000000000000009,11,XIAOMI,xiaomi@gmail.com,1,2025-11-20 09:35:19,Hoàng Minh Đức,Trung Quốc,Nhà cung cấp Xiaomi,8172635409
+68ffe201000000000000000a,12,SONY,sony@gmail.com,1,2025-11-20 09:40:42,Sato Kenji,Nhật Bản,Nhà cung cấp Sony,7263540819

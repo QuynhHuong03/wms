@@ -1,0 +1,70 @@
+@startuml Cập Nhật Sản Phẩm
+
+' Cấu hình giao diện
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor "QL Kho tổng" as Admin
+boundary "GD_Chinh" as MainGUI
+boundary "GD_DanhSachSP" as ListView
+boundary "GD_CapNhatSP" as EditView
+control "Ctrl_Product" as Controller
+entity "DB_Products" as ProductDB
+
+Admin -> MainGUI: 1: Chọn "Quản lý sản phẩm"
+activate Admin
+activate MainGUI
+
+MainGUI -> ListView: 1.1: Mở danh sách sản phẩm
+activate ListView
+deactivate MainGUI
+
+ListView -> ListView: 1.2: Hiển thị danh sách
+
+Admin -> ListView: 2: Click "Cập nhật" trên sản phẩm
+
+ListView -> EditView: 2.1: Mở form cập nhật với sku
+activate EditView
+deactivate ListView
+
+EditView -> EditView: 2.2: Hiển thị form với dữ liệu hiện tại
+
+Admin -> EditView: 3: Sửa thông tin
+
+EditView -> EditView: 3.1: Validate dữ liệu
+
+alt Dữ liệu không hợp lệ
+    EditView -> EditView: 3.2: Hiển thị lỗi validation
+else Dữ liệu hợp lệ
+    Admin -> EditView: 3.3: Click "Cập nhật"
+    
+    EditView -> Controller: 3.4: updateProduct(sku, data)
+    activate Controller
+    
+    Controller -> ProductDB: 3.4.1: updateOne({sku}, {$set: data})
+    activate ProductDB
+    
+    ProductDB --> Controller: 3.4.2: Update result
+    deactivate ProductDB
+    
+    alt Cập nhật thành công
+        Controller --> EditView: 3.5: return true
+        deactivate Controller
+        
+        EditView -> EditView: 3.5.1: Hiển thị "Cập nhật sản phẩm thành công"
+        
+        EditView -> ListView: 3.5.2: Chuyển hướng về danh sách sản phẩm
+        activate ListView
+        deactivate EditView
+        deactivate ListView
+    else Cập nhật thất bại
+        Controller --> EditView: 3.5: return false
+        deactivate Controller
+        EditView -> EditView: 3.5.1: Hiển thị "Cập nhật sản phẩm thất bại"
+    end
+end
+
+deactivate Admin
+
+@enduml

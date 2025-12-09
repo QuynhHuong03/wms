@@ -1,0 +1,78 @@
+@startuml
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor "NV Kho" as User
+boundary "GD_Chinh" as GUI_Main
+boundary "GD_TaoPhieuKiemKe" as View
+control "Ctrl_InventorySheet" as Controller
+entity "DB_Transactions" as TransactionDB
+entity "DB_Inventory" as InventoryDB
+
+
+User -> GUI_Main: 1: Chọn "Tạo phiếu kiểm kê"
+activate User
+activate GUI_Main
+
+GUI_Main -> View: 1.1: Mở form
+activate View
+deactivate GUI_Main
+
+View -> View: 1.2: Hiển thị form (chọn khoảng thời gian)
+
+User -> View: 2: Click "Tải tất cả sản phẩm"
+
+View -> Controller: 2.1: getSystemStock(warehouse_id, from, to)
+activate Controller
+
+Controller -> InventoryDB: 2.1.1: aggregate({$group: {_id: "$product_id", qty: {$sum: "$qty"}}})
+activate InventoryDB
+
+InventoryDB --> Controller: 2.1.2: return stocks
+deactivate InventoryDB
+
+Controller --> View: 2.1.3: return stock list
+deactivate Controller
+
+View -> View: 2.2: Hiển thị bảng sản phẩm với SL hệ thống
+
+User -> View: 3: Nhập số lượng thực tế
+
+View -> View: 3.1: Tự động tính chênh lệch (thực tế - hệ thống)
+
+View -> View: 3.2: Cập nhật thống kê (thừa/thiếu/khớp)
+
+User -> View: 4: Nhập ghi chú (tùy chọn)
+
+User -> View: 5: Click "Hoàn thành và lưu"
+
+View -> View: 5.1: Validate dữ liệu
+
+alt Dữ liệu hợp lệ
+    View -> Controller: 5.2: createInventorySheet(warehouse_id, items, note, count_date, created_by)
+    activate Controller
+    
+    Controller -> Controller: 5.2.1: generateSheetId()
+    
+    Controller -> TransactionDB: 5.2.2: insertOne(document)
+    activate TransactionDB
+    
+    
+    TransactionDB --> Controller: 5.2.3: Insert success
+    deactivate TransactionDB
+    
+    Controller --> View: 5.2.4: return [true, sheet_id]
+    deactivate Controller
+    
+    View -> View: 5.3: Hiển thị "Đã hoàn thành phiếu kiểm kê"
+    
+    View -> GUI_Main: 5.4: Chuyển hướng về danh sách phiếu
+else Dữ liệu không hợp lệ
+    View -> View: 5.5: Hiển thị lỗi
+end
+
+deactivate View
+deactivate User
+
+@enduml

@@ -1,0 +1,70 @@
+@startuml Cập Nhật Kho
+
+' Cấu hình giao diện
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor "Admin" as Admin
+boundary "GD_Chinh" as MainGUI
+boundary "GD_DanhSachKho" as ListView
+boundary "GD_CapNhatKho" as EditView
+control "Ctrl_Warehouse" as Controller
+entity "DB_Warehouses" as WarehouseDB
+
+Admin -> MainGUI: 1: Chọn "Quản lý kho"
+activate Admin
+activate MainGUI
+
+MainGUI -> ListView: 1.1: Mở danh sách kho
+activate ListView
+deactivate MainGUI
+
+ListView -> ListView: 1.2: Hiển thị danh sách
+
+Admin -> ListView: 2: Click "Cập nhật" trên kho
+
+ListView -> EditView: 2.1: Mở form cập nhật với warehouse_id
+activate EditView
+deactivate ListView
+
+EditView -> EditView: 2.2: Hiển thị form với dữ liệu hiện tại
+
+Admin -> EditView: 3: Sửa thông tin
+
+EditView -> EditView: 3.1: Validate dữ liệu
+
+alt Dữ liệu không hợp lệ
+    EditView -> EditView: 3.2: Hiển thị lỗi validation
+else Dữ liệu hợp lệ
+    Admin -> EditView: 3.3: Click "Cập nhật"
+    
+    EditView -> Controller: 3.4: updateWarehouse(warehouse_id, data)
+    activate Controller
+    
+    Controller -> WarehouseDB: 3.4.1: updateOne({warehouse_id}, {$set: data})
+    activate WarehouseDB
+    
+    WarehouseDB --> Controller: 3.4.2: Update result
+    deactivate WarehouseDB
+    
+    alt Cập nhật thành công
+        Controller --> EditView: 3.5: return true
+        deactivate Controller
+        
+        EditView -> EditView: 3.5.1: Hiển thị "Cập nhật kho thành công"
+        
+        EditView -> ListView: 3.5.2: Chuyển hướng về danh sách kho
+        activate ListView
+        deactivate EditView
+        deactivate ListView
+    else Cập nhật thất bại
+        Controller --> EditView: 3.6: return false
+        deactivate Controller
+        EditView -> EditView: 3.6.1: Hiển thị "Cập nhật kho thất bại"
+    end
+end
+
+deactivate Admin
+
+@enduml

@@ -1,0 +1,155 @@
+@startuml Duyet_Phieu_Yeu_Cau_Tai_Chi_Nhanh
+
+' Cấu hình giao diện
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+' Định nghĩa các đối tượng tham gia
+actor "QL Chi nhánh" as BranchManager
+boundary "GD_Chinh" as GUI_Main
+boundary "GD_DanhSachYeuCau" as GUI_List
+boundary "GD_ChiTietYeuCau" as GUI_Detail <<Boundary>>
+control "Ctrl_Request" as RequestController <<Control>>
+entity "DB_Transactions" as TransactionDB <<Entity>>
+
+title Sequence: Quản lý Chi nhánh duyệt Phiếu Yêu Cầu Nhập Hàng
+
+' === Xem danh sách phiếu chờ duyệt ===
+
+BranchManager -> GUI_Main: 1: Chọn "Duyệt yêu cầu"
+activate BranchManager
+activate GUI_Main
+
+GUI_Main -> GUI_List: 1.1: Mở danh sách (status=0)
+activate GUI_List
+deactivate GUI_Main
+
+GUI_List -> RequestController: 1.1: getRequestsByWarehouse(warehouse_id)
+activate RequestController
+
+RequestController -> TransactionDB: 1.1.1: Query requests WHERE status=0
+activate TransactionDB
+
+note right of TransactionDB
+  Query: {
+    warehouse_id: branch_warehouse_id,
+    status: 0,
+    transaction_type: "goods_request"
+  }
+end note
+
+TransactionDB --> RequestController: 1.1.2: Danh sách phiếu chờ duyệt
+deactivate TransactionDB
+
+RequestController --> GUI_List: 1.2: Danh sách yêu cầu
+deactivate RequestController
+
+GUI_List -> GUI_List: 1.3: Hiển thị phiếu yêu cầu
+deactivate GUI_List
+
+' === Xem chi tiết phiếu ===
+
+BranchManager -> GUI_Detail: 2: Click "Xem chi tiết" phiếu
+activate GUI_Detail
+
+GUI_Detail -> RequestController: 2.1: getRequestById(request_id)
+activate RequestController
+
+RequestController -> TransactionDB: 2.1.1: Query request details
+activate TransactionDB
+
+TransactionDB --> RequestController: 2.1.2: Request data
+deactivate TransactionDB
+
+RequestController --> GUI_Detail: 2.2: Thông tin đầy đủ phiếu
+deactivate RequestController
+
+GUI_Detail -> GUI_Detail: 2.3: Hiển thị chi tiết\n(sản phẩm, số lượng, mức độ ưu tiên)
+deactivate GUI_Detail
+
+note right of BranchManager
+  QL Chi nhánh xem xét:
+  - Danh sách sản phẩm yêu cầu
+  - Số lượng cần nhập
+  - Mức độ ưu tiên (normal/urgent)
+  - Lý do yêu cầu
+  
+  Quyết định: DUYỆT hoặc TỪ CHỐI
+end note
+
+' === Quyết định duyệt/từ chối ===
+
+alt
+    
+    BranchManager -> GUI_Detail: 3: Click "Duyệt phiếu"
+    activate GUI_Detail
+    
+    GUI_Detail -> RequestController: 3.1: approveRequest(request_id, approver)
+    activate RequestController
+    
+    RequestController -> TransactionDB: 3.2: updateOne({_id: request_id})\nSET status=1
+    activate TransactionDB
+    
+    note right of TransactionDB
+      Cập nhật:
+      - status: 1 (Đã duyệt, gửi lên Kho Tổng)
+      - approved_by: branch_manager_id
+      - approved_at: current_timestamp
+      
+      Phiếu sẽ xuất hiện trong
+      danh sách của QL Kho Tổng
+    end note
+    
+    TransactionDB --> RequestController: 3.3: Updated successfully
+    deactivate TransactionDB
+    
+    RequestController --> GUI_Detail: 3.4: Duyệt thành công
+    deactivate RequestController
+    
+    GUI_Detail -> GUI_Detail: 3.5: Hiển thị "Đã gửi yêu cầu lên Kho Tổng\nChờ Kho Tổng xác nhận và phân bổ"
+    deactivate GUI_Detail
+
+else Quản lý chi nhánh TỪ CHỐI
+    
+    BranchManager -> GUI_Detail: 4: Click "Từ chối" (nhập lý do)
+    activate GUI_Detail
+    
+    GUI_Detail -> RequestController: 4.1: rejectRequest(request_id, approver, reason)
+    activate RequestController
+    
+    RequestController -> TransactionDB: 4.2: updateOne({_id: request_id})\nSET status=2
+    activate TransactionDB
+    
+    note right of TransactionDB
+      Cập nhật:
+      - status: 2 (Từ chối)
+      - rejected_by: branch_manager_id
+      - rejected_at: current_timestamp
+      - rejection_reason: text
+      
+      Phiếu kết thúc, không xử lý tiếp
+    end note
+    
+    TransactionDB --> RequestController: 4.3: Updated successfully
+    deactivate TransactionDB
+    
+    RequestController --> GUI_Detail: 4.4: Từ chối thành công
+    deactivate RequestController
+    
+    GUI_Detail -> GUI_Detail: 4.5: Hiển thị "Đã từ chối phiếu yêu cầu"
+    deactivate GUI_Detail
+    
+end
+
+note over BranchManager, TransactionDB
+  === KẾT THÚC SEQUENCE TẠI CHI NHÁNH ===
+  
+  Nếu status = 1 (Đã duyệt):
+  → Chuyển sang sequence "Xác nhận và Phân phối tại Kho Tổng"
+  
+  Nếu status = 2 (Từ chối):
+  → Kết thúc luồng
+end note
+
+@enduml

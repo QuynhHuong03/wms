@@ -1,0 +1,75 @@
+@startuml Đổi Mật Khẩu
+
+' Cấu hình giao diện
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor "Nhân viên" as User
+boundary "GD_Chinh" as MainGUI
+boundary "GD_DoiMatKhau" as PasswordGUI
+control "Ctrl_Users" as UserCtrl
+entity "DB_Users" as UserDB
+
+User -> MainGUI: 1: Chọn "Quản lý mật khẩu"
+activate User
+activate MainGUI
+
+MainGUI -> PasswordGUI: 1.1: Mở form đổi mật khẩu
+activate PasswordGUI
+deactivate MainGUI
+
+PasswordGUI -> PasswordGUI: 1.2: Hiển thị form
+
+User -> PasswordGUI: 2: Nhập thông tin và click "Đổi mật khẩu"
+
+PasswordGUI -> PasswordGUI: 2.1: Validate dữ liệu
+
+alt Dữ liệu không hợp lệ
+    PasswordGUI -> PasswordGUI: 2.2: Hiển thị lỗi validation
+else Dữ liệu hợp lệ
+    PasswordGUI -> UserCtrl: 2.3: updatePassword(userId, currentPassword, newPassword)
+    activate UserCtrl
+    
+    UserCtrl -> UserDB: 2.3.1: getUserByUserId(userId)
+    activate UserDB
+    
+    UserDB --> UserCtrl: 2.3.2: User data
+    deactivate UserDB
+    
+    UserCtrl -> UserCtrl: 2.3.3: password_verify(currentPassword, user['password'])
+    
+    alt Mật khẩu hiện tại sai
+        UserCtrl --> PasswordGUI: 2.3.4: return 'wrong_password'
+        deactivate UserCtrl
+        PasswordGUI -> PasswordGUI: 2.3.5: Hiển thị "Mật khẩu hiện tại không chính xác"
+    else Mật khẩu hiện tại đúng
+        UserCtrl -> UserCtrl: 2.4: password_hash(newPassword)
+        
+        UserCtrl -> UserDB: 2.4.1: updateOne({user_id}, {$set: {password: hashedPassword}})
+        activate UserDB
+        
+        UserDB --> UserCtrl: 2.4.2: Update result
+        deactivate UserDB
+        
+        alt Cập nhật thành công
+            UserCtrl --> PasswordGUI: 2.4.3: return 'updated'
+            deactivate UserCtrl
+            
+            PasswordGUI -> PasswordGUI: 2.4.4: Hủy session, hiển thị "Đổi mật khẩu thành công"
+            
+            PasswordGUI -> MainGUI: 2.4.5: Redirect đến trang đăng nhập
+            activate MainGUI
+            deactivate PasswordGUI
+            deactivate MainGUI
+        else Cập nhật thất bại
+            UserCtrl --> PasswordGUI: 2.5: return false
+            deactivate UserCtrl
+            PasswordGUI -> PasswordGUI: 2.5.1: Hiển thị "Có lỗi xảy ra"
+        end
+    end
+end
+
+deactivate User
+
+@enduml

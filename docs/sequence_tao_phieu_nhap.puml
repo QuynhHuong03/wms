@@ -1,0 +1,131 @@
+@startuml
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor "QL Kho/NV Kho" as Admin
+boundary "GD_Chinh" as MainGUI
+boundary "GD_TaoPN" as CreateView
+control "Ctrl_Receipt" as Controller
+control "Ctrl_Supplier" as SupplierCtrl
+control "Ctrl_Product" as ProductCtrl
+entity "DB_Receipts" as ReceiptDB
+entity "DB_Suppliers" as SupplierDB
+entity "DB_Products" as ProductDB
+
+Admin -> MainGUI: 1: Chọn "Tạo phiếu nhập"
+activate Admin
+activate MainGUI
+
+MainGUI -> CreateView: 1.1: Mở form tạo phiếu
+activate CreateView
+deactivate MainGUI
+
+CreateView -> SupplierCtrl: 1.2: getAllSuppliers()
+activate SupplierCtrl
+
+SupplierCtrl -> SupplierDB: 1.2.1: find({})
+activate SupplierDB
+
+SupplierDB --> SupplierCtrl: 1.2.2: Danh sách nhà cung cấp
+deactivate SupplierDB
+
+SupplierCtrl --> CreateView: 1.2.3: return suppliers
+deactivate SupplierCtrl
+
+CreateView -> ProductCtrl: 1.3: getAllProducts()
+activate ProductCtrl
+
+ProductCtrl -> ProductDB: 1.3.1: find({})
+activate ProductDB
+
+ProductDB --> ProductCtrl: 1.3.2: Danh sách sản phẩm
+deactivate ProductDB
+
+ProductCtrl --> CreateView: 1.3.3: return products
+deactivate ProductCtrl
+
+CreateView -> CreateView: 1.4: Hiển thị form với danh sách
+
+Admin -> CreateView: 2: Chọn loại phiếu "purchase"
+
+CreateView -> CreateView: 2.1: toggleFields() - Hiển thị trường nhà cung cấp
+
+Admin -> CreateView: 3: Chọn nhà cung cấp
+
+loop Thêm sản phẩm
+    Admin -> CreateView: 4: Nhập/Quét mã sản phẩm (barcode/SKU)
+    
+    CreateView -> ProductCtrl: 4.1: getProductByBarcode(barcode, supplier_id)
+    activate ProductCtrl
+    
+    ProductCtrl -> ProductDB: 4.1.1: findOne({$or: [{barcode}, {sku}], supplier_id})
+    activate ProductDB
+    
+    alt Tìm thấy sản phẩm thuộc NCC
+        ProductDB --> ProductCtrl: 4.1.2: Thông tin sản phẩm
+        deactivate ProductDB
+        
+        ProductCtrl --> CreateView: 4.1.3: return product JSON
+        deactivate ProductCtrl
+        
+        CreateView -> CreateView: 4.2: addOrUpdateRow(product)
+        
+        Admin -> CreateView: 5: Nhập số lượng và giá nhập
+        
+        CreateView -> CreateView: 5.1: validateQuantityPrice()
+        
+        alt Số lượng/giá không hợp lệ
+            CreateView -> CreateView: 5.1.1: Hiển thị lỗi "Số lượng/giá không hợp lệ"
+        else Hợp lệ
+            CreateView -> CreateView: 5.1.2: calcSubtotal() - Cập nhật thành tiền
+        end
+        
+    else Không tìm thấy sản phẩm
+        ProductDB --> ProductCtrl: 4.1.2b: null
+        deactivate ProductDB
+        
+        ProductCtrl --> CreateView: 4.1.3b: return null
+        deactivate ProductCtrl
+        
+        CreateView -> CreateView: 4.2b: Hiển thị lỗi
+        note right
+            "Barcode không tồn tại" hoặc
+            "Sản phẩm không thuộc nhà cung cấp đã chọn"
+        end note
+    end
+end
+
+Admin -> CreateView: 6: Click "Tạo phiếu"
+
+CreateView -> CreateView: 6.1: showConfirmDialog()
+note right
+    Sản phẩm đã được validate khi thêm vào bảng
+    Chỉ kiểm tra có ít nhất 1 sản phẩm
+end note
+
+Admin -> CreateView: 6.2: Click "Xác nhận"
+
+CreateView -> Controller: 6.3: createReceipt(payload) - Submit form
+activate Controller
+
+Controller -> Controller: 6.3.1: generateReceiptId()
+note right: Tạo mã IR0001, IR0002...
+
+Controller -> ReceiptDB: 6.3.2: insertOne(doc)
+activate ReceiptDB
+
+ReceiptDB --> Controller: 6.3.3: Insert result
+deactivate ReceiptDB
+
+Controller --> CreateView: 6.3.4: return [true, receipt_id]
+deactivate Controller
+
+CreateView -> CreateView: 6.4: Hiển thị "Tạo phiếu thành công!"
+
+CreateView -> MainGUI: 6.5: Chuyển hướng về danh sách phiếu
+deactivate CreateView
+
+deactivate Admin
+
+@enduml

@@ -1,0 +1,83 @@
+@startuml Cập Nhật Người Dùng
+
+' Cấu hình giao diện
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+title Cập Nhật Thông Tin Người Dùng
+
+actor "Admin" as Admin
+boundary "GD_Chinh" as GUI_Main
+boundary "GD_QuanLyNguoiDung" as UserListGUI
+boundary "GD_CapNhatNguoiDung" as UpdateUserGUI
+control "Ctrl_Users" as UserCtrl
+entity "DB_Users" as UserDB
+
+Admin -> GUI_Main: 1: Chọn "Quản lý người dùng"
+activate Admin
+activate GUI_Main
+
+GUI_Main -> UserListGUI: 1.1: Mở trang quản lý
+activate UserListGUI
+deactivate GUI_Main
+
+UserListGUI -> UserListGUI: 1.2: Hiển thị danh sách
+
+Admin -> UserListGUI: 2: Click "Cập nhật" trên người dùng
+
+UserListGUI -> UpdateUserGUI: 2.1: Mở form cập nhật với user_id
+activate UpdateUserGUI
+deactivate UserListGUI
+
+UpdateUserGUI -> UserCtrl: 2.2: getUserById(user_id)
+activate UserCtrl
+
+UserCtrl -> UserDB: 2.2.1: findOne({user_id: user_id})
+activate UserDB
+
+UserDB --> UserCtrl: 2.2.2: User data
+deactivate UserDB
+
+UserCtrl --> UpdateUserGUI: 2.3: User info
+deactivate UserCtrl
+
+UpdateUserGUI -> UpdateUserGUI: 2.4: Hiển thị form với dữ liệu hiện tại
+
+Admin -> UpdateUserGUI: 3: Chỉnh sửa thông tin
+
+UpdateUserGUI -> UpdateUserGUI: 3.1: Validate dữ liệu
+
+alt Dữ liệu không hợp lệ
+    UpdateUserGUI -> UpdateUserGUI: 3.2: Hiển thị lỗi validation
+else Dữ liệu hợp lệ
+    Admin -> UpdateUserGUI: 3.3: Click "Cập nhật"
+    
+    UpdateUserGUI -> UserDB: 3.4: updateOne({user_id}, {$set: data})
+    activate UserDB
+    
+    note right of UserDB
+      Cập nhật:
+      - name, email, gender
+      - phone, role_id
+      - status, warehouse_id
+    end note
+    
+    UserDB --> UpdateUserGUI: 3.4.1: Update result
+    deactivate UserDB
+    
+    alt Cập nhật thành công
+        UpdateUserGUI -> UserListGUI: 3.5: Chuyển hướng về danh sách
+        activate UserListGUI
+        deactivate UpdateUserGUI
+        
+        UserListGUI -> UserListGUI: 3.5: Hiển thị "Cập nhật thành công"
+        deactivate UserListGUI
+    else Cập nhật thất bại
+        UpdateUserGUI -> UpdateUserGUI: 3.6: Hiển thị "Cập nhật thất bại"
+    end
+end
+
+deactivate Admin
+
+@enduml

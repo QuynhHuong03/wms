@@ -1,0 +1,91 @@
+@startuml Xếp hàng vào vị trí
+
+skinparam swimlane {
+    BorderColor black
+    BorderThickness 2
+    TitleFontSize 14
+}
+skinparam PartitionBorderColor black
+skinparam PartitionBorderThickness 2
+skinparam ActivityBackgroundColor white
+skinparam ActivityBorderColor black
+skinparam DiamondBackgroundColor white
+skinparam DiamondBorderColor black
+skinparam Padding 2
+skinparam BoxPadding 10
+
+|Người dùng|
+start
+:Chọn chức năng "Xếp hàng";
+
+|Hệ thống|
+:Hiển thị danh sách sản phẩm
+cần xếp từ phiếu nhập;
+
+|Người dùng|
+:Chọn sản phẩm cần xếp;
+
+|Hệ thống|
+:Tìm kiếm các bin phù hợp;
+:Tính điểm chất lượng
+cho từng bin;
+:Phân loại bin theo 4 nhóm:
+- Cùng sản phẩm
+- Cùng loại
+- Thể tích lớn
+- Lấp đầy tối ưu;
+
+:Hiển thị danh sách
+gợi ý vị trí xếp hàng;
+
+|Người dùng|
+if (Duyệt gợi ý?) then (Có)
+  :Chọn bin từ
+  danh sách gợi ý;
+else (Không)
+  :Chọn vị trí thủ công;
+endif
+
+:Nhập số lượng cần xếp;
+
+|Hệ thống|
+:Kiểm tra ràng buộc:
+- Bin còn chỗ?
+- Đủ dung tích?
+- Phù hợp kích thước?;
+
+if (Hợp lệ?) then (Đúng)
+  :Cập nhật bin:
+  - Tăng số lượng
+  - Cập nhật capacity
+  - Lưu sản phẩm;
+  
+  :Ghi nhận phân bổ
+  vào phiếu nhập;
+  
+  :Cập nhật trạng thái
+  batch_location;
+  
+  |Người dùng|
+  :Nhận thông báo thành công;
+  
+  if (Còn hàng cần xếp?) then (Còn)
+    |Hệ thống|
+    :Hiển thị số lượng còn lại;
+    |Người dùng|
+    :Tiếp tục xếp hàng;
+  else (Hết)
+    :Hoàn tất xếp hàng;
+    |Hệ thống|
+    :Ghi vào inventory;
+    :Cập nhật trạng thái
+    phiếu nhập = "Hoàn tất";
+    stop
+  endif
+else (Sai)
+  :Thông báo lỗi;
+  |Người dùng|
+  :Chọn lại vị trí;
+endif
+
+@enduml

@@ -1,0 +1,108 @@
+@startuml
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor "QL Kho/NV Kho/Admin" as User
+boundary "GD_Chinh" as GUI_Main
+boundary "GD_TonKho" as GUI_Inventory
+boundary "GD_ChiTietViTri" as GUI_Detail
+control "Ctrl_Inventory" as InventoryController
+control "Ctrl_Product" as ProductController
+entity "DB_Inventory" as InventoryDB
+entity "DB_Products" as ProductDB
+
+User -> GUI_Main: 1: Chọn "Xem tồn kho"
+activate User
+activate GUI_Main
+
+GUI_Main -> GUI_Inventory: 1.1: Mở trang tồn kho
+activate GUI_Inventory
+deactivate GUI_Main
+
+GUI_Inventory -> InventoryController: 1.2: getInventoryGroupedByProduct(filters)
+activate InventoryController
+
+note right of InventoryController
+Filters:
+- warehouse_id (kho chi nhánh chỉ xem của mình)
+- from/to (thời gian)
+- q (tìm kiếm)
+end note
+
+InventoryController -> InventoryDB: 1.2.1: aggregate([{$group: {_id: product_id, totalQty: {$sum: qty}}}])
+activate InventoryDB
+
+InventoryDB --> InventoryController: 1.2.2: return grouped data
+deactivate InventoryDB
+
+InventoryController -> ProductController: 1.2.3: enrichProductInfo(product_ids)
+activate ProductController
+
+ProductController -> ProductDB: 1.2.3.1: find({_id: {$in: product_ids}})
+activate ProductDB
+
+ProductDB --> ProductController: 1.2.3.2: return products
+deactivate ProductDB
+
+ProductController --> InventoryController: 1.2.4: return enriched data
+deactivate ProductController
+
+InventoryController --> GUI_Inventory: 1.2.5: return inventory list
+deactivate InventoryController
+
+GUI_Inventory -> GUI_Inventory: 1.3: Hiển thị bảng:\n- SKU\n- Tên sản phẩm\n- Tổng SL\n- Ngày nhập gần nhất
+
+User -> GUI_Inventory: 2: Thay đổi bộ lọc (kho/thời gian)
+
+GUI_Inventory -> InventoryController: 2.1: getInventoryGroupedByProduct(new_filters)
+activate InventoryController
+
+InventoryController -> InventoryDB: 2.1.1: aggregate with filters
+activate InventoryDB
+
+InventoryDB --> InventoryController: 2.1.2: return data
+deactivate InventoryDB
+
+InventoryController --> GUI_Inventory: 2.1.3: return updated list
+deactivate InventoryController
+
+GUI_Inventory -> GUI_Inventory: 2.2: Cập nhật bảng (AJAX)
+
+User -> GUI_Inventory: 3: Click "Xem chi tiết vị trí" trên 1 sản phẩm
+
+GUI_Inventory -> GUI_Detail: 3.1: Mở modal chi tiết
+activate GUI_Detail
+deactivate GUI_Inventory
+
+GUI_Detail -> InventoryController: 3.1.1: getBinDistributionForProduct(product_id)
+activate InventoryController
+
+InventoryController -> InventoryDB: 3.1.1.1: aggregate([{$match: {product_id}}, {$group: {_id: {zone, rack, bin}, qty: {$sum: qty}}}])
+activate InventoryDB
+
+note right of InventoryDB
+Nhóm theo vị trí:
+- Zone/Rack/Bin
+- Tính tổng qty tại mỗi vị trí
+- Lấy thời gian nhập gần nhất
+end note
+
+InventoryDB --> InventoryController: 3.1.1.2: return bin distribution
+deactivate InventoryDB
+
+InventoryController --> GUI_Detail: 3.1.2: return locations with qty
+deactivate InventoryController
+
+GUI_Detail -> GUI_Detail: 3.1.3: Hiển thị bảng vị trí:\n- Kho\n- Zone/Rack/Bin\n- Mã ô\n- Số lượng\n- Ngày nhập
+
+User -> GUI_Detail: 4: Click "Đóng"
+
+GUI_Detail -> GUI_Inventory: 4.1: Quay lại danh sách
+deactivate GUI_Detail
+activate GUI_Inventory
+
+deactivate GUI_Inventory
+deactivate User
+
+@enduml

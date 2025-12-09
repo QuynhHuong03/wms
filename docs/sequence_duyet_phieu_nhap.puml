@@ -1,0 +1,104 @@
+@startuml
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor "QL Kho" as Manager
+boundary "GD_Chinh" as GUI_Main
+boundary "GD_DanhSachPN" as GUI_List
+boundary "GD_ChiTietPN" as GUI_Detail
+control "Ctrl_Receipt" as Controller
+entity "DB_Receipts" as Database
+
+Manager -> GUI_Main: 1: Chọn "Duyệt phiếu nhập"
+activate Manager
+activate GUI_Main
+
+GUI_Main -> GUI_List: 1.1: Mở danh sách phiếu
+activate GUI_List
+deactivate GUI_Main
+
+GUI_List -> Controller: 1.2: getReceiptsByWarehouse(warehouse_id)
+activate Controller
+
+Controller -> Database: 1.2.1: find({warehouse_id, status: 0})
+activate Database
+
+Database --> Controller: 1.2.2: Danh sách phiếu chờ duyệt
+deactivate Database
+
+Controller --> GUI_List: 1.2.3: return receipts
+deactivate Controller
+
+GUI_List -> GUI_List: 1.3: Hiển thị danh sách với bộ lọc
+
+Manager -> GUI_List: 2: Click "Xem" chi tiết phiếu
+
+GUI_List -> GUI_Detail: 2.1: Mở trang chi tiết
+activate GUI_Detail
+
+GUI_Detail -> Controller: 2.2: getReceiptById(receipt_id)
+activate Controller
+
+Controller -> Database: 2.2.1: findOne({transaction_id})
+activate Database
+
+Database --> Controller: 2.2.2: Thông tin phiếu và details
+deactivate Database
+
+Controller --> GUI_Detail: 2.2.3: return receipt
+deactivate Controller
+
+GUI_Detail -> GUI_Detail: 2.3: Hiển thị chi tiết phiếu
+
+alt Duyệt phiếu
+    Manager -> GUI_Detail: 3: Click "Duyệt phiếu"
+    
+    GUI_Detail -> GUI_Detail: 3.1: Hiển thị xác nhận (SweetAlert)
+    
+    Manager -> GUI_Detail: 3.2: Xác nhận duyệt
+    
+    GUI_Detail -> Controller: 3.3: updateReceiptStatus(id, status=1, approver)
+    activate Controller
+    
+    Controller -> Database: 3.3.1: updateOne({transaction_id}, {status: 1, approved_by, approved_at})
+    activate Database
+    
+    Database --> Controller: 3.3.2: Update success
+    deactivate Database
+    
+    Controller --> GUI_Detail: 3.3.3: return true
+    deactivate Controller
+    
+    GUI_Detail -> GUI_Detail: 3.4: Hiển thị "Phiếu đã được duyệt"
+    
+    GUI_Detail -> GUI_List: 3.5: Chuyển hướng về danh sách
+else Từ chối phiếu
+    Manager -> GUI_Detail: 4: Click "Từ chối"
+    
+    GUI_Detail -> GUI_Detail: 4.1: Hiển thị form nhập lý do
+    
+    Manager -> GUI_Detail: 4.2: Nhập lý do và xác nhận
+    
+    GUI_Detail -> Controller: 4.3: updateReceiptStatus(id, status=2, approver, reason)
+    activate Controller
+    
+    Controller -> Database: 4.3.1: updateOne({transaction_id}, {status: 2, approved_by, reason})
+    activate Database
+    
+    Database --> Controller: 4.3.2: Update success
+    deactivate Database
+    
+    Controller --> GUI_Detail: 4.3.3: return true
+    deactivate Controller
+    
+    GUI_Detail -> GUI_Detail: 4.4: Hiển thị "Phiếu đã bị từ chối"
+    
+    GUI_Detail -> GUI_List: 4.5: Chuyển hướng về danh sách
+end
+
+deactivate GUI_Detail
+deactivate GUI_List
+deactivate Manager
+
+@enduml

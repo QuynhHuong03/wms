@@ -1,0 +1,7 @@
+_id,id,warehouse_id,warehouse_name,address,status,warehouse_type,created_at
+68c574e69e7a11a2d5b232a9,1,KHO_TONG_01,Kho Tổng Quốc Gia,"Thành phố Thủ Đức, TP.HCM",1,1,
+68c574e69e7a11a2d5b232aa,2,KHO_CN_01,Kho Chi Nhánh Hà Nội,"Quận Nam Từ Liêm, Hà Nội",1,2,
+68c574e69e7a11a2d5b232ab,3,KHO_CN_02,Kho Chi Nhánh A,"Quận Hồng Bàng, Hải Phòng",1,2,
+68c574e69e7a11a2d5b232ac,4,KHO_CN_03,Kho Chi Nhánh Đà Nẵng,"Quận Hải Châu, Đà Nẵng",1,2,
+68c574e69e7a11a2d5b232ad,5,KHO_CN_04,Kho Chi Nhánh Cần Thơ,"Quận Ninh Kiều, Cần Thơ",1,2,
+68cbeeb7f955dbd54b0a3ab1,6,KHO_CN_051,Kho Chi Nhánh Hà Nội,90/2A Đường Nguyễn du,1,2,2025-09-18 13:36:23

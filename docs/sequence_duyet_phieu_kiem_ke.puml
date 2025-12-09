@@ -1,0 +1,126 @@
+@startuml
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor "QL Kho" as Manager
+boundary "GD_Chinh" as GUI_Main
+boundary "GD_DanhSachPhieu" as GUI_List
+boundary "GD_ChiTietPhieu" as GUI_Detail
+boundary "GD_ChonViTri" as GUI_Location
+control "Ctrl_InventorySheet" as SheetController
+control "Ctrl_Inventory" as InventoryController
+control "Ctrl_Location" as LocationController
+entity "DB_Transactions" as TransactionDB
+entity "DB_Inventory" as InventoryDB
+entity "DB_Locations" as LocationDB
+
+Manager -> GUI_Main: 1: Chọn "Danh sách phiếu kiểm kê"
+activate Manager
+activate GUI_Main
+
+GUI_Main -> GUI_List: 1.1: Mở danh sách phiếu (status=1)
+activate GUI_List
+deactivate GUI_Main
+
+GUI_List -> SheetController: 1.2: listSheets({status: 1})
+activate SheetController
+
+SheetController -> TransactionDB: 1.2.1: find({transaction_type: "inventory_sheet", status: 1})
+activate TransactionDB
+
+note right of TransactionDB
+status = 1: Chờ duyệt (completed)
+status = 2: Đã duyệt (approved)
+status = 3: Từ chối (rejected)
+end note
+
+TransactionDB --> SheetController: 1.2.2: return sheets
+deactivate TransactionDB
+
+SheetController --> GUI_List: 1.2.3: return sheets
+deactivate SheetController
+
+GUI_List -> GUI_List: 1.3: Hiển thị danh sách phiếu chờ duyệt
+
+Manager -> GUI_Detail: 2: Click "Xem chi tiết"
+activate GUI_Detail
+deactivate GUI_List
+
+GUI_Detail -> SheetController: 2.1: getSheetById(sheet_id)
+activate SheetController
+
+SheetController -> TransactionDB: 2.1.1: findOne({_id})
+activate TransactionDB
+
+TransactionDB --> SheetController: 2.1.2: return sheet
+deactivate TransactionDB
+
+SheetController --> GUI_Detail: 2.1.3: return sheet
+deactivate SheetController
+
+GUI_Detail -> GUI_Detail: 2.2: Hiển thị chi tiết:\n- Danh sách sản phẩm\n- SL hệ thống, SL thực tế\n- Chênh lệch (+/-)
+
+Manager -> GUI_Detail: 3: Click "Duyệt phiếu"
+
+GUI_Detail -> GUI_Detail: 3.1: Mở modal chọn vị trí
+deactivate GUI_Detail
+
+Manager -> GUI_Detail: 4: Chọn vị trí cho từng sản phẩm chênh lệch
+activate GUI_Detail
+
+note right of GUI_Detail
+- Thêm (+): Chọn bất kỳ bin nào
+- Trừ (-): Chỉ hiển thị bin có SP
+- Có thể chọn nhiều bin cho 1 SP
+end note
+
+Manager -> GUI_Detail: 5: Nhập ghi chú (tùy chọn)
+
+Manager -> GUI_Detail: 6: Click "Xác nhận duyệt"
+
+GUI_Detail -> SheetController: 6.1: approveSheet(sheet_id, locations, note)
+activate SheetController
+
+SheetController -> SheetController: 6.1.1: Validate status = 1
+
+loop Mỗi sản phẩm có location
+    SheetController -> InventoryDB: 6.1.2: Update inventory (thêm/trừ theo diff)
+    activate InventoryDB
+    
+    note right of InventoryDB
+    - Thêm: Tạo/update entry tại vị trí
+    - Trừ: Giảm qty từ entry cụ thể
+    end note
+    
+    InventoryDB --> SheetController: 6.1.3: Updated
+    deactivate InventoryDB
+    
+    SheetController -> LocationDB: 6.1.4: updateBin(bin_id, quantity)
+    activate LocationDB
+    
+    LocationDB --> SheetController: 6.1.5: Updated
+    deactivate LocationDB
+end
+
+SheetController -> TransactionDB: 6.1.6: updateOne({$set: {status: 2, approved_by, approved_at, locations}})
+activate TransactionDB
+
+note right of TransactionDB
+status = 2: Đã duyệt
+end note
+
+TransactionDB --> SheetController: 6.1.7: Success
+deactivate TransactionDB
+
+SheetController --> GUI_Detail: 6.1.8: return {ok: true}
+deactivate SheetController
+
+GUI_Detail -> GUI_Detail: 6.2: Hiển thị "Đã duyệt và cập nhật tồn kho"
+
+GUI_Detail -> GUI_Main: 6.3: Quay lại danh sách
+deactivate GUI_Detail
+
+deactivate Manager
+
+@enduml
