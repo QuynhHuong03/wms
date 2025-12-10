@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Bin Updates</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 8px; }
+        .success { background: #d1fae5; border-color: #10b981; }
+        .error { background: #fee2e2; border-color: #dc2626; }
+        .info { background: #dbeafe; border-color: #3b82f6; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test Bin Capacity Updates</h1>
+    
+    <div class="test-section info">
+        <h3>Hướng dẫn:</h3>
+        <ol>
+            <li>Mở Console (F12) để xem logs</li>
+            <li>Xếp hàng vào một bin bất kỳ</li>
+            <li>Click "Reload Locations" để kiểm tra % cập nhật</li>
+            <li>Kiểm tra attribute <code>data-utilization</code> của bin</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h3>Actions:</h3>
+        <button onclick="reloadLocations()">🔄 Reload Locations</button>
+        <button onclick="checkBinAttributes()">🔍 Check Bin Attributes</button>
+        <button onclick="viewErrorLog()">📋 View Error Log</button>
+    </div>
+
+    <div id="results" class="test-section">
+        <h3>Results:</h3>
+        <div id="resultsContent">Click a button to start testing...</div>
+    </div>
+
+    <script>
+        function reloadLocations() {
+            const warehouseId = 'KHO_TONG_01'; // Change this
+            const resultsDiv = document.getElementById('resultsContent');
+            resultsDiv.innerHTML = '⏳ Loading...';
+            
+            fetch(`../locations/ajax_get_locations.php?warehouse_id=${warehouseId}`)
+                .then(r => r.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const bins = doc.querySelectorAll('.bin');
+                    
+                    let output = `<p>✅ Found ${bins.length} bins</p><table border="1" style="border-collapse:collapse;width:100%">
+                        <tr>
+                            <th>Bin ID</th>
+                            <th>Code</th>
+                            <th>Quantity</th>
+                            <th>Capacity</th>
+                            <th>Utilization %</th>
+                            <th>Status</th>
+                        </tr>`;
+                    
+                    bins.forEach(bin => {
+                        const binId = bin.getAttribute('data-bin');
+                        const code = bin.getAttribute('data-code');
+                        const qty = bin.getAttribute('data-quantity');
+                        const cap = bin.getAttribute('data-capacity');
+                        const util = bin.getAttribute('data-utilization');
+                        const status = bin.getAttribute('data-status');
+                        
+                        output += `<tr>
+                            <td>${binId}</td>
+                            <td>${code}</td>
+                            <td>${qty}</td>
+                            <td>${cap}</td>
+                            <td style="font-weight:bold;color:${parseFloat(util) > 80 ? 'red' : parseFloat(util) > 0 ? 'orange' : 'green'}">${util}%</td>
+                            <td>${status}</td>
+                        </tr>`;
+                    });
+                    
+                    output += '</table>';
+                    resultsDiv.innerHTML = output;
+                })
+                .catch(err => {
+                    resultsDiv.innerHTML = `<p class="error">❌ Error: ${err.message}</p>`;
+                });
+        }
+
+        function checkBinAttributes() {
+            const bins = document.querySelectorAll('#locationsPane .bin');
+            const resultsDiv = document.getElementById('resultsContent');
+            
+            if (bins.length === 0) {
+                resultsDiv.innerHTML = '<p class="error">❌ No bins found. Please load the receipt locate page first.</p>';
+                return;
+            }
+            
+            let output = `<p>✅ Found ${bins.length} bins in current page</p><ul>`;
+            
+            bins.forEach(bin => {
+                const util = bin.getAttribute('data-utilization');
+                const qty = bin.getAttribute('data-quantity');
+                const code = bin.getAttribute('data-code');
+                
+                output += `<li><strong>${code}</strong>: Utilization = ${util}%, Quantity = ${qty}</li>`;
+            });
+            
+            output += '</ul>';
+            resultsDiv.innerHTML = output;
+        }
+
+        function viewErrorLog() {
+            alert('Check the PHP error log file:\nXAMPP: xampp/apache/logs/error.log\n\nOr check browser console for client-side logs.');
+        }
+    </script>
+</body>
+</html>
