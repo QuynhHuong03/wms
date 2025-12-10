@@ -107,9 +107,13 @@ async function loadWarehouseStock(productId, destinationWarehouse) {
   try {
     console.log('Loading stock for product:', productId, 'excluding warehouse:', destinationWarehouse);
     
-    // Simple relative path
-    const url = 'get_warehouse_stock.php';
+    // Build absolute URL to the API endpoint
+    const currentUrl = window.location.href;
+    const baseUrl = currentUrl.substring(0, currentUrl.indexOf('/view/'));
+    const url = baseUrl + '/view/page/manage/exports/create/get_warehouse_stock.php';
     
+    console.log('Current URL:', currentUrl);
+    console.log('Base URL:', baseUrl);
     console.log('Fetching from URL:', url);
     console.log('Request body:', JSON.stringify({
       product_id: productId,
