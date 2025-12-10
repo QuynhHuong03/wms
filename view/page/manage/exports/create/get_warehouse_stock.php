@@ -3,10 +3,16 @@
  * API: Get product stock across all warehouses
  * Lấy số lượng tồn kho của sản phẩm tại tất cả các kho
  */
-error_reporting(0); // Suppress errors that might break JSON
-ini_set('display_errors', 0);
-ob_start(); // Start output buffering
 
+// CRITICAL: Start output buffering FIRST
+ob_start();
+
+// Set error handling
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
+// Set JSON header
 header('Content-Type: application/json; charset=utf-8');
 
 if (session_status() === PHP_SESSION_NONE) { session_set_cookie_params(['path' => '/', 'secure' => false, 'httponly' => true, 'samesite' => 'Lax']); session_start(); }
@@ -15,21 +21,28 @@ include_once(__DIR__ . "/../../../../../model/connect.php");
 include_once(__DIR__ . "/../../../../../controller/cWarehouse.php");
 
 try {
-    ob_clean(); // Clean any output before JSON
-    $input = json_decode(file_get_contents('php://input'), true);
+    // Clean any accidental output from includes
+    ob_clean();
+    
+    // Get and validate input
+    $rawInput = file_get_contents('php://input');
+    $input = json_decode($rawInput, true);
+    
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        throw new Exception('Invalid JSON input: ' . json_last_error_msg());
+    }
+    
     $productId = $input['product_id'] ?? '';
     $destinationWarehouse = $input['destination_warehouse'] ?? null;
     
     if (!$productId) {
-        echo json_encode(['success' => false, 'error' => 'Missing product_id']);
-        exit;
+        throw new Exception('Missing product_id');
     }
     
     $p = new clsKetNoi();
     $con = $p->moKetNoi();
     if (!$con) {
-        echo json_encode(['success' => false, 'error' => 'Database connection failed']);
-        exit;
+        throw new Exception('Database connection failed');
     }
     
     // Get all warehouses
@@ -79,19 +92,33 @@ try {
         return $b['available_qty'] - $a['available_qty'];
     });
     
-    ob_clean(); // Clean before final output
+    // Final clean before output
+    ob_clean();
+    
     echo json_encode([
         'success' => true,
         'product_id' => $productId,
         'warehouses' => $stockByWarehouse
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     
 } catch (Exception $e) {
-    ob_clean(); // Clean before error output
+    ob_clean();
     echo json_encode([
         'success' => false,
-        'error' => $e->getMessage()
-    ]);
+        'error' => $e->getMessage(),
+        'file' => basename(__FILE__),
+        'line' => $e->getLine()
+    ], JSON_UNESCAPED_UNICODE);
+} catch (Throwable $e) {
+    ob_clean();
+    echo json_encode([
+        'success' => false,
+        'error' => 'Fatal error: ' . $e->getMessage(),
+        'file' => basename(__FILE__),
+        'line' => $e->getLine()
+    ], JSON_UNESCAPED_UNICODE);
 }
+
 ob_end_flush();
+exit;
 ?>

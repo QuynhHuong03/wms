@@ -106,24 +106,56 @@ function closeWarehouseModal() {
 async function loadWarehouseStock(productId, destinationWarehouse) {
   try {
     console.log('Loading stock for product:', productId, 'excluding warehouse:', destinationWarehouse);
-    // Build URL using first path segment (app folder) to avoid duplicate segments
-    const parts = (window.location.pathname || '/').split('/');
-    const appFolder = parts.length > 1 && parts[1] ? '/' + parts[1] : '';
-    const url = window.location.origin + appFolder + '/view/page/manage/exports/create/get_warehouse_stock.php';
+    
+    // Simple relative path
+    const url = 'get_warehouse_stock.php';
+    
+    console.log('Fetching from URL:', url);
+    console.log('Request body:', JSON.stringify({
+      product_id: productId,
+      destination_warehouse: destinationWarehouse
+    }));
+    
     const response = await fetch(url, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify({
         product_id: productId,
         destination_warehouse: destinationWarehouse
       })
     });
     
+    console.log('Response status:', response.status);
+    console.log('Response headers:', [...response.headers.entries()]);
+    
     const text = await response.text();
-    console.log('Response text:', text);
-    const data = JSON.parse(text);
+    console.log('Response text (first 500 chars):', text.substring(0, 500));
+    
+    // Check if response is HTML (error page)
+    if (text.trim().startsWith('<') || text.trim().startsWith('<!')) {
+      console.error('Received HTML instead of JSON. Full response:', text);
+      throw new Error('Server trả về HTML thay vì JSON. Có thể có lỗi PHP. Kiểm tra console để xem chi tiết.');
+    }
+    
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      console.error('Response text:', text);
+      throw new Error('Không thể parse JSON: ' + parseError.message);
+    }
+    
     console.log('Parsed data:', data);
-    if (!data.success) throw new Error(data.error || 'Failed to load');
+    
+    if (!data.success) {
+      const errorMsg = data.error || 'Failed to load';
+      const errorDetails = data.file ? ` (File: ${data.file}, Line: ${data.line})` : '';
+      throw new Error(errorMsg + errorDetails);
+    }
     
     // Lọc bỏ kho đích (kho yêu cầu) khỏi danh sách
     const filteredWarehouses = data.warehouses.filter(wh => wh.warehouse_id !== destinationWarehouse);
@@ -131,10 +163,14 @@ async function loadWarehouseStock(productId, destinationWarehouse) {
     
     renderWarehouseList(filteredWarehouses);
   } catch (error) {
+    console.error('Error in loadWarehouseStock:', error);
     document.getElementById('warehouseList').innerHTML = `
       <div style="text-align:center;padding:40px;color:#dc3545;">
-        <i class="fa-solid fa-exclamation-circle" style="font-size:32px;"></i><br>
-        Lỗi: ${error.message}
+        <i class="fa-solid fa-exclamation-circle" style="font-size:32px;margin-bottom:16px;"></i><br>
+        <strong style="font-size:16px;">Lỗi: ${error.message}</strong><br>
+        <small style="color:#666;margin-top:12px;display:block;font-size:13px;">
+          Vui lòng mở Console (F12) để xem chi tiết lỗi
+        </small>
       </div>
     `;
   }
