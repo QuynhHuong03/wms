@@ -2,7 +2,7 @@
 // Sync bin quantities from inventory to locations
 // Usage: Navigate to this file in browser to run sync
 
-if (session_status() === PHP_SESSION_NONE) { session_set_cookie_params(['path' =&gt; '/', 'secure' =&gt; false, 'httponly' =&gt; true, 'samesite' =&gt; 'Lax']); session_start(); }
+if (session_status() === PHP_SESSION_NONE) { session_set_cookie_params(['path' => '/', 'secure' => false, 'httponly' => true, 'samesite' => 'Lax']); session_start(); }
 
 include_once(__DIR__ . '/../controller/cSync.php');
 

@@ -1,4 +1,4 @@
-
+﻿
 <?php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -285,7 +285,7 @@ async function viewBatchDetail(batchCode) {
             data = JSON.parse(text);
         } catch (err) {
             console.error('Invalid JSON from batch detail API:', text);
-            content.innerHTML = `<div class="alert alert-danger"><strong>Server trả về dữ liệu không hợp lệ.</strong><pre style="max-height:300px;overflow:auto">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></div>`;
+            content.innerHTML = `<div class="alert alert-danger"><strong>Server trả về dữ liệu không hợp lệ.</strong><pre style="max-height:300px;overflow:auto">${text.replace(/</g,'&lt;').replace(/>/g,'>')}</pre></div>`;
             return;
         }
 

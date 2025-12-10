@@ -29,7 +29,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ob_start();
 
-if (session_status() === PHP_SESSION_NONE) { session_set_cookie_params(['path' =&gt; '/', 'secure' =&gt; false, 'httponly' =&gt; true, 'samesite' =&gt; 'Lax']); session_start(); }
+if (session_status() === PHP_SESSION_NONE) { session_set_cookie_params(['path' => '/', 'secure' => false, 'httponly' => true, 'samesite' => 'Lax']); session_start(); }
 
 include_once(__DIR__ . "/../../../../../controller/cProduct.php");
 include_once(__DIR__ . "/../../../../../controller/clocation.php");
