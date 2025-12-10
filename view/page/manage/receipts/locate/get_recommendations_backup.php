@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Get rule-based bin placement recommendations
  */
@@ -6,7 +6,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0); // Don't display errors to output
 ob_start(); // Start output buffering to catch any stray output
 
-if (session_status() === PHP_SESSION_NONE) session_start();
+if (session_status() === PHP_SESSION_NONE) { session_set_cookie_params(['path' =&gt; '/', 'secure' =&gt; false, 'httponly' =&gt; true, 'samesite' =&gt; 'Lax']); session_start(); }
 
 include_once(__DIR__ . "/../../../../../controller/cProduct.php");
 include_once(__DIR__ . "/../../../../../controller/clocation.php");

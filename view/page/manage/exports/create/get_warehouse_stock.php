@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * API: Get product stock across all warehouses
  * Lấy số lượng tồn kho của sản phẩm tại tất cả các kho
@@ -9,7 +9,7 @@ ob_start(); // Start output buffering
 
 header('Content-Type: application/json; charset=utf-8');
 
-if (session_status() === PHP_SESSION_NONE) session_start();
+if (session_status() === PHP_SESSION_NONE) { session_set_cookie_params(['path' =&gt; '/', 'secure' =&gt; false, 'httponly' =&gt; true, 'samesite' =&gt; 'Lax']); session_start(); }
 
 include_once(__DIR__ . "/../../../../../model/connect.php");
 include_once(__DIR__ . "/../../../../../controller/cWarehouse.php");

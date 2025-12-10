@@ -1,8 +1,8 @@
-<?php
+﻿<?php
 header('Content-Type: application/json; charset=utf-8');
 include_once(__DIR__ . '/../../../../controller/cProduct.php');
 
-if (session_status() === PHP_SESSION_NONE) session_start();
+if (session_status() === PHP_SESSION_NONE) { session_set_cookie_params(['path' =&gt; '/', 'secure' =&gt; false, 'httponly' =&gt; true, 'samesite' =&gt; 'Lax']); session_start(); }
 
 // Check authentication
 if (!isset($_SESSION['login'])) {

@@ -51,7 +51,7 @@ class CUsers {
                 $_SESSION["login"] = (array)$result;
             }
 
-            header("Location: ../manage");
+            header("Location: /view/page/manage/index.php");
             exit();
         }
         return false;

@@ -1,5 +1,5 @@
 ﻿<?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+if (session_status() === PHP_SESSION_NONE) { session_set_cookie_params(['path' =&gt; '/', 'secure' =&gt; false, 'httponly' =&gt; true, 'samesite' =&gt; 'Lax']); session_start(); }
 // Role-based warehouse visibility: Admin (1) and Warehouse Manager (2) can view all warehouses
 $user = $_SESSION['login'] ?? null;
 $roleId = isset($user['role_id']) ? intval($user['role_id']) : null;

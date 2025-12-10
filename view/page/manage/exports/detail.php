@@ -1,5 +1,5 @@
-<?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+﻿<?php
+if (session_status() === PHP_SESSION_NONE) { session_set_cookie_params(['path' =&gt; '/', 'secure' =&gt; false, 'httponly' =&gt; true, 'samesite' =&gt; 'Lax']); session_start(); }
 
 // --- GIỮ NGUYÊN PHẦN LOGIC PHP ---
 include_once(__DIR__ . "/../../../../model/connect.php");

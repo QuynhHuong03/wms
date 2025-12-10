@@ -1,5 +1,5 @@
-<?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+﻿<?php
+if (session_status() === PHP_SESSION_NONE) { session_set_cookie_params(['path' =&gt; '/', 'secure' =&gt; false, 'httponly' =&gt; true, 'samesite' =&gt; 'Lax']); session_start(); }
 
 echo "<h2>Debug Export Detail Page</h2>";
 echo "<hr>";

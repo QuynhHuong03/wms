@@ -1,9 +1,9 @@
-<?php
+﻿<?php
 /**
  * Chi tiết phiếu xuất chờ duyệt (cho chi nhánh)
  */
 
-if (session_status() === PHP_SESSION_NONE) session_start();
+if (session_status() === PHP_SESSION_NONE) { session_set_cookie_params(['path' =&gt; '/', 'secure' =&gt; false, 'httponly' =&gt; true, 'samesite' =&gt; 'Lax']); session_start(); }
 
 include_once(__DIR__ . "/../../../../../model/connect.php");
 include_once(__DIR__ . "/../../../../../controller/cWarehouse.php");

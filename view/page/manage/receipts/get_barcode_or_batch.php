@@ -1,8 +1,8 @@
-<?php
+﻿<?php
 // Ensure any PHP warnings/notices don't break JSON responses
 ini_set('display_errors', 0);
 header('Content-Type: application/json; charset=UTF-8');
-if (session_status() === PHP_SESSION_NONE) session_start();
+if (session_status() === PHP_SESSION_NONE) { session_set_cookie_params(['path' =&gt; '/', 'secure' =&gt; false, 'httponly' =&gt; true, 'samesite' =&gt; 'Lax']); session_start(); }
 ob_start();
 
 require_once(__DIR__ . '/../../../../controller/cProduct.php');
