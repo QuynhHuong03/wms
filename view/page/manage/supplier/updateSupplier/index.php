@@ -81,7 +81,7 @@ body {
     </div>
 
     <div class="container">
-        <form action="/KLTN/view/page/manage/supplier/updateSupplier/process.php" method="post">
+        <form action="/view/page/manage/supplier/updateSupplier/process.php" method="post">
             <input type="hidden" name="supplier_id" value="<?php echo $supplier['supplier_id']; ?>">
 
             <div class="form-group">

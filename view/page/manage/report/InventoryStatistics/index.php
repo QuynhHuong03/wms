@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 // Role-based warehouse visibility
 $user = $_SESSION['login'] ?? null;
@@ -392,7 +392,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv_inventory') {
 
     <div class="card">
       <h3>Sản phẩm sắp hết (theo kho)</h3>
-      <form method="get" action="/kltn/view/page/manage/index.php" id="inventory-filter-form" class="filter-form">
+      <form method="get" action="/view/page/manage/index.php" id="inventory-filter-form" class="filter-form">
         <input type="hidden" name="page" value="report/InventoryStatistics">
         <label>Kho</label>
         <?php $warehouseDisabled = !$isGlobalViewer ? 'disabled' : ''; ?>

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 include_once("../../../controller/cSupplier.php");
@@ -500,12 +500,12 @@ if (is_array($suppliers) && !empty($suppliers)) {
 
     confirmDeleteBtn.addEventListener('click', function(){
         if(deleteId){
-            fetch('/KLTN/view/page/manage/supplier/deleteSupplier/process.php?id=' + encodeURIComponent(deleteId))
+            fetch('/view/page/manage/supplier/deleteSupplier/process.php?id=' + encodeURIComponent(deleteId))
                 .then(response => response.json())
                 .then((data) => {
                     deleteModal.style.display = 'none';
                     if (data && data.success) {
-                        window.location.href = '/KLTN/view/page/manage/index.php?page=supplier&msg=deleted';
+                        window.location.href = '/view/page/manage/index.php?page=supplier&msg=deleted';
                     } else {
                         const errToast = document.createElement('div');
                         errToast.className = 'toast-notification error';

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 include_once(__DIR__ . '/../../../../controller/cUsers.php');
 include_once(__DIR__ . '/../../../../controller/cWarehouse.php');
@@ -536,13 +536,13 @@ if ($tblNV && is_array($tblNV)) {
 
     confirmDeleteBtn.addEventListener('click', function(){
         if(deleteUserId){
-            fetch('/KLTN/view/page/manage/users/deleteUsers/process.php?id=' + encodeURIComponent(deleteUserId))
+            fetch('/view/page/manage/users/deleteUsers/process.php?id=' + encodeURIComponent(deleteUserId))
                 .then(response => response.json())
                 .then((data) => {
                     deleteModal.style.display = 'none';
                     if (data && data.success) {
                         // Redirect to users list with deleted message
-                        window.location.href = '/KLTN/view/page/manage/index.php?page=users&msg=deleted';
+                        window.location.href = '/view/page/manage/index.php?page=users&msg=deleted';
                     } else {
                         // Show error toast
                         const errToast = document.createElement('div');

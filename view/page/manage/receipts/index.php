@@ -1,4 +1,4 @@
-<?php
+﻿<?php
   if (session_status() === PHP_SESSION_NONE) session_start();
   
   // DEBUG: Kiểm tra file đã được load chưa
@@ -382,7 +382,7 @@
       if (iframe) {
         // inputs no longer exist in the receipts modal, so pass minimal prefill (supplier only)
           const params = `?prefill=1&product_name=${encodeURIComponent('')}&sku=${encodeURIComponent('')}&barcode=${encodeURIComponent('')}&base_unit=${encodeURIComponent('')}&purchase_price=${encodeURIComponent('')}&description=${encodeURIComponent(selSupplierName ? `Supplier: ${selSupplierName}` : '')}&supplier_id=${encodeURIComponent(supplierEl ? supplierEl.value : '')}`;
-          iframe.src = '/kltn/view/page/manage/products/createProduct/index.php' + params;
+          iframe.src = '/view/page/manage/products/createProduct/index.php' + params;
         if (full) full.style.display = 'block';
       }
     }
@@ -404,7 +404,7 @@
       const supplier_id = encodeURIComponent(document.getElementById('supplier_id') ? document.getElementById('supplier_id').value : '');
       const note = '';
       const params = `?prefill=1&product_name=&sku=&barcode=&base_unit=&purchase_price=&description=${encodeURIComponent(note)}&supplier_id=${supplier_id}`;
-      const url = '/kltn/view/page/manage/products/createProduct/index.php' + params;
+      const url = '/view/page/manage/products/createProduct/index.php' + params;
       const iframe = document.getElementById('fullAddFormIframe');
       const full = document.getElementById('fullAddFormContainer');
       if (!iframe) { window.open(url, '_blank'); return; }
@@ -444,7 +444,7 @@
           // If barcode present, verify it doesn't already exist as a different product
           if (prod && prod.barcode) {
             try {
-              const resp = await fetch(`/kltn/view/page/manage/receipts/get_barcode_or_batch.php?barcode=${encodeURIComponent(prod.barcode)}`);
+              const resp = await fetch(`/view/page/manage/receipts/get_barcode_or_batch.php?barcode=${encodeURIComponent(prod.barcode)}`);
               const j = await resp.json();
               if (j && j.success && j.product && j.product._id) {
                 // existing product in DB

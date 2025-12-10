@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 include_once(__DIR__ . "/../../../../controller/cWarehouse.php");
 $cWarehouse = new CWarehouse();
@@ -391,12 +391,12 @@ body {
 
   confirmDeleteBtn.addEventListener('click', function(){
     if(deleteWarehouseId){
-      fetch('/KLTN/view/page/manage/warehouse/deleteWarehouse/deleteWarehouse.php?id=' + encodeURIComponent(deleteWarehouseId))
+      fetch('/view/page/manage/warehouse/deleteWarehouse/deleteWarehouse.php?id=' + encodeURIComponent(deleteWarehouseId))
         .then(response => response.json())
         .then((data) => {
           deleteModal.style.display = 'none';
           if (data && data.success) {
-            window.location.href = '/KLTN/view/page/manage/index.php?page=warehouse&msg=deleted';
+            window.location.href = '/view/page/manage/index.php?page=warehouse&msg=deleted';
           } else {
             const errToast = document.createElement('div');
             errToast.className = 'toast-notification error';

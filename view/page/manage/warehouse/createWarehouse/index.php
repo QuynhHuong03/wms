@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include_once("../../../controller/cWarehouse.php");
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $result = $cWarehouse->addBranchWarehouse($warehouse_id, $warehouse_name, $address, $status);
 
     if ($result) {
-        echo "<script>window.location='/KLTN/view/page/manage/index.php?page=warehouse&msg=success';</script>";
+        echo "<script>window.location='/view/page/manage/index.php?page=warehouse&msg=success';</script>";
         exit;
     } else {
         echo "<script>alert('Thêm kho thất bại!');</script>";

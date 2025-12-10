@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 // Role-based warehouse visibility: Admin (1) and Warehouse Manager (2) can view all warehouses
 $user = $_SESSION['login'] ?? null;
@@ -476,7 +476,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv_receipts') {
     <h2>Thống kê Xuất kho</h2>
     
     <div class="card">
-      <form method="get" action="/kltn/view/page/manage/index.php" class="filters">
+      <form method="get" action="/view/page/manage/index.php" class="filters">
         <input type="hidden" name="page" value="report/OutboundStatistics">
         <label>Từ ngày:</label>
         <input type="date" name="from" value="<?= htmlspecialchars($from) ?>">
@@ -498,7 +498,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv_receipts') {
           <?php endforeach; ?>
         </select>
         <button type="submit">Xem báo cáo</button>
-        <a href="<?= '/kltn/view/page/manage/report/OutboundStatistics/index.php?export=csv_receipts&from=' . rawurlencode($from) . '&to=' . rawurlencode($to) . (isset($warehouse) && $warehouse !== '' ? '&warehouse=' . rawurlencode($warehouse) : '') ?>"><button type="button" class="btn-export">Xuất file</button></a>
+        <a href="<?= '/view/page/manage/report/OutboundStatistics/index.php?export=csv_receipts&from=' . rawurlencode($from) . '&to=' . rawurlencode($to) . (isset($warehouse) && $warehouse !== '' ? '&warehouse=' . rawurlencode($warehouse) : '') ?>"><button type="button" class="btn-export">Xuất file</button></a>
       </form>
       
       <div class="summary">

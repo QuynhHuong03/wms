@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include_once(__DIR__ . "/../../../../../controller/cWarehouse.php");
 
 $cWarehouse = new CWarehouse();
@@ -127,7 +127,7 @@ if (isset($warehouse['address'])) {
   </div>
 
   <div class="container">
-    <form id="warehouseForm" action="/kltn/view/page/manage/warehouse/updateWarehouse/process.php" method="post" onsubmit="return handleSubmit(event)">
+    <form id="warehouseForm" action="/view/page/manage/warehouse/updateWarehouse/process.php" method="post" onsubmit="return handleSubmit(event)">
       <input type="hidden" name="warehouse_id" value="<?php echo $warehouse['warehouse_id']; ?>">
 
       <div class="form-group">

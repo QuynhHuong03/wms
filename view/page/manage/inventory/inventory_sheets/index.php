@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 include_once(__DIR__ . '/../../../../../controller/cInventorySheet.php');
 
@@ -727,7 +727,7 @@ function buildUrl($overrides = []) {
 
     async function viewSheet(sheetId) {
         try {
-            const response = await fetch(`/KLTN/view/page/manage/inventory/createInventory_sheet/process.php?action=get_sheet&id=${sheetId}`);
+            const response = await fetch(`/view/page/manage/inventory/createInventory_sheet/process.php?action=get_sheet&id=${sheetId}`);
             const result = await response.json();
 
             if (result.ok && result.data) {
@@ -876,7 +876,7 @@ function buildUrl($overrides = []) {
         currentSelectedBin = null;
         
         // Load sheet data to check items with differences
-        fetch(`/KLTN/view/page/manage/inventory/createInventory_sheet/process.php?action=get_sheet&id=${sheetId}`)
+        fetch(`/view/page/manage/inventory/createInventory_sheet/process.php?action=get_sheet&id=${sheetId}`)
             .then(res => res.json())
             .then(result => {
                 if (result.ok && result.data) {
@@ -942,7 +942,7 @@ function buildUrl($overrides = []) {
         // Load warehouse map once
         const warehouseId = currentSheetData?.warehouse_id || '';
         try {
-            const response = await fetch(`/KLTN/view/page/manage/locations/ajax_get_locations.php?warehouse_id=${warehouseId}`);
+            const response = await fetch(`/view/page/manage/locations/ajax_get_locations.php?warehouse_id=${warehouseId}`);
             warehouseLocationsHTML = await response.text();
         } catch (error) {
             console.error('Load locations error:', error);
@@ -1154,7 +1154,7 @@ function buildUrl($overrides = []) {
         
         try {
             const note = document.getElementById('approveNote').value;
-            const response = await fetch('/KLTN/view/page/manage/inventory/inventory_sheets/process.php?action=approve', {
+            const response = await fetch('/view/page/manage/inventory/inventory_sheets/process.php?action=approve', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -1202,7 +1202,7 @@ function buildUrl($overrides = []) {
         if (!note) return;
 
         try {
-            const response = await fetch('/KLTN/view/page/manage/inventory/inventory_sheets/process.php?action=reject', {
+            const response = await fetch('/view/page/manage/inventory/inventory_sheets/process.php?action=reject', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

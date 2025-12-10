@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include_once(__DIR__ . "/../../../../../controller/cRoles.php");
 
 // Accept both normal submit and JS-confirm submit (no button name)
@@ -42,7 +42,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if ($result) {
         // Chuyển hướng về danh sách vai trò với thông báo thành công
         echo "<script>
-            window.location.href = '/KLTN/view/page/manage/index.php?page=roles&msg=success';
+            window.location.href = '/view/page/manage/index.php?page=roles&msg=success';
         </script>";
         exit();
     } else {
@@ -56,6 +56,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 
 // Nếu truy cập trực tiếp, đưa về danh sách vai trò
-header('Location: /KLTN/view/page/manage/index.php?page=roles');
+header('Location: /view/page/manage/index.php?page=roles');
 exit();
 ?>

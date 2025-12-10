@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // session_start();
 // error_reporting(E_ALL);
 // ini_set('display_errors', 1);
@@ -69,7 +69,7 @@ $user = $p->getUserById($id);
   </div>
 
   <div class="container">
-  <form action="/KLTN/view/page/manage/users/updateUsers/process.php" method="post" enctype="multipart/form-data">
+  <form action="/view/page/manage/users/updateUsers/process.php" method="post" enctype="multipart/form-data">
       <input type="hidden" name="id" id="id" value="<?php echo htmlspecialchars($user['user_id']); ?>">
 
       <div class="form-group">
@@ -154,7 +154,7 @@ $user = $p->getUserById($id);
       </div>
 
       <div class="form-actions">
-        <a href="/KLTN/view/page/manage/index.php?page=users" class="btn-secondary">Quay lại</a>
+        <a href="/view/page/manage/index.php?page=users" class="btn-secondary">Quay lại</a>
         <button type="reset" class="btn-secondary">Hủy</button>
         <button type="submit" class="btn-success" name="btnUpdate">Cập nhật</button>
       </div>

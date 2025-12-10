@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include_once(__DIR__ . "/../../../../../controller/cRoles.php");
 $p = new CRoles();
 ?>
@@ -65,7 +65,7 @@ $p = new CRoles();
     </div>
 
     <div class="container">
-      <form id="roleForm" action="/KLTN/view/page/manage/roles/createRoles/process.php" method="POST" onsubmit="return handleSubmit(event)">
+      <form id="roleForm" action="/view/page/manage/roles/createRoles/process.php" method="POST" onsubmit="return handleSubmit(event)">
         <div class="form-group">
           <label for="role_name">Tên vai trò</label>
           <input type="text" id="role_name" name="role_name" required>
@@ -90,7 +90,7 @@ $p = new CRoles();
         </div>
 
         <div class="form-actions">
-          <a href="/KLTN/view/page/manage/index.php?page=roles" class="btn-secondary">Quay lại</a>
+          <a href="/view/page/manage/index.php?page=roles" class="btn-secondary">Quay lại</a>
           <button type="reset" class="btn-secondary">Hủy</button>
           <button type="submit" class="btn-success">Thêm</button>
         </div>

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
@@ -277,12 +277,12 @@ body {
 
   confirmDeleteBtn.addEventListener('click', function(){
       if(deleteCategoryId){
-          fetch('/KLTN/view/page/manage/categories/deleteCategories/process.php?id=' + encodeURIComponent(deleteCategoryId))
+          fetch('/view/page/manage/categories/deleteCategories/process.php?id=' + encodeURIComponent(deleteCategoryId))
               .then(response => response.json())
               .then((data) => {
                   deleteModal.style.display = 'none';
                   if (data && data.success) {
-                      window.location.href = '/KLTN/view/page/manage/index.php?page=categories&msg=deleted';
+                      window.location.href = '/view/page/manage/index.php?page=categories&msg=deleted';
                   } else {
                       const errToast = document.createElement('div');
                       errToast.className = 'toast-notification error';

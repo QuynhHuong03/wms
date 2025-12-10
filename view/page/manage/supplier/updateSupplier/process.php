@@ -29,7 +29,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnUpdate"])) {
 
     if (count($errors) > 0) {
         // Redirect back to the update page with an error flag so the UI can show a toast
-        header("Location: /KLTN/view/page/manage/index.php?page=supplier/updateSupplier&id=$supplier_id&msg=error");
+        header("Location: /view/page/manage/index.php?page=supplier/updateSupplier&id=$supplier_id&msg=error");
         exit();
     }
 
@@ -37,11 +37,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnUpdate"])) {
     $result = $cSupplier->updateSupplier($supplier_id, $supplier_name, $contact, $status, $contact_name, $tax_code, $country, $description);
     if ($result) {
         // Redirect to supplier list with success message so toast appears
-        header("Location: /KLTN/view/page/manage/index.php?page=supplier&msg=updated");
+        header("Location: /view/page/manage/index.php?page=supplier&msg=updated");
         exit();
     } else {
         // Redirect back to update page with an error flag
-        header("Location: /KLTN/view/page/manage/index.php?page=supplier/updateSupplier&id=$supplier_id&msg=error");
+        header("Location: /view/page/manage/index.php?page=supplier/updateSupplier&id=$supplier_id&msg=error");
         exit();
     }
 }

@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+﻿<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 /* --- BASE & TYPOGRAPHY --- */
 body {
@@ -359,7 +359,7 @@ form .form-actions .btn-success.is-disabled,
   </div>
 
   <div class="container">
-  <form action="/KLTN/view/page/manage/users/createUsers/process.php" method="post" enctype="multipart/form-data" onsubmit="return validateForm()">
+  <form action="/view/page/manage/users/createUsers/process.php" method="post" enctype="multipart/form-data" onsubmit="return validateForm()">
       
       <!-- Họ và tên -->
       <div class="form-group">

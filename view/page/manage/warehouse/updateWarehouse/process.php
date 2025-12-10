@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 include_once(__DIR__ . "/../../../../../controller/cWarehouse.php");
 
@@ -60,20 +60,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if ($result) {
         // Chuyển hướng về danh sách kho với thông báo thành công
         echo "<script>
-            window.location.href = '/kltn/view/page/manage/index.php?page=warehouse&msg=updated';
+            window.location.href = '/view/page/manage/index.php?page=warehouse&msg=updated';
         </script>";
         exit();
     } else {
         // Hiển thị thông báo thất bại và chuyển hướng
         echo "<script>
             alert('Cập nhật kho thất bại. Vui lòng thử lại.');
-            setTimeout(() => { window.location.href = '/kltn/view/page/manage/index.php?page=warehouse/updateWarehouse&id=$warehouse_id'; }, 1000);
+            setTimeout(() => { window.location.href = '/view/page/manage/index.php?page=warehouse/updateWarehouse&id=$warehouse_id'; }, 1000);
         </script>";
         exit();
     }
 }
 
 // Nếu không phải POST request, chuyển về trang danh sách kho
-header("Location: /kltn/view/page/manage/index.php?page=warehouse");
+header("Location: /view/page/manage/index.php?page=warehouse");
 exit();
 ?>

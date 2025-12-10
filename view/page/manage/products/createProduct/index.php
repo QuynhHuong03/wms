@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include_once(__DIR__ . '/../../../../../controller/cCategories.php');
 include_once(__DIR__ . '/../../../../../controller/cSupplier.php');
 
@@ -150,7 +150,7 @@ $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', '
   <div class="container">
     <h2><i class="fa-solid fa-boxes-stacked"></i> Thêm sản phẩm mới</h2>
 
-    <form id="createProductForm" action="/kltn/view/page/manage/products/createProduct/process.php" method="post" enctype="multipart/form-data" novalidate>
+    <form id="createProductForm" action="/view/page/manage/products/createProduct/process.php" method="post" enctype="multipart/form-data" novalidate>
 
       <div class="form-group">
         <label for="image">Hình ảnh sản phẩm</label>
@@ -513,7 +513,7 @@ $unitOptions = ['cái', 'bộ', 'hộp', 'thùng', 'chiếc', 'set', 'cuộn', '
 
       // Check uniqueness via server endpoint
       try {
-        const resp = await fetch(`/kltn/view/page/manage/receipts/get_barcode_or_batch.php?barcode=${encodeURIComponent(val)}`);
+        const resp = await fetch(`/view/page/manage/receipts/get_barcode_or_batch.php?barcode=${encodeURIComponent(val)}`);
         const data = await resp.json();
         if (data && data.success && data.product && data.product._id) {
           // barcode exists in DB

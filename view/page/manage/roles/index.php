@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 include_once(__DIR__ . '/../../../../controller/cRoles.php');
 $p = new CRoles();
@@ -154,15 +154,15 @@ if ($tblRoles && is_array($tblRoles)) {
 
   confirmDeleteBtn.addEventListener('click', function(){
     if (deleteRoleId) {
-      fetch('/KLTN/view/page/manage/roles/deleteRoles/deleteRoles.php?id=' + encodeURIComponent(deleteRoleId))
+      fetch('/view/page/manage/roles/deleteRoles/deleteRoles.php?id=' + encodeURIComponent(deleteRoleId))
         .then(res => res.json().catch(() => res.text()))
         .then(data => {
           deleteModal.style.display = 'none';
           if (typeof data === 'object' && data.success) {
-            window.location.href = '/KLTN/view/page/manage/index.php?page=roles&msg=deleted';
+            window.location.href = '/view/page/manage/index.php?page=roles&msg=deleted';
           } else if (typeof data === 'string' && data.trim().length > 0) {
             // fallback: assume success if non-empty text returned
-            window.location.href = '/KLTN/view/page/manage/index.php?page=roles&msg=deleted';
+            window.location.href = '/view/page/manage/index.php?page=roles&msg=deleted';
           } else {
             const errToast = document.createElement('div');
             errToast.className = 'toast-notification error';

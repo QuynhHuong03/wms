@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -1158,7 +1158,7 @@ function __resolve_sku_by_product_id($productId) {
         if (catSelect) {
           catSelect.addEventListener('change', function(){
             const wh = this.value || '';
-            const url = '/kltn/view/page/manage/ajax/category_distribution.php?warehouse=' + encodeURIComponent(wh);
+            const url = '/view/page/manage/ajax/category_distribution.php?warehouse=' + encodeURIComponent(wh);
             fetch(url, { credentials: 'same-origin' })
               .then(r => r.json())
               .then(d => {

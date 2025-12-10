@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 //include_once("../../../model/mUsers.php"); // chứa MWarehouse/CUsers hoặc tương tự
 // include_once("connect.php"); // clsKetNoi MongoDB
 include_once(__DIR__ . "/../../../../../controller/cUsers.php");
@@ -65,17 +65,17 @@ try {
 
     if ($result->getModifiedCount() > 0) {
         // Redirect back to manage users with update message
-        header("Location: /KLTN/view/page/manage/index.php?page=users&msg=updated");
+        header("Location: /view/page/manage/index.php?page=users&msg=updated");
         exit();
     } else {
         // No changes made, still redirect with updated for UX consistency
-        header("Location: /KLTN/view/page/manage/index.php?page=users&msg=updated");
+        header("Location: /view/page/manage/index.php?page=users&msg=updated");
         exit();
     }
 
 } catch (\Exception $e) {
     // On error, redirect back with error message so users list can show toast
-    header("Location: /KLTN/view/page/manage/index.php?page=users&msg=error");
+    header("Location: /view/page/manage/index.php?page=users&msg=error");
     exit();
 }
 ?>

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -13,7 +13,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['btnUpdate'])) {
 
     if (!$id || $name === '') {
         $_SESSION['error'] = "Tên danh mục không được để trống.";
-        header("Location: /KLTN/view/page/manage/index.php?page=categories&msg=error");
+        header("Location: /view/page/manage/index.php?page=categories&msg=error");
         exit();
     }
 
@@ -32,14 +32,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['btnUpdate'])) {
 
     if ($result) {
         // Redirect to categories list and include msg=updated to trigger a toast there
-        header("Location: /KLTN/view/page/manage/index.php?page=categories&msg=updated");
+        header("Location: /view/page/manage/index.php?page=categories&msg=updated");
         exit();
     } else {
         $_SESSION['error'] = "Cập nhật danh mục sản phẩm thất bại.";
-        header("Location: /KLTN/view/page/manage/index.php?page=categories&msg=error");
+        header("Location: /view/page/manage/index.php?page=categories&msg=error");
         exit();
     }
 } else {
-    header("Location: /KLTN/view/page/manage/index.php?page=categories");
+    header("Location: /view/page/manage/index.php?page=categories");
     exit();
 }

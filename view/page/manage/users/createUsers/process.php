@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 //error_reporting(E_ALL);
 //ini_set('display_errors', 1);
 
@@ -63,7 +63,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["btnAdd"])) {
 
     if ($result) {
         // thành công → về trang quản lý users (correct manage index path)
-        header("Location: /KLTN/view/page/manage/index.php?page=users&msg=success");
+        header("Location: /view/page/manage/index.php?page=users&msg=success");
         exit();
     } else {
         echo "Thêm người dùng thất bại. <a href='../page/index.php?page=users_add'>Thử lại</a>";

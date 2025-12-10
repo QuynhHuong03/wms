@@ -1,4 +1,4 @@
-<?php
+﻿<?php
     session_start();
     error_reporting();
     include_once(__DIR__ . '/../../../../controller/cSupplier.php');
@@ -663,7 +663,7 @@
       // Open the product create form in an iframe modal so it can postMessage the new product back
       const supplierId = document.getElementById('supplier_id') ? document.getElementById('supplier_id').value : '';
       const prefill = supplierId ? ('?prefill=1&supplier_id=' + encodeURIComponent(supplierId)) : '';
-      openCreateProductModal('/kltn/view/page/manage/products/createProduct/index.php' + prefill);
+      openCreateProductModal('/view/page/manage/products/createProduct/index.php' + prefill);
     }
 
     // Create iframe modal and listen for new product postMessage
@@ -1164,7 +1164,7 @@
               allowOutsideClick: false
             }).then(() => {
               // Redirect về danh sách phiếu
-              window.location.href = '/kltn/view/page/manage/receipts/';
+              window.location.href = '/view/page/manage/receipts/';
             });
           } else {
             Swal.fire({

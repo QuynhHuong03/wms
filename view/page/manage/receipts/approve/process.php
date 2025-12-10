@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include_once(__DIR__ . "/../../../../../controller/cReceipt.php");
 session_start();
 
@@ -431,7 +431,7 @@ if ($action === 'approve') {
                     barcodeCheckInProgress[idx] = true;
                     
                     try {
-                        const response = await fetch('/kltn/view/page/manage/receipts/get_barcode_or_batch.php?barcode=' + encodeURIComponent(barcode));
+                        const response = await fetch('/view/page/manage/receipts/get_barcode_or_batch.php?barcode=' + encodeURIComponent(barcode));
                         const data = await response.json();
                         
                         if (data.success && data.product && data.product._id) {

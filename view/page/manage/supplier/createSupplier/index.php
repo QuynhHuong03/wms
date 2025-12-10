@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include_once(__DIR__ . "/../../../../../controller/cSupplier.php");
 ?>
 
@@ -125,7 +125,7 @@ body {
 </div>
 
 <div class="container">
-    <form action="/KLTN/view/page/manage/supplier/createSupplier/process.php" method="post" onsubmit="return validateForm()">
+    <form action="/view/page/manage/supplier/createSupplier/process.php" method="post" onsubmit="return validateForm()">
 
         <div class="form-group">
             <label for="supplier_name">Tên nhà cung cấp</label>
