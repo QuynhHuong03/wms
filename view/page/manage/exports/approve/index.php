@@ -15,29 +15,51 @@ $cWarehouse = new CWarehouse();
 $user_id = $_SESSION['login']['user_id'] ?? 'U001';
 $role = $_SESSION['login']['role'] ?? 'staff';
 $role_name = $_SESSION['login']['role_name'] ?? '';
-$role_id = $_SESSION['login']['role_id'] ?? '';
+$role_id = (int)($_SESSION['login']['role_id'] ?? 0);
 $warehouse_id = $_SESSION['warehouse_id'] ?? ($_SESSION['login']['warehouse_id'] ?? null);
 
-// Xác định vai trò quản lý
-$allowedRoles = ['manager', 'admin', 'QL_Kho_CN'];
-$allowedRoleIds = [4];
-$isManager = in_array($role, $allowedRoles) || in_array($role_name, $allowedRoles) || in_array($role_id, $allowedRoleIds);
+// ⚠️ PHÂN QUYỀN: Quản lý kho được duyệt phiếu xuất ĐẾN kho của mình
+// role_id = 2: QL_Kho_Tong - duyệt phiếu đến kho tổng
+// role_id = 4: QL_Kho_CN - duyệt phiếu đến kho chi nhánh
+$allowedRoleIds = [2, 4];
+$isManager = in_array($role_id, $allowedRoleIds);
+
+if (!$isManager) {
+    echo '<div style="max-width:800px;margin:50px auto;padding:30px;background:#fff3cd;border:2px solid #ffc107;border-radius:12px;text-align:center;">';
+    echo '<h2 style="color:#856404;margin-bottom:20px;"><i class="fa-solid fa-ban"></i> Không có quyền truy cập</h2>';
+    echo '<p style="font-size:16px;color:#856404;margin-bottom:20px;">Chỉ <strong>Quản lý kho</strong> mới được duyệt phiếu xuất kho.</p>';
+    echo '<p style="color:#6c757d;">Vai trò của bạn: <strong>' . htmlspecialchars($role_name) . '</strong> (ID: ' . $role_id . ')</p>';
+    echo '<p style="color:#0c5460;font-size:14px;margin-top:15px;">💡 <strong>Lưu ý:</strong> Bạn chỉ có thể duyệt các phiếu xuất <strong>GỬI ĐẾN</strong> kho mà bạn quản lý.</p>';
+    echo '<a href="../../index.php" style="display:inline-block;margin-top:20px;padding:10px 20px;background:#007bff;color:#fff;text-decoration:none;border-radius:6px;"><i class="fa fa-arrow-left"></i> Quay lại trang chủ</a>';
+    echo '</div>';
+    exit;
+}
+
+// ⚠️ Kiểm tra warehouse_id trước khi query
+if (empty($warehouse_id)) {
+    error_log("⚠️ EXPORTS APPROVE - User $user_id has no warehouse_id assigned");
+} else {
+    error_log("📦 EXPORTS APPROVE - Loading exports for warehouse: $warehouse_id (User: $user_id, Role: $role_id)");
+}
 
 // Kết nối MongoDB để lấy phiếu xuất
 $p = new clsKetNoi();
 $con = $p->moKetNoi();
 $exports = [];
 
-if ($con) {
+if ($con && !empty($warehouse_id)) {
     $transactionsCol = $con->selectCollection('transactions');
     
-    // Lấy phiếu xuất gửi đến kho của mình
+    // ✅ CHỈ LẤY phiếu xuất GỬI ĐẾN kho của user hiện tại
+    // destination_warehouse_id phải ĐÚNG BẰNG warehouse_id của user
     $filter = [
         'transaction_type' => 'export',
-        'destination_warehouse_id' => $warehouse_id,
+        'destination_warehouse_id' => $warehouse_id, // ⭐ Quan trọng: chỉ lấy phiếu đến kho này
         'status' => 1, // Status 1 = Đã xuất kho (chờ chi nhánh duyệt nhận hàng)
         'inventory_deducted' => true // Chỉ lấy phiếu đã trừ kho
     ];
+    
+    error_log("🔍 Filter: " . json_encode($filter));
     
     // Aggregation để join với users
     $pipeline = [
@@ -65,8 +87,16 @@ if ($con) {
     
     try {
         $exports = iterator_to_array($transactionsCol->aggregate($pipeline));
+        error_log("✅ Found " . count($exports) . " exports for warehouse $warehouse_id");
+        
+        // Debug: Log chi tiết các phiếu tìm được
+        foreach ($exports as $idx => $exp) {
+            $tid = $exp['transaction_id'] ?? 'N/A';
+            $dest = $exp['destination_warehouse_id'] ?? 'N/A';
+            error_log("  - Export #" . ($idx+1) . ": $tid → Dest: $dest");
+        }
     } catch (Exception $e) {
-        error_log("Error fetching exports for approval: " . $e->getMessage());
+        error_log("❌ Error fetching exports for approval: " . $e->getMessage());
     }
 }
 
@@ -106,7 +136,8 @@ function getStatusBadge($status) {
 
   <?php if (empty($warehouse_id)): ?>
     <div class="alert alert-warning">
-      <strong>⚠️ Cảnh báo:</strong> Bạn chưa được gán kho. Vui lòng liên hệ quản trị viên.
+      <strong>⚠️ Cảnh báo:</strong> Bạn chưa được gán kho. Vui lòng liên hệ quản trị viên để được phân công kho quản lý.<br>
+      <small style="color:#856404;">User ID: <?= htmlspecialchars($user_id) ?> | Role: <?= htmlspecialchars($role_name) ?> (<?= $role_id ?>)</small>
     </div>
   <?php elseif (empty($exports)): ?>
     <div class="alert alert-info">
@@ -114,7 +145,8 @@ function getStatusBadge($status) {
     </div>
   <?php else: ?>
     <div class="alert alert-info">
-      Có <strong><?= count($exports) ?></strong> phiếu xuất kho chờ duyệt tại kho <strong><?= htmlspecialchars($warehouse_id) ?></strong>.
+      Có <strong><?= count($exports) ?></strong> phiếu xuất kho chờ duyệt <strong>GỬI ĐẾN</strong> kho <strong><?= htmlspecialchars($warehouse_id) ?></strong> của bạn.<br>
+      <small style="color:#0c5460;">Chỉ hiển thị các phiếu có destination_warehouse_id = <?= htmlspecialchars($warehouse_id) ?></small>
     </div>
 
     <table>

@@ -1191,11 +1191,9 @@ class MLocation {
 						// Get current capacity
 						$currentCapacity = (float)($bin['current_capacity'] ?? 0);
 						
-						// Calculate new capacity percentage
-						$capacityChange = ($binVolume > 0) ? ($volumeChange / $binVolume * 100) : 0;
-						$newCapacity = max(0, min(100, $currentCapacity + $capacityChange));
-						
-						error_log("=== BIN CAPACITY UPDATE ===");
+                        // Calculate new capacity percentage (giới hạn 0-100%)
+                        $capacityChange = ($binVolume > 0) ? ($volumeChange / $binVolume * 100) : 0;
+                        $newCapacity = max(0.0, min(100.0, $currentCapacity + $capacityChange));						error_log("=== BIN CAPACITY UPDATE ===");
 						error_log("Bin: $binId");
 						error_log("Product volume (per unit): $productVolume cm³");
 						error_log("Quantity: $quantity");

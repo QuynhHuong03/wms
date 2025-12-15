@@ -14,7 +14,13 @@ $cProduct = new CProduct();
 
 // Lấy thông tin người dùng
 $user_id = $_SESSION['login']['user_id'] ?? '';
+$role_id = (int)($_SESSION['login']['role_id'] ?? 0);
+$role_name = $_SESSION['login']['role_name'] ?? '';
 $warehouse_id = $_SESSION['warehouse_id'] ?? '';
+
+// ⚠️ PHÂN QUYỀN: Quản lý kho được duyệt phiếu xuất ĐẾN kho của mình
+$allowedRoleIds = [2, 4]; // QL_Kho_Tong và QL_Kho_CN
+$isManager = in_array($role_id, $allowedRoleIds);
 
 $export_id = $_GET['id'] ?? '';
 
@@ -232,7 +238,12 @@ $p->dongKetNoi($con);
       <i class="fa-solid fa-arrow-left"></i> Quay lại
     </a>
     
-    <?php if ($status === 1 && $inventoryDeducted): ?>
+    <?php if (!$isManager): ?>
+      <div class="alert alert-warning" style="flex:1;margin:0;">
+        <i class="fa-solid fa-info-circle"></i> Chỉ <strong>Quản lý kho</strong> mới có quyền duyệt phiếu xuất. (Vai trò của bạn: <?= htmlspecialchars($role_name) ?>)
+        <br><small>💡 Bạn chỉ có thể duyệt phiếu xuất <strong>GỬI ĐẾN</strong> kho mà bạn quản lý.</small>
+      </div>
+    <?php elseif ($status === 1 && $inventoryDeducted): ?>
       <button onclick="approveExport('<?= $export_id ?>')" class="btn btn-approve">
         <i class="fa-solid fa-check-circle"></i> Duyệt Nhận Hàng
       </button>

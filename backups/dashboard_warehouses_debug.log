@@ -490,3 +490,66 @@ wid=KHO_CN_05 status=1
 wid=KHO_CN_06 status=1
 wid=KHO_CN_07 status=1
 
+--- getTotalWarehouses called: 2025-12-15T01:21:00+07:00
+warehouses_count=4
+wid=KHO_TONG_01 status=1
+wid=KHO_CN_02 status=1
+wid=KHO_CN_03 status=1
+wid=KHO_CN_04 status=1
+
+--- getTotalWarehouses called: 2025-12-15T01:38:29+07:00
+warehouses_count=4
+wid=KHO_TONG_01 status=1
+wid=KHO_CN_02 status=1
+wid=KHO_CN_03 status=1
+wid=KHO_CN_04 status=1
+
+--- getTotalWarehouses called: 2025-12-15T01:39:12+07:00
+warehouses_count=4
+wid=KHO_TONG_01 status=1
+wid=KHO_CN_02 status=1
+wid=KHO_CN_03 status=1
+wid=KHO_CN_04 status=1
+
+--- getTotalWarehouses called: 2025-12-15T01:42:03+07:00
+warehouses_count=4
+wid=KHO_TONG_01 status=1
+wid=KHO_CN_02 status=1
+wid=KHO_CN_03 status=1
+wid=KHO_CN_04 status=1
+
+--- getTotalWarehouses called: 2025-12-15T01:42:28+07:00
+warehouses_count=4
+wid=KHO_TONG_01 status=1
+wid=KHO_CN_02 status=1
+wid=KHO_CN_03 status=1
+wid=KHO_CN_04 status=1
+
+--- getTotalWarehouses called: 2025-12-15T01:48:52+07:00
+warehouses_count=4
+wid=KHO_TONG_01 status=1
+wid=KHO_CN_02 status=1
+wid=KHO_CN_03 status=1
+wid=KHO_CN_04 status=1
+
+--- getTotalWarehouses called: 2025-12-15T01:49:26+07:00
+warehouses_count=4
+wid=KHO_TONG_01 status=1
+wid=KHO_CN_02 status=1
+wid=KHO_CN_03 status=1
+wid=KHO_CN_04 status=1
+
+--- getTotalWarehouses called: 2025-12-15T01:50:20+07:00
+warehouses_count=4
+wid=KHO_TONG_01 status=1
+wid=KHO_CN_02 status=1
+wid=KHO_CN_03 status=1
+wid=KHO_CN_04 status=1
+
+--- getTotalWarehouses called: 2025-12-15T01:50:49+07:00
+warehouses_count=4
+wid=KHO_TONG_01 status=1
+wid=KHO_CN_02 status=1
+wid=KHO_CN_03 status=1
+wid=KHO_CN_04 status=1
+

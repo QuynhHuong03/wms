@@ -441,6 +441,10 @@ if ($warehouseId) {
                     </label>
                     <input id="modalBinCurrentCapacity" type="number" min="0" max="100" value="0" readonly style="width:100%;padding:10px;border:2px solid #d1d5db;border-radius:6px;background:#f9fafb;color:#6b7280;cursor:not-allowed;font-size:16px;font-weight:600;text-align:center">
                     <input type="hidden" id="modalBinMaxCapacity" value="100">
+                    <div style="margin-top:8px;padding:10px;background:#fef3c7;border-left:3px solid #f59e0b;border-radius:6px;font-size:12px;color:#92400e">
+                        <strong>💡 Lưu ý:</strong> % sức chứa được tính tự động dựa trên <strong>thể tích thực tế</strong> của sản phẩm so với thể tích bin.<br>
+                        <strong>Công thức:</strong> % = (Tổng thể tích sản phẩm / Thể tích bin) × 100
+                    </div>
                     <div style="margin-top:6px;font-size:12px;color:#6b7280;display:flex;align-items:center;gap:4px">
                         <i class="fas fa-lock"></i>
                         Sức chứa được tính tự động khi có sản phẩm trong bin
@@ -537,8 +541,9 @@ if ($warehouseId) {
                     <label style="display:block;margin-bottom:8px;font-weight:600">Sức chứa hiện tại (0-100%)</label>
                     <input id="editBinCurrentCapacity" type="number" min="0" max="100" value="0" readonly style="width:100%;padding:10px;border:2px solid #d1d5db;border-radius:6px;background:#f9fafb;color:#6b7280;cursor:not-allowed;font-size:16px;font-weight:600;text-align:center">
                     <input type="hidden" id="editBinMaxCapacity" value="100">
-                    <div style="margin-top:6px;font-size:12px;color:#6b7280;display:flex;align-items:center;gap:4px">
-                        Sức chứa được tính tự động dựa trên thể tích sản phẩm trong bin
+                    <div style="margin-top:8px;padding:10px;background:#fef3c7;border-left:3px solid #f59e0b;border-radius:6px;font-size:12px;color:#92400e">
+                        <strong>💡 Lưu ý:</strong> % sức chứa được tính tự động dựa trên <strong>thể tích thực tế</strong> của sản phẩm so với thể tích bin.<br>
+                        <strong>Công thức:</strong> % = (Tổng thể tích sản phẩm / Thể tích bin) × 100
                     </div>
                 </div>
                 
@@ -547,7 +552,6 @@ if ($warehouseId) {
                         <span style="font-weight:600;color:#0369a1">Tự động tính toán</span>
                     </div>
                     <div style="font-size:12px;color:#0c4a6e;line-height:1.5">
-                        <strong>Sức chứa:</strong> Được tính tự động từ 0-100% dựa trên thể tích sản phẩm so với thể tích bin.<br>
                         <strong>Trạng thái:</strong> Cập nhật tự động theo % chiếm dụng:<br>
                         • Empty (0%) | Partial (1-79%) | Full (≥80%)
                     </div>
@@ -784,36 +788,31 @@ if ($warehouseId) {
                                                         $dimsText = $hasDims ? "{$width}×{$depth}×{$height} cm" : '-';
                                                         
                                                         // Calculate occupancy percentage based on volume
+                                                        // ✅ Sử dụng current_capacity đã được tính chính xác từ updateBinCapacity()
                                                         $occupancyPercent = 0;
                                                         $occupancyText = '-';
                                                         $occupancyColor = '#6b7280';
                                                         
-                                                        // Nếu không có sản phẩm, luôn hiển thị màu xanh (empty)
-                                                        if ($quantity == 0) {
+                                                        // Lấy current_capacity từ database (đã được tính theo thể tích thực tế)
+                                                        $currentCap = isset($bin['current_capacity']) ? (float)$bin['current_capacity'] : 0;
+                                                        
+                                                        // Nếu không có sản phẩm hoặc current_capacity = 0
+                                                        if ($quantity == 0 || $currentCap <= 0) {
                                                             $occupancyPercent = 0;
                                                             $occupancyText = '0%';
                                                             $occupancyColor = '#10b981'; // Green - empty
-                                                        } elseif ($hasDims && $quantity > 0) {
-                                                            // Calculate bin volume (cm³)
-                                                            $binVolume = $width * $depth * $height;
+                                                        } else {
+                                                            // Hiển thị current_capacity đã được tính sẵn (giới hạn tối đa 100%)
+                                                            $occupancyPercent = min(100.0, $currentCap);
+                                                            $occupancyText = number_format($occupancyPercent, 1) . '%';
                                                             
-                                                            // Try to calculate product volume from inventory
-                                                            // This is a simplified calculation - ideally should fetch product dimensions
-                                                            // For now, use current_capacity as percentage if set
-                                                            $currentCap = isset($bin['current_capacity']) ? (int)$bin['current_capacity'] : 0;
-                                                            
-                                                            if ($currentCap > 0) {
-                                                                $occupancyPercent = min(100, $currentCap);
-                                                                $occupancyText = $occupancyPercent . '%';
-                                                                
-                                                                // Color based on occupancy
-                                                                if ($occupancyPercent >= 80) {
-                                                                    $occupancyColor = '#dc2626'; // Red - nearly full
-                                                                } elseif ($occupancyPercent >= 50) {
-                                                                    $occupancyColor = '#f59e0b'; // Orange - half full
-                                                                } else {
-                                                                    $occupancyColor = '#10b981'; // Green - plenty of space
-                                                                }
+                                                            // Color based on occupancy
+                                                            if ($occupancyPercent >= 80) {
+                                                                $occupancyColor = '#dc2626'; // Red - nearly full
+                                                            } elseif ($occupancyPercent >= 50) {
+                                                                $occupancyColor = '#f59e0b'; // Orange - half full
+                                                            } else {
+                                                                $occupancyColor = '#10b981'; // Green - plenty of space
                                                             }
                                                         }
                                                     ?>

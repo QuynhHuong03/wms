@@ -24,7 +24,20 @@ if (empty($action) || empty($export_id)) {
 }
 
 $user_id = $_SESSION['login']['user_id'] ?? '';
+$role_id = (int)($_SESSION['login']['role_id'] ?? 0);
 $warehouse_id = $_SESSION['warehouse_id'] ?? '';
+
+// ⚠️ PHÂN QUYỀN: Quản lý kho được duyệt phiếu xuất ĐẾN kho của mình
+$allowedRoleIds = [2, 4]; // QL_Kho_Tong và QL_Kho_CN
+$isManager = in_array($role_id, $allowedRoleIds);
+
+if (!$isManager) {
+    echo json_encode([
+        'success' => false, 
+        'message' => 'Bạn không có quyền duyệt phiếu xuất. Chỉ Quản lý kho mới được thực hiện thao tác này.'
+    ]);
+    exit;
+}
 
 $p = new clsKetNoi();
 $con = $p->moKetNoi();

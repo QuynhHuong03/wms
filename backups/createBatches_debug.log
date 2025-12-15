@@ -497,3 +497,15 @@ Receipt details count: 1
 Updated receipt details with persisted product ids for receipt IR0017
 No batches found for product 68dd78e5dfe97d5c520ac055 in receipt or export
 Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-14T19:31:31+01:00 receipt=IR0013
+Receipt details count: 1
+Updated receipt details with persisted product ids for receipt IR0013
+No batches found for product 69034550de544e1ede0649f7 in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.
+
+--- createBatchesFromReceipt start: 2025-12-14T19:31:40+01:00 receipt=IR0013
+Receipt details count: 1
+Updated receipt details with persisted product ids for receipt IR0013
+No batches found for product 69034550de544e1ede0649f7 in receipt or export
+Receipt approved successfully. Products created. Batches not auto-created.

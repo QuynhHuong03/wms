@@ -190,20 +190,28 @@ try {
                     }
                 }
                 
-                // Get current utilization/capacity from database
+                // ✅ Get current utilization/capacity from database
+                // current_capacity được tính dựa trên thể tích thực tế:
+                // % = (Tổng thể tích sản phẩm / Thể tích bin) × 100
                 $currentCapacity = (float)($b['current_capacity'] ?? 0);
                 
-                // ✅ Debug log để kiểm tra giá trị TRƯỚC khi xử lý
+                // ⚠️ Giới hạn tối đa 100%
+                $currentCapacity = min(100, $currentCapacity);
+                
+                // Debug log để kiểm tra giá trị
                 error_log("📊 Bin $binId - DB current_capacity: {$currentCapacity}%, Inventory qty: $qty");
                 
-                // ⭐ FIX: Reset current_capacity = 0 khi bin không có hàng (qty = 0)
-                // Không quan tâm database có giá trị gì, inventory mới là nguồn chân lý
+                // ⭐ QUAN TRỌNG: Reset current_capacity = 0 khi bin không có hàng
+                // Inventory là nguồn chân lý - nếu qty = 0 thì % phải là 0
                 if ($qty <= 0) {
                     $currentCapacity = 0;
-                    error_log("🔴 Bin $binId is empty - capacity reset to 0");
+                    error_log("🔴 Bin $binId is empty - capacity reset to 0%");
                 }
                 
-                // Color logic: 0% = green, 1-80% = yellow, >80% = red
+                // Xác định màu sắc và trạng thái dựa trên % chiếm dụng:
+                // - 0%: Xanh (empty) 🟢
+                // - 1-80%: Vàng (partial) 🟠  
+                // - >80%: Đỏ (full) 🔴
                 $utilClass = 'low'; // green
                 if ($currentCapacity > 80) {
                     $utilClass = 'high'; // red
@@ -216,7 +224,7 @@ try {
                     $status = 'empty'; // Override status based on capacity
                 }
                 
-                error_log("📊 Bin $binId - Final capacity: {$currentCapacity}%, Status: $status, Class: $utilClass");
+                error_log("✅ Bin $binId - Final: {$currentCapacity}%, Status: $status, Color: $utilClass");
                 
                 $titleParts = [];
                 $titleParts[] = 'Trạng thái: ' . htmlspecialchars($status);

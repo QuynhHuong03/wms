@@ -262,8 +262,9 @@ if ($con) {
           if ($status == 0 && !$inventoryDeducted) {
             $statusBadge = '<span class="status pending"><i class="fa-solid fa-clock"></i> Chờ xác nhận</span>';
             $statusClass = 'pending';
-            // Nút xác nhận xuất kho (chỉ manager mới thấy)
-            if ($isManager) {
+            // Nút xác nhận xuất kho (chỉ manager từ kho xuất mới thấy)
+            $exportWarehouseId = $export['warehouse_id'] ?? '';
+            if ($isManager && $exportWarehouseId === $warehouse_id) {
               $confirmButton = "
                 <button class='btn btn-print' onclick='confirmExport(\"$exportId\")' title='Xác nhận xuất kho (Trừ inventory)' style='background:#28a745;'>
                   <i class='fa-solid fa-check-circle'></i> Xác nhận

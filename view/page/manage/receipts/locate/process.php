@@ -1154,10 +1154,9 @@ try {
                         
                         if (!$whId || !$zId || !$rId || !$bId) continue;
                         
-                        // Tính tổng số lượng trong bin từ inventory
+                        // ✅ Tính current_capacity dựa trên THÔNG TIN THỰC TẾ từ inventory (theo thể tích)
+                        // Lấy tất cả sản phẩm trong bin này từ inventory
                         $invCol = $conCap->selectCollection('inventory');
-                        $totalQty = 0;
-                        
                         $invItems = $invCol->find([
                             'warehouse_id' => $whId,
                             'zone_id' => $zId,
@@ -1165,13 +1164,56 @@ try {
                             'bin_id' => $bId
                         ]);
                         
+                        $totalVolumeUsed = 0.0; // Tổng thể tích đã chiếm (cm³)
+                        
                         foreach ($invItems as $item) {
-                            $totalQty += (int)($item['qty'] ?? 0);
+                            $productId = $item['product_id'] ?? '';
+                            $qty = (int)($item['qty'] ?? 0);
+                            
+                            if (!$productId || $qty <= 0) continue;
+                            
+                            // Lấy thông tin sản phẩm để tính volume
+                            try {
+                                $cprod = new CProduct();
+                                $product = $cprod->getProductById($productId);
+                            } catch (\Throwable $e) {
+                                $product = null;
+                            }
+                            
+                            if (!$product) continue;
+                            
+                            // Lấy dimensions từ sản phẩm (ưu tiên package_dimensions)
+                            $pDims = [];
+                            if (isset($product['package_dimensions']) && is_array($product['package_dimensions'])) {
+                                $pDims = $product['package_dimensions'];
+                            } elseif (isset($product['dimensions']) && is_array($product['dimensions'])) {
+                                $pDims = $product['dimensions'];
+                            } else {
+                                // Try direct fields
+                                $pWidth = (float)($product['width'] ?? $product['length'] ?? 0);
+                                $pDepth = (float)($product['depth'] ?? $product['width'] ?? 0);
+                                $pHeight = (float)($product['height'] ?? 0);
+                                if ($pWidth > 0 || $pDepth > 0 || $pHeight > 0) {
+                                    $pDims = ['width' => $pWidth, 'depth' => $pDepth, 'height' => $pHeight];
+                                }
+                            }
+                            
+                            $pWidth = (float)($pDims['width'] ?? 0);
+                            $pDepth = (float)($pDims['depth'] ?? 0);
+                            $pHeight = (float)($pDims['height'] ?? 0);
+                            $pVolume = $pWidth * $pDepth * $pHeight;
+                            
+                            if ($pVolume > 0) {
+                                $totalVolumeUsed += ($pVolume * $qty);
+                            } else {
+                                // Fallback: default volume per unit (10x10x10 cm = 1000 cm³)
+                                $totalVolumeUsed += (1000 * $qty);
+                            }
                         }
                         
-                        // Lấy capacity của bin từ locations collection
-                        $location = $locCol->findOne(['warehouse.id' => $whId]); // ✅ Đổi từ warehouse_id => warehouse.id
-                        $binCapacity = 100; // Default capacity
+                        // Lấy thể tích bin từ locations collection
+                        $location = $locCol->findOne(['warehouse.id' => $whId]);
+                        $binVolume = 0;
                         
                         if ($location && isset($location['zones'])) {
                             foreach ($location['zones'] as $zone) {
@@ -1180,7 +1222,11 @@ try {
                                         if (($rack['rack_id'] ?? '') === $rId && isset($rack['bins'])) {
                                             foreach ($rack['bins'] as $bin) {
                                                 if (($bin['bin_id'] ?? '') === $bId) {
-                                                    $binCapacity = (int)($bin['capacity'] ?? 100);
+                                                    $bDims = $bin['dimensions'] ?? [];
+                                                    $bWidth = (float)($bDims['width'] ?? 100);
+                                                    $bDepth = (float)($bDims['depth'] ?? 100);
+                                                    $bHeight = (float)($bDims['height'] ?? 100);
+                                                    $binVolume = $bWidth * $bDepth * $bHeight;
                                                     break 3;
                                                 }
                                             }
@@ -1190,26 +1236,29 @@ try {
                             }
                         }
                         
-                        // Tính % capacity
-                        $currentCapacity = 0;
-                        if ($binCapacity > 0 && $totalQty > 0) {
-                            $currentCapacity = ($totalQty / $binCapacity) * 100;
+                        // ✅ Tính % capacity dựa trên thể tích thực tế
+                        $currentCapacity = 0.0;
+                        if ($binVolume > 0 && $totalVolumeUsed > 0) {
+                            $currentCapacity = ($totalVolumeUsed / $binVolume) * 100;
+                            $currentCapacity = min(100, $currentCapacity); // Cap at 100%
                         }
                         
-                        error_log("📊 CAPACITY UPDATE - Bin: $whId/$zId/$rId/$bId, Qty: $totalQty, Cap: $binCapacity, Calc: " . round($currentCapacity, 1) . "%");
+                        error_log("📊 CAPACITY UPDATE (Volume-based) - Bin: $whId/$zId/$rId/$bId");
+                        error_log("   Total volume used: " . round($totalVolumeUsed, 2) . " cm³");
+                        error_log("   Bin volume: " . round($binVolume, 2) . " cm³");
+                        error_log("   Calculated capacity: " . round($currentCapacity, 1) . "%");
                         
                         // Cập nhật current_capacity vào bin trong locations collection
                         $updateResult = $locCol->updateOne(
                             [
-                                'warehouse.id' => $whId, // ✅ Đổi từ warehouse_id => warehouse.id
+                                'warehouse.id' => $whId,
                                 'zones.zone_id' => $zId,
                                 'zones.racks.rack_id' => $rId,
                                 'zones.racks.bins.bin_id' => $bId
                             ],
                             [
                                 '$set' => [
-                                    'zones.$[z].racks.$[r].bins.$[b].current_capacity' => round($currentCapacity, 1),
-                                    'zones.$[z].racks.$[r].bins.$[b].capacity' => $binCapacity // Đảm bảo có capacity
+                                    'zones.$[z].racks.$[r].bins.$[b].current_capacity' => round($currentCapacity, 1)
                                 ]
                             ],
                             [
@@ -1222,7 +1271,7 @@ try {
                         );
                         
                         if ($updateResult->getModifiedCount() > 0) {
-                            error_log("✅ Updated bin capacity: $bId = " . round($currentCapacity, 1) . "% (qty: $totalQty, cap: $binCapacity)");
+                            error_log("✅ Updated bin capacity: $bId = " . round($currentCapacity, 1) . "%");
                         } else {
                             error_log("⚠️ Bin capacity NOT updated (maybe no change): $bId");
                         }
