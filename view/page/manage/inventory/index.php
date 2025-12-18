@@ -733,12 +733,22 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
 						<tr>
 										<td><?=h($sku)?></td>
 										<td>
-														<?php
-														$linkParams = ['view' => 'list', 'q' => ''];
+												<?php
+												$linkParams = ['view' => 'list', 'q' => ''];
 												if (!empty($pid)) { $linkParams['product_id'] = $pid; }
 												elseif (!empty($sku)) { $linkParams['product_sku'] = $sku; }
-											?>
-											<a class="inv-btn ghost" href="<?=h(buildUrl($linkParams))?>" title="Xem chi tiết giao dịch"><?=h($pname)?></a>
+												// When viewing paginated server-rendered pages (p > 1), avoid linking product name
+												if ($p > 1) {
+													// Render as plain text (no button/link)
+													?>
+													<span style="color:#374151; font-weight:600;"><?=h($pname)?></span>
+													<?php
+												} else {
+													?>
+													<a class="inv-btn ghost" href="<?=h(buildUrl($linkParams))?>" title="Xem chi tiết giao dịch"><?=h($pname)?></a>
+													<?php
+												}
+												?>
 										</td>
 							<td class="<?=($totalQty<0?'qty-neg':'qty-pos')?>"><?=number_format($totalQty, 0, ',', '.')?></td>
 							<td><?=h($lastStr)?></td>
@@ -807,8 +817,17 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
 									$linkParams = ['view' => 'list', 'q' => ''];
 									if (!empty($it['product_id'])) { $linkParams['product_id'] = $it['product_id']; }
 									elseif (!empty($sku)) { $linkParams['product_sku'] = $sku; }
+									// When on paginated pages, don't provide a navigation link for product name
+									if ($p > 1) {
+										?>
+										<span style="color:#374151; font-weight:600;"><?=h($pname)?></span>
+										<?php
+									} else {
+										?>
+										<a class="inv-btn ghost" href="<?=h(buildUrl($linkParams))?>" title="Xem chi tiết giao dịch"><?=h($pname)?></a>
+										<?php
+									}
 								?>
-								<a class="inv-btn ghost" href="<?=h(buildUrl($linkParams))?>" title="Xem chi tiết giao dịch"><?=h($pname)?></a>
 							</td>
 							<td class="<?=$qtyClass?>"><?=number_format($qty, 0, ',', '.')?></td>
 							<td><?=h($note)?></td>
