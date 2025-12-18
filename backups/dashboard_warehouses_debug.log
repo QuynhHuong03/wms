@@ -553,3 +553,38 @@ wid=KHO_CN_02 status=1
 wid=KHO_CN_03 status=1
 wid=KHO_CN_04 status=1
 
+--- getTotalWarehouses called: 2025-12-18T13:56:01+07:00
+warehouses_count=4
+wid=KHO_TONG_01 status=1
+wid=KHO_CN_02 status=1
+wid=KHO_CN_03 status=1
+wid=KHO_CN_04 status=1
+
+--- getTotalWarehouses called: 2025-12-18T14:37:55+07:00
+warehouses_count=4
+wid=KHO_TONG_01 status=1
+wid=KHO_CN_02 status=1
+wid=KHO_CN_03 status=1
+wid=KHO_CN_04 status=1
+
+--- getTotalWarehouses called: 2025-12-18T16:03:29+07:00
+warehouses_count=4
+wid=KHO_TONG_01 status=1
+wid=KHO_CN_02 status=1
+wid=KHO_CN_03 status=1
+wid=KHO_CN_04 status=1
+
+--- getTotalWarehouses called: 2025-12-18T16:20:40+07:00
+warehouses_count=4
+wid=KHO_TONG_01 status=1
+wid=KHO_CN_02 status=1
+wid=KHO_CN_03 status=1
+wid=KHO_CN_04 status=1
+
+--- getTotalWarehouses called: 2025-12-18T16:21:00+07:00
+warehouses_count=4
+wid=KHO_TONG_01 status=1
+wid=KHO_CN_02 status=1
+wid=KHO_CN_03 status=1
+wid=KHO_CN_04 status=1
+

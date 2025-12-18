@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" 
+                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" 
+                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" 
+                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI" 
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   id="Definitions_WMS" 
+                   targetNamespace="http://bpmn.io/schema/bpmn" 
+                   exporter="bpmn-js (https://demo.bpmn.io)" 
+                   exporterVersion="9.0.0">
+  
+  <bpmn:collaboration id="Collaboration_WMS">
+    <bpmn:participant id="Participant_Admin" name="👤 Admin - Quản trị hệ thống" processRef="Process_Admin" />
+    <bpmn:participant id="Participant_WarehouseManager" name="📦 Warehouse Manager - Quản lý kho" processRef="Process_WarehouseManager" />
+    <bpmn:participant id="Participant_WarehouseStaff" name="🔧 Warehouse Staff - Nhân viên kho" processRef="Process_WarehouseStaff" />
+    <bpmn:participant id="Participant_BranchManager" name="🏪 Branch Manager - Quản lý chi nhánh" processRef="Process_BranchManager" />
+    <bpmn:participant id="Participant_System" name="⚙️ Hệ thống WMS" processRef="Process_System" />
+  </bpmn:collaboration>
+
+  <!-- Process: Admin -->
+  <bpmn:process id="Process_Admin" name="Quy trình Admin" isExecutable="false">
+    <bpmn:startEvent id="StartEvent_Admin" name="Đăng nhập Admin">
+      <bpmn:outgoing>Flow_Admin_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    
+    <bpmn:exclusiveGateway id="Gateway_Admin_Menu" name="Chức năng Admin">
+      <bpmn:incoming>Flow_Admin_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Admin_User</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Admin_Warehouse</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Admin_System</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- Quản lý người dùng -->
+    <bpmn:task id="Task_Admin_ManageUsers" name="Quản lý người dùng&#10;- Thêm/Sửa/Xóa user&#10;- Phân quyền&#10;- Gán kho">
+      <bpmn:incoming>Flow_Admin_User</bpmn:incoming>
+      <bpmn:outgoing>Flow_Admin_User_End</bpmn:outgoing>
+    </bpmn:task>
+
+    <!-- Quản lý kho -->
+    <bpmn:task id="Task_Admin_ManageWarehouses" name="Quản lý kho&#10;- Thêm/Sửa/Xóa kho&#10;- Kích hoạt/Vô hiệu hóa&#10;- Phân loại kho">
+      <bpmn:incoming>Flow_Admin_Warehouse</bpmn:incoming>
+      <bpmn:outgoing>Flow_Admin_Warehouse_End</bpmn:outgoing>
+    </bpmn:task>
+
+    <!-- Cấu hình hệ thống -->
+    <bpmn:task id="Task_Admin_SystemConfig" name="Cấu hình hệ thống&#10;- Backup/Restore&#10;- Đồng bộ dữ liệu&#10;- Báo cáo tổng hợp">
+      <bpmn:incoming>Flow_Admin_System</bpmn:incoming>
+      <bpmn:outgoing>Flow_Admin_System_End</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:endEvent id="EndEvent_Admin" name="Kết thúc">
+      <bpmn:incoming>Flow_Admin_User_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Admin_Warehouse_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Admin_System_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_Admin_1" sourceRef="StartEvent_Admin" targetRef="Gateway_Admin_Menu" />
+    <bpmn:sequenceFlow id="Flow_Admin_User" name="Quản lý user" sourceRef="Gateway_Admin_Menu" targetRef="Task_Admin_ManageUsers" />
+    <bpmn:sequenceFlow id="Flow_Admin_Warehouse" name="Quản lý kho" sourceRef="Gateway_Admin_Menu" targetRef="Task_Admin_ManageWarehouses" />
+    <bpmn:sequenceFlow id="Flow_Admin_System" name="Cấu hình" sourceRef="Gateway_Admin_Menu" targetRef="Task_Admin_SystemConfig" />
+    <bpmn:sequenceFlow id="Flow_Admin_User_End" sourceRef="Task_Admin_ManageUsers" targetRef="EndEvent_Admin" />
+    <bpmn:sequenceFlow id="Flow_Admin_Warehouse_End" sourceRef="Task_Admin_ManageWarehouses" targetRef="EndEvent_Admin" />
+    <bpmn:sequenceFlow id="Flow_Admin_System_End" sourceRef="Task_Admin_SystemConfig" targetRef="EndEvent_Admin" />
+  </bpmn:process>
+
+  <!-- Process: Warehouse Manager -->
+  <bpmn:process id="Process_WarehouseManager" name="Quy trình Quản lý kho" isExecutable="false">
+    <bpmn:startEvent id="StartEvent_Manager" name="Đăng nhập&#10;Quản lý kho">
+      <bpmn:outgoing>Flow_Manager_1</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:exclusiveGateway id="Gateway_Manager_Menu" name="Menu chức năng">
+      <bpmn:incoming>Flow_Manager_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manager_Product</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Manager_Receipt</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Manager_Export</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Manager_Inventory</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Manager_Location</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Manager_Request</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- Quản lý sản phẩm -->
+    <bpmn:subProcess id="SubProcess_ProductManagement" name="Quản lý sản phẩm">
+      <bpmn:incoming>Flow_Manager_Product</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manager_Product_End</bpmn:outgoing>
+      
+      <bpmn:startEvent id="Start_Product" />
+      <bpmn:task id="Task_AddProduct" name="Thêm sản phẩm" />
+      <bpmn:task id="Task_UpdateProduct" name="Cập nhật thông tin" />
+      <bpmn:task id="Task_ManageCategory" name="Quản lý danh mục" />
+      <bpmn:task id="Task_ManageSupplier" name="Quản lý nhà cung cấp" />
+      <bpmn:endEvent id="End_Product" />
+    </bpmn:subProcess>
+
+    <!-- Quản lý phiếu nhập -->
+    <bpmn:subProcess id="SubProcess_ReceiptManagement" name="Quản lý phiếu nhập">
+      <bpmn:incoming>Flow_Manager_Receipt</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manager_Receipt_End</bpmn:outgoing>
+      
+      <bpmn:startEvent id="Start_Receipt" name="Bắt đầu" />
+      <bpmn:task id="Task_CreateReceipt" name="Tạo phiếu nhập&#10;từ NCC" />
+      <bpmn:task id="Task_CreateTransferReceipt" name="Tạo phiếu nhập&#10;điều chuyển" />
+      <bpmn:task id="Task_ReviewReceipt" name="Duyệt phiếu nhập" />
+      <bpmn:task id="Task_ReceiveGoods" name="Nhận hàng&#10;và xếp vào vị trí" />
+      <bpmn:task id="Task_GenerateBarcode" name="Tạo mã barcode&#10;cho batch" />
+      <bpmn:endEvent id="End_Receipt" name="Hoàn thành" />
+      
+      <bpmn:sequenceFlow sourceRef="Start_Receipt" targetRef="Task_CreateReceipt" />
+      <bpmn:sequenceFlow sourceRef="Task_CreateReceipt" targetRef="Task_ReviewReceipt" />
+      <bpmn:sequenceFlow sourceRef="Task_CreateTransferReceipt" targetRef="Task_ReviewReceipt" />
+      <bpmn:sequenceFlow sourceRef="Task_ReviewReceipt" targetRef="Task_ReceiveGoods" />
+      <bpmn:sequenceFlow sourceRef="Task_ReceiveGoods" targetRef="Task_GenerateBarcode" />
+      <bpmn:sequenceFlow sourceRef="Task_GenerateBarcode" targetRef="End_Receipt" />
+    </bpmn:subProcess>
+
+    <!-- Quản lý phiếu xuất -->
+    <bpmn:subProcess id="SubProcess_ExportManagement" name="Quản lý phiếu xuất">
+      <bpmn:incoming>Flow_Manager_Export</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manager_Export_End</bpmn:outgoing>
+      
+      <bpmn:startEvent id="Start_Export" name="Bắt đầu" />
+      <bpmn:task id="Task_CreateExport" name="Tạo phiếu xuất" />
+      <bpmn:task id="Task_ReviewExport" name="Duyệt phiếu xuất" />
+      <bpmn:task id="Task_PickGoods" name="Lấy hàng từ vị trí" />
+      <bpmn:task id="Task_ConfirmExport" name="Xác nhận xuất kho" />
+      <bpmn:task id="Task_UpdateInventory" name="Cập nhật tồn kho" />
+      <bpmn:endEvent id="End_Export" name="Hoàn thành" />
+      
+      <bpmn:sequenceFlow sourceRef="Start_Export" targetRef="Task_CreateExport" />
+      <bpmn:sequenceFlow sourceRef="Task_CreateExport" targetRef="Task_ReviewExport" />
+      <bpmn:sequenceFlow sourceRef="Task_ReviewExport" targetRef="Task_PickGoods" />
+      <bpmn:sequenceFlow sourceRef="Task_PickGoods" targetRef="Task_ConfirmExport" />
+      <bpmn:sequenceFlow sourceRef="Task_ConfirmExport" targetRef="Task_UpdateInventory" />
+      <bpmn:sequenceFlow sourceRef="Task_UpdateInventory" targetRef="End_Export" />
+    </bpmn:subProcess>
+
+    <!-- Kiểm kê kho -->
+    <bpmn:subProcess id="SubProcess_InventoryCheck" name="Kiểm kê kho">
+      <bpmn:incoming>Flow_Manager_Inventory</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manager_Inventory_End</bpmn:outgoing>
+      
+      <bpmn:startEvent id="Start_Inventory" name="Bắt đầu" />
+      <bpmn:task id="Task_CreateInventorySheet" name="Tạo phiếu kiểm kê" />
+      <bpmn:task id="Task_CountInventory" name="Kiểm đếm thực tế" />
+      <bpmn:task id="Task_CompareInventory" name="So sánh số liệu" />
+      <bpmn:task id="Task_ReviewInventory" name="Duyệt phiếu kiểm kê" />
+      <bpmn:task id="Task_AdjustInventory" name="Điều chỉnh tồn kho" />
+      <bpmn:endEvent id="End_Inventory" name="Hoàn thành" />
+      
+      <bpmn:sequenceFlow sourceRef="Start_Inventory" targetRef="Task_CreateInventorySheet" />
+      <bpmn:sequenceFlow sourceRef="Task_CreateInventorySheet" targetRef="Task_CountInventory" />
+      <bpmn:sequenceFlow sourceRef="Task_CountInventory" targetRef="Task_CompareInventory" />
+      <bpmn:sequenceFlow sourceRef="Task_CompareInventory" targetRef="Task_ReviewInventory" />
+      <bpmn:sequenceFlow sourceRef="Task_ReviewInventory" targetRef="Task_AdjustInventory" />
+      <bpmn:sequenceFlow sourceRef="Task_AdjustInventory" targetRef="End_Inventory" />
+    </bpmn:subProcess>
+
+    <!-- Quản lý vị trí -->
+    <bpmn:subProcess id="SubProcess_LocationManagement" name="Quản lý vị trí kho">
+      <bpmn:incoming>Flow_Manager_Location</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manager_Location_End</bpmn:outgoing>
+      
+      <bpmn:startEvent id="Start_Location" />
+      <bpmn:task id="Task_CreateLocation" name="Tạo vị trí/bin" />
+      <bpmn:task id="Task_UpdateLocation" name="Cập nhật vị trí" />
+      <bpmn:task id="Task_ArrangeGoods" name="Xếp hàng vào vị trí" />
+      <bpmn:task id="Task_MoveGoods" name="Di chuyển hàng" />
+      <bpmn:endEvent id="End_Location" />
+    </bpmn:subProcess>
+
+    <!-- Xử lý yêu cầu -->
+    <bpmn:subProcess id="SubProcess_RequestManagement" name="Xử lý yêu cầu chi nhánh">
+      <bpmn:incoming>Flow_Manager_Request</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manager_Request_End</bpmn:outgoing>
+      
+      <bpmn:startEvent id="Start_Request" name="Nhận yêu cầu" />
+      <bpmn:task id="Task_ReviewRequest" name="Duyệt yêu cầu" />
+      <bpmn:task id="Task_AllocateStock" name="Phân bổ hàng" />
+      <bpmn:task id="Task_CreateTransfer" name="Tạo phiếu điều chuyển" />
+      <bpmn:endEvent id="End_Request" name="Hoàn thành" />
+      
+      <bpmn:sequenceFlow sourceRef="Start_Request" targetRef="Task_ReviewRequest" />
+      <bpmn:sequenceFlow sourceRef="Task_ReviewRequest" targetRef="Task_AllocateStock" />
+      <bpmn:sequenceFlow sourceRef="Task_AllocateStock" targetRef="Task_CreateTransfer" />
+      <bpmn:sequenceFlow sourceRef="Task_CreateTransfer" targetRef="End_Request" />
+    </bpmn:subProcess>
+
+    <bpmn:endEvent id="EndEvent_Manager" name="Kết thúc">
+      <bpmn:incoming>Flow_Manager_Product_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Manager_Receipt_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Manager_Export_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Manager_Inventory_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Manager_Location_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Manager_Request_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_Manager_1" sourceRef="StartEvent_Manager" targetRef="Gateway_Manager_Menu" />
+    <bpmn:sequenceFlow id="Flow_Manager_Product" name="Quản lý sản phẩm" sourceRef="Gateway_Manager_Menu" targetRef="SubProcess_ProductManagement" />
+    <bpmn:sequenceFlow id="Flow_Manager_Receipt" name="Phiếu nhập" sourceRef="Gateway_Manager_Menu" targetRef="SubProcess_ReceiptManagement" />
+    <bpmn:sequenceFlow id="Flow_Manager_Export" name="Phiếu xuất" sourceRef="Gateway_Manager_Menu" targetRef="SubProcess_ExportManagement" />
+    <bpmn:sequenceFlow id="Flow_Manager_Inventory" name="Kiểm kê" sourceRef="Gateway_Manager_Menu" targetRef="SubProcess_InventoryCheck" />
+    <bpmn:sequenceFlow id="Flow_Manager_Location" name="Vị trí kho" sourceRef="Gateway_Manager_Menu" targetRef="SubProcess_LocationManagement" />
+    <bpmn:sequenceFlow id="Flow_Manager_Request" name="Yêu cầu" sourceRef="Gateway_Manager_Menu" targetRef="SubProcess_RequestManagement" />
+    <bpmn:sequenceFlow id="Flow_Manager_Product_End" sourceRef="SubProcess_ProductManagement" targetRef="EndEvent_Manager" />
+    <bpmn:sequenceFlow id="Flow_Manager_Receipt_End" sourceRef="SubProcess_ReceiptManagement" targetRef="EndEvent_Manager" />
+    <bpmn:sequenceFlow id="Flow_Manager_Export_End" sourceRef="SubProcess_ExportManagement" targetRef="EndEvent_Manager" />
+    <bpmn:sequenceFlow id="Flow_Manager_Inventory_End" sourceRef="SubProcess_InventoryCheck" targetRef="EndEvent_Manager" />
+    <bpmn:sequenceFlow id="Flow_Manager_Location_End" sourceRef="SubProcess_LocationManagement" targetRef="EndEvent_Manager" />
+    <bpmn:sequenceFlow id="Flow_Manager_Request_End" sourceRef="SubProcess_RequestManagement" targetRef="EndEvent_Manager" />
+  </bpmn:process>
+
+  <!-- Process: Warehouse Staff -->
+  <bpmn:process id="Process_WarehouseStaff" name="Quy trình Nhân viên kho" isExecutable="false">
+    <bpmn:startEvent id="StartEvent_Staff" name="Đăng nhập&#10;Nhân viên">
+      <bpmn:outgoing>Flow_Staff_1</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:exclusiveGateway id="Gateway_Staff_Menu" name="Menu nhiệm vụ">
+      <bpmn:incoming>Flow_Staff_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Staff_Receive</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Staff_Pick</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Staff_Arrange</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Staff_Count</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:task id="Task_Staff_ReceiveGoods" name="Nhận hàng nhập kho&#10;- Kiểm tra chất lượng&#10;- Quét barcode&#10;- Cập nhật số lượng">
+      <bpmn:incoming>Flow_Staff_Receive</bpmn:incoming>
+      <bpmn:outgoing>Flow_Staff_Receive_End</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:task id="Task_Staff_PickGoods" name="Lấy hàng xuất kho&#10;- Tìm vị trí&#10;- Quét barcode&#10;- Xác nhận số lượng">
+      <bpmn:incoming>Flow_Staff_Pick</bpmn:incoming>
+      <bpmn:outgoing>Flow_Staff_Pick_End</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:task id="Task_Staff_ArrangeGoods" name="Sắp xếp hàng hóa&#10;- Xếp vào vị trí&#10;- Cập nhật location&#10;- In nhãn">
+      <bpmn:incoming>Flow_Staff_Arrange</bpmn:incoming>
+      <bpmn:outgoing>Flow_Staff_Arrange_End</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:task id="Task_Staff_CountInventory" name="Kiểm đếm kho&#10;- Đếm số lượng thực tế&#10;- Ghi nhận chênh lệch&#10;- Báo cáo">
+      <bpmn:incoming>Flow_Staff_Count</bpmn:incoming>
+      <bpmn:outgoing>Flow_Staff_Count_End</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:endEvent id="EndEvent_Staff" name="Hoàn thành">
+      <bpmn:incoming>Flow_Staff_Receive_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Staff_Pick_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Staff_Arrange_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Staff_Count_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_Staff_1" sourceRef="StartEvent_Staff" targetRef="Gateway_Staff_Menu" />
+    <bpmn:sequenceFlow id="Flow_Staff_Receive" name="Nhận hàng" sourceRef="Gateway_Staff_Menu" targetRef="Task_Staff_ReceiveGoods" />
+    <bpmn:sequenceFlow id="Flow_Staff_Pick" name="Lấy hàng" sourceRef="Gateway_Staff_Menu" targetRef="Task_Staff_PickGoods" />
+    <bpmn:sequenceFlow id="Flow_Staff_Arrange" name="Sắp xếp" sourceRef="Gateway_Staff_Menu" targetRef="Task_Staff_ArrangeGoods" />
+    <bpmn:sequenceFlow id="Flow_Staff_Count" name="Kiểm đếm" sourceRef="Gateway_Staff_Menu" targetRef="Task_Staff_CountInventory" />
+    <bpmn:sequenceFlow id="Flow_Staff_Receive_End" sourceRef="Task_Staff_ReceiveGoods" targetRef="EndEvent_Staff" />
+    <bpmn:sequenceFlow id="Flow_Staff_Pick_End" sourceRef="Task_Staff_PickGoods" targetRef="EndEvent_Staff" />
+    <bpmn:sequenceFlow id="Flow_Staff_Arrange_End" sourceRef="Task_Staff_ArrangeGoods" targetRef="EndEvent_Staff" />
+    <bpmn:sequenceFlow id="Flow_Staff_Count_End" sourceRef="Task_Staff_CountInventory" targetRef="EndEvent_Staff" />
+  </bpmn:process>
+
+  <!-- Process: Branch Manager -->
+  <bpmn:process id="Process_BranchManager" name="Quy trình Quản lý chi nhánh" isExecutable="false">
+    <bpmn:startEvent id="StartEvent_Branch" name="Đăng nhập&#10;Chi nhánh">
+      <bpmn:outgoing>Flow_Branch_1</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:exclusiveGateway id="Gateway_Branch_Menu" name="Chức năng">
+      <bpmn:incoming>Flow_Branch_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Branch_Request</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Branch_Inventory</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Branch_Report</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:subProcess id="SubProcess_BranchRequest" name="Tạo yêu cầu hàng">
+      <bpmn:incoming>Flow_Branch_Request</bpmn:incoming>
+      <bpmn:outgoing>Flow_Branch_Request_End</bpmn:outgoing>
+      
+      <bpmn:startEvent id="Start_BranchRequest" name="Bắt đầu" />
+      <bpmn:task id="Task_CheckBranchStock" name="Kiểm tra tồn kho&#10;chi nhánh" />
+      <bpmn:task id="Task_CreateRequest" name="Tạo phiếu yêu cầu&#10;hàng từ kho tổng" />
+      <bpmn:task id="Task_WaitApproval" name="Chờ phê duyệt&#10;từ kho tổng" />
+      <bpmn:task id="Task_ReceiveGoods" name="Nhận hàng&#10;điều chuyển" />
+      <bpmn:endEvent id="End_BranchRequest" name="Hoàn thành" />
+      
+      <bpmn:sequenceFlow sourceRef="Start_BranchRequest" targetRef="Task_CheckBranchStock" />
+      <bpmn:sequenceFlow sourceRef="Task_CheckBranchStock" targetRef="Task_CreateRequest" />
+      <bpmn:sequenceFlow sourceRef="Task_CreateRequest" targetRef="Task_WaitApproval" />
+      <bpmn:sequenceFlow sourceRef="Task_WaitApproval" targetRef="Task_ReceiveGoods" />
+      <bpmn:sequenceFlow sourceRef="Task_ReceiveGoods" targetRef="End_BranchRequest" />
+    </bpmn:subProcess>
+
+    <bpmn:task id="Task_Branch_ViewInventory" name="Xem tồn kho&#10;chi nhánh&#10;- Theo dõi số lượng&#10;- Cảnh báo hết hàng">
+      <bpmn:incoming>Flow_Branch_Inventory</bpmn:incoming>
+      <bpmn:outgoing>Flow_Branch_Inventory_End</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:task id="Task_Branch_Report" name="Báo cáo&#10;- Xuất nhập tồn&#10;- Doanh thu&#10;- Hàng tồn kho">
+      <bpmn:incoming>Flow_Branch_Report</bpmn:incoming>
+      <bpmn:outgoing>Flow_Branch_Report_End</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:endEvent id="EndEvent_Branch" name="Kết thúc">
+      <bpmn:incoming>Flow_Branch_Request_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Branch_Inventory_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Branch_Report_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_Branch_1" sourceRef="StartEvent_Branch" targetRef="Gateway_Branch_Menu" />
+    <bpmn:sequenceFlow id="Flow_Branch_Request" name="Yêu cầu hàng" sourceRef="Gateway_Branch_Menu" targetRef="SubProcess_BranchRequest" />
+    <bpmn:sequenceFlow id="Flow_Branch_Inventory" name="Xem tồn kho" sourceRef="Gateway_Branch_Menu" targetRef="Task_Branch_ViewInventory" />
+    <bpmn:sequenceFlow id="Flow_Branch_Report" name="Báo cáo" sourceRef="Gateway_Branch_Menu" targetRef="Task_Branch_Report" />
+    <bpmn:sequenceFlow id="Flow_Branch_Request_End" sourceRef="SubProcess_BranchRequest" targetRef="EndEvent_Branch" />
+    <bpmn:sequenceFlow id="Flow_Branch_Inventory_End" sourceRef="Task_Branch_ViewInventory" targetRef="EndEvent_Branch" />
+    <bpmn:sequenceFlow id="Flow_Branch_Report_End" sourceRef="Task_Branch_Report" targetRef="EndEvent_Branch" />
+  </bpmn:process>
+
+  <!-- Process: System -->
+  <bpmn:process id="Process_System" name="Hệ thống WMS" isExecutable="false">
+    <bpmn:startEvent id="StartEvent_System" name="Hệ thống khởi động">
+      <bpmn:outgoing>Flow_System_1</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:parallelGateway id="Gateway_System_Parallel" name="Các dịch vụ song song">
+      <bpmn:incoming>Flow_System_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_System_Auth</bpmn:outgoing>
+      <bpmn:outgoing>Flow_System_Barcode</bpmn:outgoing>
+      <bpmn:outgoing>Flow_System_Report</bpmn:outgoing>
+      <bpmn:outgoing>Flow_System_Sync</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <bpmn:task id="Task_System_Auth" name="Xác thực và phân quyền&#10;- Đăng nhập&#10;- Quản lý session&#10;- Kiểm tra quyền">
+      <bpmn:incoming>Flow_System_Auth</bpmn:incoming>
+      <bpmn:outgoing>Flow_System_Auth_End</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:task id="Task_System_Barcode" name="Quản lý Barcode&#10;- Tạo mã vạch&#10;- Quét mã&#10;- Tra cứu batch">
+      <bpmn:incoming>Flow_System_Barcode</bpmn:incoming>
+      <bpmn:outgoing>Flow_System_Barcode_End</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:task id="Task_System_Report" name="Dashboard và báo cáo&#10;- Thống kê tồn kho&#10;- Top sản phẩm&#10;- Xuất nhập tồn">
+      <bpmn:incoming>Flow_System_Report</bpmn:incoming>
+      <bpmn:outgoing>Flow_System_Report_End</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:task id="Task_System_Sync" name="Đồng bộ dữ liệu&#10;- Backup&#10;- Replication&#10;- Data integrity">
+      <bpmn:incoming>Flow_System_Sync</bpmn:incoming>
+      <bpmn:outgoing>Flow_System_Sync_End</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:parallelGateway id="Gateway_System_Join" name="Hợp nhất">
+      <bpmn:incoming>Flow_System_Auth_End</bpmn:incoming>
+      <bpmn:incoming>Flow_System_Barcode_End</bpmn:incoming>
+      <bpmn:incoming>Flow_System_Report_End</bpmn:incoming>
+      <bpmn:incoming>Flow_System_Sync_End</bpmn:incoming>
+      <bpmn:outgoing>Flow_System_End</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <bpmn:endEvent id="EndEvent_System" name="Hệ thống hoạt động">
+      <bpmn:incoming>Flow_System_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_System_1" sourceRef="StartEvent_System" targetRef="Gateway_System_Parallel" />
+    <bpmn:sequenceFlow id="Flow_System_Auth" sourceRef="Gateway_System_Parallel" targetRef="Task_System_Auth" />
+    <bpmn:sequenceFlow id="Flow_System_Barcode" sourceRef="Gateway_System_Parallel" targetRef="Task_System_Barcode" />
+    <bpmn:sequenceFlow id="Flow_System_Report" sourceRef="Gateway_System_Parallel" targetRef="Task_System_Report" />
+    <bpmn:sequenceFlow id="Flow_System_Sync" sourceRef="Gateway_System_Parallel" targetRef="Task_System_Sync" />
+    <bpmn:sequenceFlow id="Flow_System_Auth_End" sourceRef="Task_System_Auth" targetRef="Gateway_System_Join" />
+    <bpmn:sequenceFlow id="Flow_System_Barcode_End" sourceRef="Task_System_Barcode" targetRef="Gateway_System_Join" />
+    <bpmn:sequenceFlow id="Flow_System_Report_End" sourceRef="Task_System_Report" targetRef="Gateway_System_Join" />
+    <bpmn:sequenceFlow id="Flow_System_Sync_End" sourceRef="Task_System_Sync" targetRef="Gateway_System_Join" />
+    <bpmn:sequenceFlow id="Flow_System_End" sourceRef="Gateway_System_Join" targetRef="EndEvent_System" />
+  </bpmn:process>
+
+</bpmn:definitions>

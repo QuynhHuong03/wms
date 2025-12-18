@@ -1,0 +1,704 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:collaboration id="Collaboration_WMS">
+    <bpmn:participant id="Participant_Admin" name="👤 ADMIN - Quản trị hệ thống" processRef="Process_Admin" />
+    <bpmn:participant id="Participant_Manager" name="📦 WAREHOUSE MANAGER - Quản lý kho" processRef="Process_Manager" />
+    <bpmn:participant id="Participant_Staff" name="🔧 WAREHOUSE STAFF - Nhân viên kho" processRef="Process_Staff" />
+    <bpmn:participant id="Participant_Branch" name="🏪 BRANCH MANAGER - Quản lý chi nhánh" processRef="Process_Branch" />
+    <bpmn:messageFlow id="Flow_Request" sourceRef="Activity_Branch_CreateRequest" targetRef="Activity_Manager_ProcessRequest" />
+    <bpmn:messageFlow id="Flow_Transfer" sourceRef="Activity_Manager_Transfer" targetRef="Activity_Branch_ReceiveGoods" />
+  </bpmn:collaboration>
+  
+  <!-- ADMIN PROCESS -->
+  <bpmn:process id="Process_Admin" isExecutable="false">
+    <bpmn:startEvent id="Start_Admin" name="Đăng nhập Admin">
+      <bpmn:outgoing>Flow_Admin_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:exclusiveGateway id="Gateway_Admin" name="Chức năng?">
+      <bpmn:incoming>Flow_Admin_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Admin_Users</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Admin_Warehouses</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Admin_Config</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="Activity_Admin_Users" name="Quản lý người dùng&#10;• Thêm/Sửa/Xóa&#10;• Phân quyền&#10;• Gán kho">
+      <bpmn:incoming>Flow_Admin_Users</bpmn:incoming>
+      <bpmn:outgoing>Flow_Admin_Users_End</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_Admin_Warehouses" name="Quản lý kho&#10;• Tạo kho mới&#10;• Kích hoạt/Vô hiệu&#10;• Phân loại kho">
+      <bpmn:incoming>Flow_Admin_Warehouses</bpmn:incoming>
+      <bpmn:outgoing>Flow_Admin_Warehouses_End</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_Admin_Config" name="Cấu hình hệ thống&#10;• Backup/Restore&#10;• Đồng bộ&#10;• Báo cáo tổng hợp">
+      <bpmn:incoming>Flow_Admin_Config</bpmn:incoming>
+      <bpmn:outgoing>Flow_Admin_Config_End</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="End_Admin" name="Hoàn thành">
+      <bpmn:incoming>Flow_Admin_Users_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Admin_Warehouses_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Admin_Config_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_Admin_1" sourceRef="Start_Admin" targetRef="Gateway_Admin" />
+    <bpmn:sequenceFlow id="Flow_Admin_Users" name="Users" sourceRef="Gateway_Admin" targetRef="Activity_Admin_Users" />
+    <bpmn:sequenceFlow id="Flow_Admin_Warehouses" name="Warehouses" sourceRef="Gateway_Admin" targetRef="Activity_Admin_Warehouses" />
+    <bpmn:sequenceFlow id="Flow_Admin_Config" name="Config" sourceRef="Gateway_Admin" targetRef="Activity_Admin_Config" />
+    <bpmn:sequenceFlow id="Flow_Admin_Users_End" sourceRef="Activity_Admin_Users" targetRef="End_Admin" />
+    <bpmn:sequenceFlow id="Flow_Admin_Warehouses_End" sourceRef="Activity_Admin_Warehouses" targetRef="End_Admin" />
+    <bpmn:sequenceFlow id="Flow_Admin_Config_End" sourceRef="Activity_Admin_Config" targetRef="End_Admin" />
+  </bpmn:process>
+  
+  <!-- WAREHOUSE MANAGER PROCESS -->
+  <bpmn:process id="Process_Manager" isExecutable="false">
+    <bpmn:startEvent id="Start_Manager" name="Đăng nhập Manager">
+      <bpmn:outgoing>Flow_Manager_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:exclusiveGateway id="Gateway_Manager" name="Chọn nghiệp vụ?">
+      <bpmn:incoming>Flow_Manager_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manager_Product</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Manager_Receipt</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Manager_Export</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Manager_Inventory</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Manager_Request</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    
+    <!-- Product Management -->
+    <bpmn:task id="Activity_Manager_Product" name="Quản lý sản phẩm&#10;• Sản phẩm&#10;• Danh mục&#10;• Nhà cung cấp">
+      <bpmn:incoming>Flow_Manager_Product</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manager_Product_End</bpmn:outgoing>
+    </bpmn:task>
+    
+    <!-- Receipt Flow -->
+    <bpmn:task id="Activity_Manager_CreateReceipt" name="Tạo phiếu nhập">
+      <bpmn:incoming>Flow_Manager_Receipt</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manager_Receipt_1</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_Manager_ReviewReceipt" name="Duyệt phiếu nhập">
+      <bpmn:incoming>Flow_Manager_Receipt_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manager_Receipt_2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_Manager_ReceiveGoods" name="Nhận hàng&#10;+ Xếp vào vị trí&#10;+ Tạo barcode">
+      <bpmn:incoming>Flow_Manager_Receipt_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manager_Receipt_End</bpmn:outgoing>
+    </bpmn:task>
+    
+    <!-- Export Flow -->
+    <bpmn:task id="Activity_Manager_CreateExport" name="Tạo phiếu xuất">
+      <bpmn:incoming>Flow_Manager_Export</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manager_Export_1</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_Manager_ReviewExport" name="Duyệt phiếu xuất">
+      <bpmn:incoming>Flow_Manager_Export_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manager_Export_2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_Manager_ConfirmExport" name="Lấy hàng&#10;+ Xác nhận xuất">
+      <bpmn:incoming>Flow_Manager_Export_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manager_Export_End</bpmn:outgoing>
+    </bpmn:task>
+    
+    <!-- Inventory Check -->
+    <bpmn:task id="Activity_Manager_CreateInventory" name="Tạo phiếu kiểm kê">
+      <bpmn:incoming>Flow_Manager_Inventory</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manager_Inventory_1</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_Manager_CountInventory" name="Kiểm đếm&#10;+ So sánh">
+      <bpmn:incoming>Flow_Manager_Inventory_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manager_Inventory_2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_Manager_ReviewInventory" name="Duyệt&#10;+ Điều chỉnh">
+      <bpmn:incoming>Flow_Manager_Inventory_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manager_Inventory_End</bpmn:outgoing>
+    </bpmn:task>
+    
+    <!-- Request Processing -->
+    <bpmn:task id="Activity_Manager_ProcessRequest" name="Xử lý yêu cầu chi nhánh">
+      <bpmn:incoming>Flow_Manager_Request</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manager_Request_1</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_Manager_Transfer" name="Phân bổ&#10;+ Điều chuyển">
+      <bpmn:incoming>Flow_Manager_Request_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manager_Request_End</bpmn:outgoing>
+    </bpmn:task>
+    
+    <bpmn:endEvent id="End_Manager" name="Hoàn thành">
+      <bpmn:incoming>Flow_Manager_Product_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Manager_Receipt_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Manager_Export_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Manager_Inventory_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Manager_Request_End</bpmn:incoming>
+    </bpmn:endEvent>
+    
+    <bpmn:sequenceFlow id="Flow_Manager_1" sourceRef="Start_Manager" targetRef="Gateway_Manager" />
+    <bpmn:sequenceFlow id="Flow_Manager_Product" name="Sản phẩm" sourceRef="Gateway_Manager" targetRef="Activity_Manager_Product" />
+    <bpmn:sequenceFlow id="Flow_Manager_Receipt" name="Phiếu nhập" sourceRef="Gateway_Manager" targetRef="Activity_Manager_CreateReceipt" />
+    <bpmn:sequenceFlow id="Flow_Manager_Export" name="Phiếu xuất" sourceRef="Gateway_Manager" targetRef="Activity_Manager_CreateExport" />
+    <bpmn:sequenceFlow id="Flow_Manager_Inventory" name="Kiểm kê" sourceRef="Gateway_Manager" targetRef="Activity_Manager_CreateInventory" />
+    <bpmn:sequenceFlow id="Flow_Manager_Request" name="Yêu cầu CN" sourceRef="Gateway_Manager" targetRef="Activity_Manager_ProcessRequest" />
+    
+    <bpmn:sequenceFlow id="Flow_Manager_Product_End" sourceRef="Activity_Manager_Product" targetRef="End_Manager" />
+    <bpmn:sequenceFlow id="Flow_Manager_Receipt_1" sourceRef="Activity_Manager_CreateReceipt" targetRef="Activity_Manager_ReviewReceipt" />
+    <bpmn:sequenceFlow id="Flow_Manager_Receipt_2" sourceRef="Activity_Manager_ReviewReceipt" targetRef="Activity_Manager_ReceiveGoods" />
+    <bpmn:sequenceFlow id="Flow_Manager_Receipt_End" sourceRef="Activity_Manager_ReceiveGoods" targetRef="End_Manager" />
+    <bpmn:sequenceFlow id="Flow_Manager_Export_1" sourceRef="Activity_Manager_CreateExport" targetRef="Activity_Manager_ReviewExport" />
+    <bpmn:sequenceFlow id="Flow_Manager_Export_2" sourceRef="Activity_Manager_ReviewExport" targetRef="Activity_Manager_ConfirmExport" />
+    <bpmn:sequenceFlow id="Flow_Manager_Export_End" sourceRef="Activity_Manager_ConfirmExport" targetRef="End_Manager" />
+    <bpmn:sequenceFlow id="Flow_Manager_Inventory_1" sourceRef="Activity_Manager_CreateInventory" targetRef="Activity_Manager_CountInventory" />
+    <bpmn:sequenceFlow id="Flow_Manager_Inventory_2" sourceRef="Activity_Manager_CountInventory" targetRef="Activity_Manager_ReviewInventory" />
+    <bpmn:sequenceFlow id="Flow_Manager_Inventory_End" sourceRef="Activity_Manager_ReviewInventory" targetRef="End_Manager" />
+    <bpmn:sequenceFlow id="Flow_Manager_Request_1" sourceRef="Activity_Manager_ProcessRequest" targetRef="Activity_Manager_Transfer" />
+    <bpmn:sequenceFlow id="Flow_Manager_Request_End" sourceRef="Activity_Manager_Transfer" targetRef="End_Manager" />
+  </bpmn:process>
+  
+  <!-- WAREHOUSE STAFF PROCESS -->
+  <bpmn:process id="Process_Staff" isExecutable="false">
+    <bpmn:startEvent id="Start_Staff" name="Đăng nhập Staff">
+      <bpmn:outgoing>Flow_Staff_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:exclusiveGateway id="Gateway_Staff" name="Nhiệm vụ?">
+      <bpmn:incoming>Flow_Staff_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Staff_Receive</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Staff_Pick</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Staff_Arrange</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Staff_Count</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="Activity_Staff_Receive" name="Nhận hàng nhập&#10;• Kiểm tra&#10;• Quét barcode&#10;• Cập nhật">
+      <bpmn:incoming>Flow_Staff_Receive</bpmn:incoming>
+      <bpmn:outgoing>Flow_Staff_Receive_End</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_Staff_Pick" name="Lấy hàng xuất&#10;• Tìm vị trí&#10;• Quét barcode&#10;• Xác nhận">
+      <bpmn:incoming>Flow_Staff_Pick</bpmn:incoming>
+      <bpmn:outgoing>Flow_Staff_Pick_End</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_Staff_Arrange" name="Sắp xếp hàng&#10;• Xếp vào bin&#10;• Cập nhật location&#10;• In nhãn">
+      <bpmn:incoming>Flow_Staff_Arrange</bpmn:incoming>
+      <bpmn:outgoing>Flow_Staff_Arrange_End</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_Staff_Count" name="Kiểm đếm&#10;• Đếm thực tế&#10;• Ghi chênh lệch&#10;• Báo cáo">
+      <bpmn:incoming>Flow_Staff_Count</bpmn:incoming>
+      <bpmn:outgoing>Flow_Staff_Count_End</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="End_Staff" name="Hoàn thành">
+      <bpmn:incoming>Flow_Staff_Receive_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Staff_Pick_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Staff_Arrange_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Staff_Count_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_Staff_1" sourceRef="Start_Staff" targetRef="Gateway_Staff" />
+    <bpmn:sequenceFlow id="Flow_Staff_Receive" name="Nhận hàng" sourceRef="Gateway_Staff" targetRef="Activity_Staff_Receive" />
+    <bpmn:sequenceFlow id="Flow_Staff_Pick" name="Lấy hàng" sourceRef="Gateway_Staff" targetRef="Activity_Staff_Pick" />
+    <bpmn:sequenceFlow id="Flow_Staff_Arrange" name="Sắp xếp" sourceRef="Gateway_Staff" targetRef="Activity_Staff_Arrange" />
+    <bpmn:sequenceFlow id="Flow_Staff_Count" name="Kiểm đếm" sourceRef="Gateway_Staff" targetRef="Activity_Staff_Count" />
+    <bpmn:sequenceFlow id="Flow_Staff_Receive_End" sourceRef="Activity_Staff_Receive" targetRef="End_Staff" />
+    <bpmn:sequenceFlow id="Flow_Staff_Pick_End" sourceRef="Activity_Staff_Pick" targetRef="End_Staff" />
+    <bpmn:sequenceFlow id="Flow_Staff_Arrange_End" sourceRef="Activity_Staff_Arrange" targetRef="End_Staff" />
+    <bpmn:sequenceFlow id="Flow_Staff_Count_End" sourceRef="Activity_Staff_Count" targetRef="End_Staff" />
+  </bpmn:process>
+  
+  <!-- BRANCH MANAGER PROCESS -->
+  <bpmn:process id="Process_Branch" isExecutable="false">
+    <bpmn:startEvent id="Start_Branch" name="Đăng nhập Chi nhánh">
+      <bpmn:outgoing>Flow_Branch_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="Activity_Branch_CheckStock" name="Kiểm tra tồn kho chi nhánh">
+      <bpmn:incoming>Flow_Branch_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Branch_2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Gateway_Branch" name="Cần yêu cầu?">
+      <bpmn:incoming>Flow_Branch_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_Branch_Yes</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Branch_No</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="Activity_Branch_CreateRequest" name="Tạo phiếu yêu cầu hàng">
+      <bpmn:incoming>Flow_Branch_Yes</bpmn:incoming>
+      <bpmn:outgoing>Flow_Branch_3</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_Branch_WaitApproval" name="Chờ phê duyệt từ kho tổng">
+      <bpmn:incoming>Flow_Branch_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_Branch_4</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_Branch_ReceiveGoods" name="Nhận hàng điều chuyển">
+      <bpmn:incoming>Flow_Branch_4</bpmn:incoming>
+      <bpmn:outgoing>Flow_Branch_5</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_Branch_Report" name="Xem báo cáo&#10;• Xuất nhập tồn&#10;• Top sản phẩm">
+      <bpmn:incoming>Flow_Branch_No</bpmn:incoming>
+      <bpmn:outgoing>Flow_Branch_6</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="End_Branch" name="Hoàn thành">
+      <bpmn:incoming>Flow_Branch_5</bpmn:incoming>
+      <bpmn:incoming>Flow_Branch_6</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_Branch_1" sourceRef="Start_Branch" targetRef="Activity_Branch_CheckStock" />
+    <bpmn:sequenceFlow id="Flow_Branch_2" sourceRef="Activity_Branch_CheckStock" targetRef="Gateway_Branch" />
+    <bpmn:sequenceFlow id="Flow_Branch_Yes" name="Có" sourceRef="Gateway_Branch" targetRef="Activity_Branch_CreateRequest" />
+    <bpmn:sequenceFlow id="Flow_Branch_No" name="Không" sourceRef="Gateway_Branch" targetRef="Activity_Branch_Report" />
+    <bpmn:sequenceFlow id="Flow_Branch_3" sourceRef="Activity_Branch_CreateRequest" targetRef="Activity_Branch_WaitApproval" />
+    <bpmn:sequenceFlow id="Flow_Branch_4" sourceRef="Activity_Branch_WaitApproval" targetRef="Activity_Branch_ReceiveGoods" />
+    <bpmn:sequenceFlow id="Flow_Branch_5" sourceRef="Activity_Branch_ReceiveGoods" targetRef="End_Branch" />
+    <bpmn:sequenceFlow id="Flow_Branch_6" sourceRef="Activity_Branch_Report" targetRef="End_Branch" />
+  </bpmn:process>
+  
+  <!-- BPMN DIAGRAM INFORMATION -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_WMS">
+      
+      <!-- ADMIN POOL -->
+      <bpmndi:BPMNShape id="Participant_Admin_di" bpmnElement="Participant_Admin" isHorizontal="true">
+        <dc:Bounds x="160" y="80" width="1200" height="250" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_Admin_di" bpmnElement="Start_Admin">
+        <dc:Bounds x="230" y="175" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="213" y="218" width="70" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Admin_di" bpmnElement="Gateway_Admin" isMarkerVisible="true">
+        <dc:Bounds x="320" y="168" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="313" y="144" width="64" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Admin_Users_di" bpmnElement="Activity_Admin_Users">
+        <dc:Bounds x="450" y="100" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Admin_Warehouses_di" bpmnElement="Activity_Admin_Warehouses">
+        <dc:Bounds x="680" y="100" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Admin_Config_di" bpmnElement="Activity_Admin_Config">
+        <dc:Bounds x="910" y="100" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Admin_di" bpmnElement="End_Admin">
+        <dc:Bounds x="1142" y="175" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1131" y="218" width="59" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      
+      <bpmndi:BPMNEdge id="Flow_Admin_1_di" bpmnElement="Flow_Admin_1">
+        <di:waypoint x="266" y="193" />
+        <di:waypoint x="320" y="193" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Admin_Users_di" bpmnElement="Flow_Admin_Users">
+        <di:waypoint x="345" y="168" />
+        <di:waypoint x="345" y="140" />
+        <di:waypoint x="450" y="140" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="365" y="123" width="30" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Admin_Warehouses_di" bpmnElement="Flow_Admin_Warehouses">
+        <di:waypoint x="370" y="193" />
+        <di:waypoint x="525" y="193" />
+        <di:waypoint x="525" y="140" />
+        <di:waypoint x="680" y="140" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="558" y="123" width="64" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Admin_Config_di" bpmnElement="Flow_Admin_Config">
+        <di:waypoint x="370" y="193" />
+        <di:waypoint x="640" y="193" />
+        <di:waypoint x="640" y="140" />
+        <di:waypoint x="910" y="140" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="796" y="123" width="34" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Admin_Users_End_di" bpmnElement="Flow_Admin_Users_End">
+        <di:waypoint x="600" y="140" />
+        <di:waypoint x="871" y="140" />
+        <di:waypoint x="871" y="193" />
+        <di:waypoint x="1142" y="193" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Admin_Warehouses_End_di" bpmnElement="Flow_Admin_Warehouses_End">
+        <di:waypoint x="830" y="140" />
+        <di:waypoint x="986" y="140" />
+        <di:waypoint x="986" y="193" />
+        <di:waypoint x="1142" y="193" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Admin_Config_End_di" bpmnElement="Flow_Admin_Config_End">
+        <di:waypoint x="1060" y="140" />
+        <di:waypoint x="1101" y="140" />
+        <di:waypoint x="1101" y="193" />
+        <di:waypoint x="1142" y="193" />
+      </bpmndi:BPMNEdge>
+      
+      <!-- WAREHOUSE MANAGER POOL -->
+      <bpmndi:BPMNShape id="Participant_Manager_di" bpmnElement="Participant_Manager" isHorizontal="true">
+        <dc:Bounds x="160" y="370" width="1900" height="380" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_Manager_di" bpmnElement="Start_Manager">
+        <dc:Bounds x="230" y="540" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="209" y="583" width="78" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Manager_di" bpmnElement="Gateway_Manager" isMarkerVisible="true">
+        <dc:Bounds x="320" y="533" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="302" y="590" width="86" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      
+      <!-- Product -->
+      <bpmndi:BPMNShape id="Activity_Manager_Product_di" bpmnElement="Activity_Manager_Product">
+        <dc:Bounds x="430" y="400" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      
+      <!-- Receipt Flow -->
+      <bpmndi:BPMNShape id="Activity_Manager_CreateReceipt_di" bpmnElement="Activity_Manager_CreateReceipt">
+        <dc:Bounds x="660" y="400" width="120" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Manager_ReviewReceipt_di" bpmnElement="Activity_Manager_ReviewReceipt">
+        <dc:Bounds x="820" y="400" width="120" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Manager_ReceiveGoods_di" bpmnElement="Activity_Manager_ReceiveGoods">
+        <dc:Bounds x="980" y="400" width="120" height="70" />
+      </bpmndi:BPMNShape>
+      
+      <!-- Export Flow -->
+      <bpmndi:BPMNShape id="Activity_Manager_CreateExport_di" bpmnElement="Activity_Manager_CreateExport">
+        <dc:Bounds x="660" y="500" width="120" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Manager_ReviewExport_di" bpmnElement="Activity_Manager_ReviewExport">
+        <dc:Bounds x="820" y="500" width="120" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Manager_ConfirmExport_di" bpmnElement="Activity_Manager_ConfirmExport">
+        <dc:Bounds x="980" y="500" width="120" height="70" />
+      </bpmndi:BPMNShape>
+      
+      <!-- Inventory -->
+      <bpmndi:BPMNShape id="Activity_Manager_CreateInventory_di" bpmnElement="Activity_Manager_CreateInventory">
+        <dc:Bounds x="1180" y="400" width="120" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Manager_CountInventory_di" bpmnElement="Activity_Manager_CountInventory">
+        <dc:Bounds x="1340" y="400" width="120" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Manager_ReviewInventory_di" bpmnElement="Activity_Manager_ReviewInventory">
+        <dc:Bounds x="1500" y="400" width="120" height="70" />
+      </bpmndi:BPMNShape>
+      
+      <!-- Request -->
+      <bpmndi:BPMNShape id="Activity_Manager_ProcessRequest_di" bpmnElement="Activity_Manager_ProcessRequest">
+        <dc:Bounds x="1180" y="620" width="140" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Manager_Transfer_di" bpmnElement="Activity_Manager_Transfer">
+        <dc:Bounds x="1380" y="620" width="140" height="70" />
+      </bpmndi:BPMNShape>
+      
+      <bpmndi:BPMNShape id="End_Manager_di" bpmnElement="End_Manager">
+        <dc:Bounds x="1832" y="540" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1821" y="583" width="59" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      
+      <bpmndi:BPMNEdge id="Flow_Manager_1_di" bpmnElement="Flow_Manager_1">
+        <di:waypoint x="266" y="558" />
+        <di:waypoint x="320" y="558" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Manager_Product_di" bpmnElement="Flow_Manager_Product">
+        <di:waypoint x="345" y="533" />
+        <di:waypoint x="345" y="440" />
+        <di:waypoint x="430" y="440" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="358" y="418" width="53" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Manager_Receipt_di" bpmnElement="Flow_Manager_Receipt">
+        <di:waypoint x="345" y="533" />
+        <di:waypoint x="345" y="435" />
+        <di:waypoint x="660" y="435" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="468" y="418" width="64" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Manager_Export_di" bpmnElement="Flow_Manager_Export">
+        <di:waypoint x="345" y="558" />
+        <di:waypoint x="345" y="535" />
+        <di:waypoint x="660" y="535" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="466" y="518" width="57" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Manager_Inventory_di" bpmnElement="Flow_Manager_Inventory">
+        <di:waypoint x="370" y="558" />
+        <di:waypoint x="775" y="558" />
+        <di:waypoint x="775" y="435" />
+        <di:waypoint x="1180" y="435" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="899" y="418" width="42" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Manager_Request_di" bpmnElement="Flow_Manager_Request">
+        <di:waypoint x="345" y="583" />
+        <di:waypoint x="345" y="655" />
+        <di:waypoint x="1180" y="655" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="712" y="638" width="62" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      
+      <bpmndi:BPMNEdge id="Flow_Manager_Product_End_di" bpmnElement="Flow_Manager_Product_End">
+        <di:waypoint x="580" y="440" />
+        <di:waypoint x="1206" y="440" />
+        <di:waypoint x="1206" y="558" />
+        <di:waypoint x="1832" y="558" />
+      </bpmndi:BPMNEdge>
+      
+      <bpmndi:BPMNEdge id="Flow_Manager_Receipt_1_di" bpmnElement="Flow_Manager_Receipt_1">
+        <di:waypoint x="780" y="435" />
+        <di:waypoint x="820" y="435" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Manager_Receipt_2_di" bpmnElement="Flow_Manager_Receipt_2">
+        <di:waypoint x="940" y="435" />
+        <di:waypoint x="980" y="435" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Manager_Receipt_End_di" bpmnElement="Flow_Manager_Receipt_End">
+        <di:waypoint x="1100" y="435" />
+        <di:waypoint x="1466" y="435" />
+        <di:waypoint x="1466" y="558" />
+        <di:waypoint x="1832" y="558" />
+      </bpmndi:BPMNEdge>
+      
+      <bpmndi:BPMNEdge id="Flow_Manager_Export_1_di" bpmnElement="Flow_Manager_Export_1">
+        <di:waypoint x="780" y="535" />
+        <di:waypoint x="820" y="535" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Manager_Export_2_di" bpmnElement="Flow_Manager_Export_2">
+        <di:waypoint x="940" y="535" />
+        <di:waypoint x="980" y="535" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Manager_Export_End_di" bpmnElement="Flow_Manager_Export_End">
+        <di:waypoint x="1100" y="535" />
+        <di:waypoint x="1466" y="535" />
+        <di:waypoint x="1466" y="558" />
+        <di:waypoint x="1832" y="558" />
+      </bpmndi:BPMNEdge>
+      
+      <bpmndi:BPMNEdge id="Flow_Manager_Inventory_1_di" bpmnElement="Flow_Manager_Inventory_1">
+        <di:waypoint x="1300" y="435" />
+        <di:waypoint x="1340" y="435" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Manager_Inventory_2_di" bpmnElement="Flow_Manager_Inventory_2">
+        <di:waypoint x="1460" y="435" />
+        <di:waypoint x="1500" y="435" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Manager_Inventory_End_di" bpmnElement="Flow_Manager_Inventory_End">
+        <di:waypoint x="1620" y="435" />
+        <di:waypoint x="1726" y="435" />
+        <di:waypoint x="1726" y="558" />
+        <di:waypoint x="1832" y="558" />
+      </bpmndi:BPMNEdge>
+      
+      <bpmndi:BPMNEdge id="Flow_Manager_Request_1_di" bpmnElement="Flow_Manager_Request_1">
+        <di:waypoint x="1320" y="655" />
+        <di:waypoint x="1380" y="655" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Manager_Request_End_di" bpmnElement="Flow_Manager_Request_End">
+        <di:waypoint x="1520" y="655" />
+        <di:waypoint x="1676" y="655" />
+        <di:waypoint x="1676" y="558" />
+        <di:waypoint x="1832" y="558" />
+      </bpmndi:BPMNEdge>
+      
+      <!-- WAREHOUSE STAFF POOL -->
+      <bpmndi:BPMNShape id="Participant_Staff_di" bpmnElement="Participant_Staff" isHorizontal="true">
+        <dc:Bounds x="160" y="790" width="1200" height="280" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_Staff_di" bpmnElement="Start_Staff">
+        <dc:Bounds x="230" y="905" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="209" y="948" width="78" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Staff_di" bpmnElement="Gateway_Staff" isMarkerVisible="true">
+        <dc:Bounds x="320" y="898" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="310" y="955" width="70" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Staff_Receive_di" bpmnElement="Activity_Staff_Receive">
+        <dc:Bounds x="450" y="820" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Staff_Pick_di" bpmnElement="Activity_Staff_Pick">
+        <dc:Bounds x="650" y="820" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Staff_Arrange_di" bpmnElement="Activity_Staff_Arrange">
+        <dc:Bounds x="450" y="950" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Staff_Count_di" bpmnElement="Activity_Staff_Count">
+        <dc:Bounds x="650" y="950" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Staff_di" bpmnElement="End_Staff">
+        <dc:Bounds x="1072" y="905" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1061" y="948" width="59" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      
+      <bpmndi:BPMNEdge id="Flow_Staff_1_di" bpmnElement="Flow_Staff_1">
+        <di:waypoint x="266" y="923" />
+        <di:waypoint x="320" y="923" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Staff_Receive_di" bpmnElement="Flow_Staff_Receive">
+        <di:waypoint x="345" y="898" />
+        <di:waypoint x="345" y="860" />
+        <di:waypoint x="450" y="860" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="359" y="843" width="54" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Staff_Pick_di" bpmnElement="Flow_Staff_Pick">
+        <di:waypoint x="345" y="898" />
+        <di:waypoint x="345" y="860" />
+        <di:waypoint x="650" y="860" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="559" y="843" width="52" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Staff_Arrange_di" bpmnElement="Flow_Staff_Arrange">
+        <di:waypoint x="345" y="948" />
+        <di:waypoint x="345" y="990" />
+        <di:waypoint x="450" y="990" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="367" y="973" width="46" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Staff_Count_di" bpmnElement="Flow_Staff_Count">
+        <di:waypoint x="345" y="948" />
+        <di:waypoint x="345" y="990" />
+        <di:waypoint x="650" y="990" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="557" y="973" width="56" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Staff_Receive_End_di" bpmnElement="Flow_Staff_Receive_End">
+        <di:waypoint x="600" y="860" />
+        <di:waypoint x="836" y="860" />
+        <di:waypoint x="836" y="923" />
+        <di:waypoint x="1072" y="923" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Staff_Pick_End_di" bpmnElement="Flow_Staff_Pick_End">
+        <di:waypoint x="800" y="860" />
+        <di:waypoint x="936" y="860" />
+        <di:waypoint x="936" y="923" />
+        <di:waypoint x="1072" y="923" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Staff_Arrange_End_di" bpmnElement="Flow_Staff_Arrange_End">
+        <di:waypoint x="600" y="990" />
+        <di:waypoint x="836" y="990" />
+        <di:waypoint x="836" y="923" />
+        <di:waypoint x="1072" y="923" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Staff_Count_End_di" bpmnElement="Flow_Staff_Count_End">
+        <di:waypoint x="800" y="990" />
+        <di:waypoint x="936" y="990" />
+        <di:waypoint x="936" y="923" />
+        <di:waypoint x="1072" y="923" />
+      </bpmndi:BPMNEdge>
+      
+      <!-- BRANCH MANAGER POOL -->
+      <bpmndi:BPMNShape id="Participant_Branch_di" bpmnElement="Participant_Branch" isHorizontal="true">
+        <dc:Bounds x="160" y="1110" width="1400" height="250" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_Branch_di" bpmnElement="Start_Branch">
+        <dc:Bounds x="230" y="1215" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="209" y="1258" width="78" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Branch_CheckStock_di" bpmnElement="Activity_Branch_CheckStock">
+        <dc:Bounds x="330" y="1193" width="130" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Branch_di" bpmnElement="Gateway_Branch" isMarkerVisible="true">
+        <dc:Bounds x="515" y="1208" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="501" y="1265" width="78" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Branch_CreateRequest_di" bpmnElement="Activity_Branch_CreateRequest">
+        <dc:Bounds x="630" y="1140" width="140" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Branch_WaitApproval_di" bpmnElement="Activity_Branch_WaitApproval">
+        <dc:Bounds x="820" y="1140" width="140" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Branch_ReceiveGoods_di" bpmnElement="Activity_Branch_ReceiveGoods">
+        <dc:Bounds x="1010" y="1140" width="140" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Branch_Report_di" bpmnElement="Activity_Branch_Report">
+        <dc:Bounds x="800" y="1250" width="140" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Branch_di" bpmnElement="End_Branch">
+        <dc:Bounds x="1242" y="1215" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1231" y="1258" width="59" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      
+      <bpmndi:BPMNEdge id="Flow_Branch_1_di" bpmnElement="Flow_Branch_1">
+        <di:waypoint x="266" y="1233" />
+        <di:waypoint x="330" y="1233" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Branch_2_di" bpmnElement="Flow_Branch_2">
+        <di:waypoint x="460" y="1233" />
+        <di:waypoint x="515" y="1233" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Branch_Yes_di" bpmnElement="Flow_Branch_Yes">
+        <di:waypoint x="540" y="1208" />
+        <di:waypoint x="540" y="1175" />
+        <di:waypoint x="630" y="1175" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="558" y="1158" width="14" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Branch_No_di" bpmnElement="Flow_Branch_No">
+        <di:waypoint x="540" y="1258" />
+        <di:waypoint x="540" y="1285" />
+        <di:waypoint x="800" y="1285" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="640" y="1268" width="35" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Branch_3_di" bpmnElement="Flow_Branch_3">
+        <di:waypoint x="770" y="1175" />
+        <di:waypoint x="820" y="1175" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Branch_4_di" bpmnElement="Flow_Branch_4">
+        <di:waypoint x="960" y="1175" />
+        <di:waypoint x="1010" y="1175" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Branch_5_di" bpmnElement="Flow_Branch_5">
+        <di:waypoint x="1150" y="1175" />
+        <di:waypoint x="1196" y="1175" />
+        <di:waypoint x="1196" y="1233" />
+        <di:waypoint x="1242" y="1233" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Branch_6_di" bpmnElement="Flow_Branch_6">
+        <di:waypoint x="940" y="1285" />
+        <di:waypoint x="1091" y="1285" />
+        <di:waypoint x="1091" y="1233" />
+        <di:waypoint x="1242" y="1233" />
+      </bpmndi:BPMNEdge>
+      
+      <!-- MESSAGE FLOWS -->
+      <bpmndi:BPMNEdge id="Flow_Request_di" bpmnElement="Flow_Request">
+        <di:waypoint x="700" y="1140" />
+        <di:waypoint x="700" y="905" />
+        <di:waypoint x="1250" y="905" />
+        <di:waypoint x="1250" y="690" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="936" y="887" width="78" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Transfer_di" bpmnElement="Flow_Transfer">
+        <di:waypoint x="1450" y="690" />
+        <di:waypoint x="1450" y="915" />
+        <di:waypoint x="1080" y="915" />
+        <di:waypoint x="1080" y="1140" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1226" y="897" width="78" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

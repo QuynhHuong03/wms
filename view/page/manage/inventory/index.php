@@ -54,7 +54,8 @@ $is_central_warehouse = ($user_warehouse_id === 'KHO_TONG_01');
 // Nếu là kho chi nhánh (branch), bắt buộc chỉ xem kho của mình
 if ($is_central_warehouse) {
     // Kho tổng: có thể xem tất cả kho hoặc lọc theo warehouse_id từ GET
-    $warehouse_id = $_GET['warehouse_id'] ?? '';  // Empty = xem tất cả
+    // Ensure we get the value even if it exists but is empty in GET
+    $warehouse_id = isset($_GET['warehouse_id']) ? $_GET['warehouse_id'] : '';
 } else {
     // Kho chi nhánh: bắt buộc chỉ xem kho của mình
     $warehouse_id = $user_warehouse_id;
@@ -65,9 +66,9 @@ $to = $_GET['to'] ?? '';
 $product_id = $_GET['product_id'] ?? '';
 $product_sku = $_GET['product_sku'] ?? '';
 $p = isset($_GET['p']) ? max(1, intval($_GET['p'])) : 1;
-$limit = isset($_GET['limit']) ? max(1, min(200, intval($_GET['limit']))) : 20;
+$limit = isset($_GET['limit']) ? max(1, min(200, intval($_GET['limit']))) : 10;
 // View mode: list or grouped-by-product
-$view = $_GET['view'] ?? 'grouped';
+$view = 'grouped';
 
 // Helper functions
 function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
@@ -186,10 +187,27 @@ $warehouses = $cWarehouse->getAllWarehouses();
 
 // Helper to build URL with current filters
 function buildUrl($overrides = []) {
+	// Preserve current GET parameters and any overrides
 	$params = array_merge($_GET, $overrides);
 	// Ensure router param stays on inventory
 	$params['page'] = 'inventory';
-	return 'index.php?' . http_build_query($params);
+
+	// If the current user is not a central warehouse, enforce their warehouse_id
+	// so branch users always get links that stay scoped to their own warehouse.
+	// Use globals available in this scope.
+	global $is_central_warehouse, $user_warehouse_id;
+	if (empty($is_central_warehouse) || $is_central_warehouse === false) {
+		$params['warehouse_id'] = $user_warehouse_id;
+	}
+
+	// Use the base path from the current script
+	$baseUrl = $_SERVER['SCRIPT_NAME'];
+	if (basename($baseUrl) !== 'index.php') {
+		$baseUrl = dirname($_SERVER['SCRIPT_NAME']) . '/index.php';
+	}
+	// Build query string, keeping empty values
+	$query = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
+	return $baseUrl . '?' . $query;
 }
 
 // Lightweight JSON endpoint for bin distribution (works with current filters)
@@ -219,13 +237,16 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
 	}
 	
 	try {
+		// Get limit from request, default to 10
+		$limitF = isset($_GET['limit']) ? max(1, min(200, intval($_GET['limit']))) : 10;
+		
 		$res = $cInventory->getInventoryGroupedByProduct([
 			'q' => $_GET['q'] ?? '',
 			'warehouse_id' => $w,
 			'from' => $fromF,
 			'to' => $toF,
 			'page' => 1,
-			'limit' => 1000
+			'limit' => $limitF
 		]);
 		$items = $res['items'] ?? [];
 		
@@ -271,7 +292,13 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
 						}
 					}
 		
-					echo json_encode(['ok' => true, 'data' => $items, 'warehouse_id' => $w, 'count' => count($items)]);
+					// Include pagination metadata from the backend if available
+					$out = ['ok' => true, 'data' => $items, 'warehouse_id' => $w, 'count' => count($items)];
+					if (isset($res['total'])) $out['total'] = intval($res['total']);
+					if (isset($res['pages'])) $out['pages'] = intval($res['pages']);
+					if (isset($res['page'])) $out['page'] = intval($res['page']);
+					if (isset($res['limit'])) $out['limit'] = intval($res['limit']);
+					echo json_encode($out);
 	} catch (Throwable $e) {
 		echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
 	}
@@ -626,7 +653,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
 	<div class="inv-header">
 		<h2 class="inv-title"><i class="fas fa-boxes"></i>  Tồn kho</h2>
 		<div class="inv-filters">
-			<form method="get" action="index.php" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+			<form method="get" action="<?= $_SERVER['SCRIPT_NAME'] ?>" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
 						<input type="hidden" name="page" value="inventory" />
 				<input type="text" name="q" placeholder="Tìm kiếm (phiếu/SP/ô kho)" value="<?=h($q)?>" />
 				
@@ -639,11 +666,15 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
 				?>
 				<select name="warehouse_id" style="min-width:220px;" <?= $is_central_warehouse ? '' : 'disabled' ?>> 
 					<?php if ($is_central_warehouse): ?>
-						<option value="">-- Tất cả kho --</option>
+						<option value="">-</option>
 					<?php endif; ?>
 					<?php foreach ($allWarehouses as $wh): ?>
-						<?php $wid = $wh['warehouse_id'] ?? ''; ?>
-						<option value="<?=h($wid)?>" <?=($warehouse_id === $wid) ? 'selected' : ''?>>
+						<?php 
+							$wid = $wh['warehouse_id'] ?? ''; 
+							// Normalize for comparison (trim whitespace)
+							$isSelected = (trim($warehouse_id) === trim($wid));
+						?>
+						<option value="<?=h($wid)?>" <?=$isSelected ? 'selected' : ''?>>
 							<?=h($wh['warehouse_name'] ?? $wid)?>
 						</option>
 					<?php endforeach; ?>
@@ -659,10 +690,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
 						<option value="<?=$opt?>" <?=$limit==$opt?'selected':''?>><?=$opt?> / trang</option>
 					<?php } ?>
 				</select>
-								<select name="view" title="Chế độ hiển thị">
-							<option value="grouped" <?=$view==='grouped'?'selected':''?>>Theo sản phẩm</option>
-							<option value="list" <?=$view==='list'?'selected':''?>>Theo giao dịch</option>
-						</select>
+								<!-- view selector removed: always show grouped by product -->
 				<button class="inv-btn" type="submit">Lọc</button>
 				<!-- <a class="inv-btn secondary" href="index.php?page=manage"> Quay lại</a> -->
 			</form>
@@ -979,6 +1007,10 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
 					const to = toInput ? toInput.value : '';
 					if (from) params.set('from', from);
 					if (to) params.set('to', to);
+					// Get limit from the select element
+					const limitSelect = document.querySelector('select[name="limit"]');
+					const limit = limitSelect ? limitSelect.value : '10';
+					params.set('limit', limit);
 					return API_INVENTORY_PAGE + '?' + params.toString();
 				}
 
@@ -998,10 +1030,18 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
 							return;
 						}
 						const items = payload.data || [];
+						const pages = payload.pages ? parseInt(payload.pages, 10) : 1;
+						const pagEl = document.querySelector('.inv-pagination');
+						if (pagEl) {
+							if (pages <= 1) pagEl.style.display = 'none'; else pagEl.style.display = '';
+						}
 						if (!items.length) {
 							const usedWarehouse = payload.warehouse_id || warehouseId || '';
 							const msg = usedWarehouse ? 'Không tồn tại tồn kho cho kho được chọn.' : 'Không có sản phẩm phù hợp.';
 							ajaxContainer.innerHTML = `<div style="padding:12px;color:#64748b;">${msg}</div>`;
+							// Update pagination links and keep pagination visible only when pages>1
+							if (typeof updatePaginationLinks === 'function') updatePaginationLinks();
+							if (pagEl) { if (pages <= 1) pagEl.style.display = 'none'; else pagEl.style.display = ''; }
 							return;
 						}
 					let html = '<table class="inv-table" style="margin-top:6px;"><thead><tr><th>SKU</th><th>Sản phẩm</th><th>Tổng SL (cái)</th><th>Nhập gần nhất</th><th>Chi tiết</th></tr></thead><tbody>';
@@ -1027,6 +1067,11 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
 					}
 					html += '</tbody></table>';
 					ajaxContainer.innerHTML = html;
+					// Update pagination links after rendering
+					if (typeof updatePaginationLinks === 'function') updatePaginationLinks();
+
+					// After AJAX load, update pagination links to reflect current filters
+					if (typeof updatePaginationLinks === 'function') updatePaginationLinks();
 				} catch (err){
 				console.error('Load grouped error', err);
 				ajaxContainer.innerHTML = '<div class="alert alert-danger">Lỗi khi tải tồn kho</div>';
@@ -1035,38 +1080,106 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'grouped') {
 				serverTables.forEach(t => t.style.display = '');
 			}
 		}
-		
-		if (whSelect) {
-			whSelect.addEventListener('change', function(){
-				// For branch users, always load their own warehouse regardless of selection
-				const isCentral = <?= $is_central_warehouse ? 'true' : 'false' ?>;
-				const userWarehouse = '<?= $user_warehouse_id ?>';
-				const selectedWarehouse = isCentral ? this.value : userWarehouse;
-				loadGrouped(selectedWarehouse);
-			});
-			// Load initial for current selection
+
+		// Build current filters from DOM (used to update pagination links)
+		function getCurrentFilterParams(){
+			const params = new URLSearchParams();
+			params.set('page','inventory');
+			const qEl = document.querySelector('input[name="q"]');
+			params.set('q', qEl ? qEl.value : '');
 			const isCentral = <?= $is_central_warehouse ? 'true' : 'false' ?>;
 			const userWarehouse = '<?= $user_warehouse_id ?>';
-			const initialWarehouse = isCentral ? whSelect.value : userWarehouse;
-			loadGrouped(initialWarehouse);
-		}				if (fromInput) fromInput.addEventListener('change', ()=> whSelect && loadGrouped(whSelect.value));
-				if (toInput) toInput.addEventListener('change', ()=> whSelect && loadGrouped(whSelect.value));
+			const whSel = document.querySelector('select[name="warehouse_id"]');
+			let wh = '';
+			if (whSel) {
+				wh = isCentral ? whSel.value : userWarehouse;
+			} else {
+				wh = userWarehouse;
+			}
+			params.set('warehouse_id', wh);
+			const fromEl = document.querySelector('input[name="from"]');
+			const toEl = document.querySelector('input[name="to"]');
+			params.set('from', fromEl ? fromEl.value : '');
+			params.set('to', toEl ? toEl.value : '');
+			const limitSel = document.querySelector('select[name="limit"]');
+			params.set('limit', limitSel ? limitSel.value : '10');
+			// view filter removed; always grouped
+			return params;
+		}
+
+		function updatePaginationLinks(){
+			const links = document.querySelectorAll('.inv-pagination a.inv-page-link');
+			if (!links || links.length === 0) return;
+			const basePath = window.location.pathname;
+			links.forEach(link => {
+				try {
+					const url = new URL(link.href, window.location.origin);
+					const p = url.searchParams.get('p') || '1';
+					const params = getCurrentFilterParams();
+					params.set('p', p);
+					link.setAttribute('href', basePath + '?' + params.toString());
+				} catch (e) {
+					// ignore
+				}
+			});
+		}
+
+		if (whSelect) {
+			// Check if pagination is active
+			const urlParams = new URLSearchParams(window.location.search);
+			const pageParam = urlParams.get('p');
+			const hasPagination = pageParam && pageParam !== '1';
+			
+			if (hasPagination) {
+				// If pagination exists, hide AJAX container and show server-rendered table
+				// Do NOT call loadGrouped or attach any event listeners
+				if (ajaxContainer) ajaxContainer.style.display = 'none';
+				const serverTables = document.querySelectorAll('.inv-table');
+				serverTables.forEach(t => t.style.display = '');
+			} else {
+				// Only load AJAX when the user explicitly submits the filter form (clicks "Lọc")
+				const filterForm = document.querySelector('.inv-filters form');
+				// Initial load for page 1
+				const isCentral = <?= $is_central_warehouse ? 'true' : 'false' ?>;
+				const userWarehouse = '<?= $user_warehouse_id ?>';
+				const initialWarehouse = isCentral ? whSelect.value : userWarehouse;
+				loadGrouped(initialWarehouse);
+				
+				if (filterForm) {
+					filterForm.addEventListener('submit', function(e){
+						e.preventDefault();
+						// when applying filters, always go to page 1
+						const params = getCurrentFilterParams();
+						params.set('p','1');
+						// Update browser URL to reflect filters (without reloading)
+						const newUrl = window.location.pathname + '?' + params.toString();
+						history.replaceState({}, '', newUrl);
+						// Load via AJAX using current selected warehouse
+						const wh = isCentral ? (whSelect ? whSelect.value : '') : userWarehouse;
+						loadGrouped(wh);
+						// Update pagination links to reflect new filters
+						updatePaginationLinks();
+					});
+				}
+			}
+		}
 			})();
 			</script>
 
 	<div class="inv-pagination">
 		<span>Tổng: <?=number_format($total)?></span>
 		<?php if ($pages > 1) { ?>
-					<a class="inv-page-link" href="<?=buildUrl(['p'=>1])?>">« Đầu</a>
+			<a class="inv-page-link" href="<?=buildUrl(['p'=>1])?>">« Đầu</a>
 			<?php
-						$start = max(1, $p - 2);
-						$end = min($pages, $p + 2);
+				$start = max(1, $p - 2);
+				$end = min($pages, $p + 2);
 				for ($i = $start; $i <= $end; $i++) {
-							$active = $i == $p ? 'active' : '';
-							echo '<a class=\"inv-page-link '.$active.'\" href=\"'.buildUrl(['p'=>$i]).'\">'.$i.'</a>';
-				}
+					$active = $i == $p ? 'active' : '';
+					$url = buildUrl(['p'=>$i]);
 			?>
-					<a class="inv-page-link" href="<?=buildUrl(['p'=>$pages])?>">Cuối »</a>
+			<a class="inv-page-link <?=$active?>" href="<?=$url?>"><?=$i?></a>
+			<?php } ?>
+			<a class="inv-page-link" href="<?=buildUrl(['p'=>$pages])?>">Cuối »</a>
 		<?php } ?>
 	</div>
 </div>
